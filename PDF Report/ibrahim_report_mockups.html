@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="ur" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ibrahim Shah Kitchen Ledger — Report Mockups</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Nastaliq+Urdu:wght@400;700&family=IBM+Plex+Mono:wght@400;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --green-dark: #1a3d2b;
+    --green-mid:  #2d6a4f;
+    --col-open-bg:   #eff6ff;
+    --col-open-hdr:  #1e40af;
+    --col-recv-bg:   #f0fdf4;
+    --col-recv-bg2:  #dcfce7;
+    --col-recv-hdr:  #15803d;
+    --col-cons-bg:   #fffbeb;
+    --col-cons-bg2:  #fef3c7;
+    --col-cons-hdr:  #92400e;
+    --col-rem-bg:    #f8fafc;
+    --col-rem-hdr:   #334155;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: Inter, sans-serif;
+    background: #f1f5f9;
+    color: #1e293b;
+    padding: 2rem;
+    direction: ltr;
+  }
+  .page-title {
+    text-align: center;
+    font-size: 1.3rem;
+    font-weight: 600;
+    color: var(--green-dark);
+    margin-bottom: 2rem;
+    letter-spacing: .04em;
+  }
+  .report-section {
+    background: #fff;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    padding: 1.5rem;
+    margin-bottom: 2.5rem;
+    page-break-inside: avoid;
+  }
+  .report-label {
+    font-size: .68rem;
+    font-weight: 600;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: #64748b;
+    margin-bottom: 1rem;
+    padding-bottom: .5rem;
+    border-bottom: 2px solid var(--green-dark);
+  }
+
+  /* ── SHARED REPORT STYLES ── */
+  .rpt-header {
+    text-align: center;
+    border-bottom: 1.5px solid #334155;
+    padding-bottom: 1rem;
+    margin-bottom: 1rem;
+    direction: rtl;
+  }
+  .rpt-institution {
+    font-family: 'Noto Nastaliq Urdu', serif;
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: var(--green-dark);
+  }
+  .rpt-subtitle {
+    font-family: Inter, sans-serif;
+    font-size: .6rem;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: #64748b;
+    margin-top: 4px;
+    direction: ltr;
+  }
+  .rpt-date {
+    font-size: .72rem;
+    color: #475569;
+    margin-top: 6px;
+    direction: ltr;
+  }
+  .rpt-footer {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 1rem;
+    font-size: .65rem;
+    color: #94a3b8;
+    direction: ltr;
+  }
+  .rpt-footer .ur {
+    font-family: 'Noto Nastaliq Urdu', serif;
+    font-size: .75rem;
+  }
+
+  /* ── STATS BAR ── */
+  .stats-bar {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    margin-bottom: 1rem;
+    direction: ltr;
+  }
+  .stat {
+    border-radius: 6px;
+    padding: 8px 10px;
+    text-align: center;
+  }
+  .stat-lbl { font-size: .58rem; letter-spacing: .07em; text-transform: uppercase; }
+  .stat-val { font-family: 'IBM Plex Mono', monospace; font-size: 1.1rem; font-weight: 600; margin-top: 2px; }
+  .stat-neu { background: #f8fafc; border: 1px solid #e2e8f0; }
+  .stat-neu .stat-lbl { color: #64748b; }
+  .stat-neu .stat-val { color: #1e293b; }
+  .stat-grn { background: #f0fdf4; border: 1px solid #86efac; }
+  .stat-grn .stat-lbl { color: #15803d; }
+  .stat-grn .stat-val { color: #15803d; }
+  .stat-amb { background: #fffbeb; border: 1px solid #fcd34d; }
+  .stat-amb .stat-lbl { color: #92400e; }
+  .stat-amb .stat-val { color: #92400e; }
+
+  /* ── STUDENTS BAR (daily) ── */
+  .stu-bar {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-bottom: 1rem;
+    direction: ltr;
+  }
+  .stu-card {
+    border-radius: 6px;
+    padding: 8px 10px;
+    text-align: center;
+  }
+  .stu-lbl { font-size: .58rem; letter-spacing: .07em; text-transform: uppercase; font-family: Inter, sans-serif; }
+  .stu-lbl .ur { font-family: 'Noto Nastaliq Urdu', serif; font-size: .7rem; letter-spacing: 0; text-transform: none; }
+  .stu-val { font-family: 'IBM Plex Mono', monospace; font-size: 1.3rem; font-weight: 600; margin-top: 2px; }
+  .stu-boys { background: #eff6ff; border: 1px solid #bfdbfe; }
+  .stu-boys .stu-lbl, .stu-boys .stu-val { color: #1e40af; }
+  .stu-girls { background: #f0fdf4; border: 1px solid #86efac; }
+  .stu-girls .stu-lbl, .stu-girls .stu-val { color: #15803d; }
+  .stu-total { background: #f8fafc; border: 1px solid #e2e8f0; }
+  .stu-total .stu-lbl { color: #64748b; }
+  .stu-total .stu-val { color: #1e293b; }
+
+  /* ── SECTION HEADING ── */
+  .sec-hdr {
+    font-size: .6rem;
+    font-weight: 600;
+    letter-spacing: .09em;
+    text-transform: uppercase;
+    color: #64748b;
+    margin: 1rem 0 6px;
+    direction: ltr;
+  }
+
+  /* ── TABLES ── */
+  .tbl { width: 100%; border-collapse: collapse; font-size: .68rem; direction: rtl; }
+  .tbl th, .tbl td { border: 0.5px solid #e2e8f0; padding: 5px 6px; }
+  .tbl thead th { font-family: Inter, sans-serif; font-size: .58rem; letter-spacing: .07em; text-transform: uppercase; }
+  .tbl tbody tr:nth-child(even) { background: #f8fafc; }
+  .tbl .ur-cell { font-family: 'Noto Nastaliq Urdu', serif; font-size: .85rem; text-align: right; }
+  .tbl .en-sub { font-family: Inter, sans-serif; font-size: .56rem; color: #94a3b8; display: block; }
+  .tbl .num { font-family: 'IBM Plex Mono', monospace; text-align: center; }
+  .tbl .tot { font-weight: 600; }
+  .tbl .ltr { direction: ltr; text-align: center; }
+
+  /* Column group tints */
+  .c-open  { background: var(--col-open-bg)  !important; color: var(--col-open-hdr); }
+  .c-recv  { background: var(--col-recv-bg)  !important; color: var(--col-recv-hdr); }
+  .c-recv2 { background: var(--col-recv-bg2) !important; color: var(--col-recv-hdr); }
+  .c-cons  { background: var(--col-cons-bg)  !important; color: var(--col-cons-hdr); }
+  .c-cons2 { background: var(--col-cons-bg2) !important; color: var(--col-cons-hdr); }
+  .c-rem   { background: var(--col-rem-bg)   !important; color: var(--col-rem-hdr); }
+
+  /* Export dialog */
+  .dialog-wrap {
+    background: rgba(0,0,0,.35);
+    border-radius: 12px;
+    padding: 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 380px;
+    direction: ltr;
+  }
+  .dialog {
+    background: #fff;
+    border-radius: 10px;
+    border: 1px solid #e2e8f0;
+    width: 400px;
+    padding: 1.25rem;
+  }
+  .dialog-title { font-size: .95rem; font-weight: 600; color: #1e293b; }
+  .dialog-sub   { font-size: .72rem; color: #64748b; margin-top: 2px; }
+  .opt-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 1rem 0; }
+  .opt {
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    padding: 9px 11px;
+    cursor: default;
+  }
+  .opt.sel { border: 2px solid #2563eb; background: #eff6ff; }
+  .opt-en { font-size: .78rem; font-weight: 500; color: #1e293b; }
+  .opt-ur { font-family: 'Noto Nastaliq Urdu', serif; font-size: .78rem; color: #64748b; margin-top: 2px; direction: rtl; }
+  .opt.sel .opt-en, .opt.sel .opt-ur { color: #1d4ed8; }
+  .opt-full { grid-column: 1 / -1; }
+  .date-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 1rem; }
+  .date-lbl { font-size: .65rem; color: #64748b; margin-bottom: 3px; }
+  .date-inp { width: 100%; padding: 6px 8px; border: 1px solid #e2e8f0; border-radius: 5px; font-size: .75rem; }
+  .chk-list { border-top: 1px solid #e2e8f0; padding-top: .75rem; margin-bottom: 1rem; }
+  .chk-lbl  { font-size: .65rem; font-weight: 600; letter-spacing: .07em; text-transform: uppercase; color: #64748b; margin-bottom: 6px; }
+  .chk-item { display: flex; align-items: center; gap: 7px; font-size: .75rem; color: #475569; margin-bottom: 5px; }
+  .chk-item input { accent-color: #2563eb; }
+  .btn-row { display: flex; gap: 8px; }
+  .btn-cancel { flex: 1; padding: 8px; font-size: .75rem; color: #64748b; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; cursor: default; }
+  .btn-gen { flex: 2; padding: 8px; font-size: .78rem; font-weight: 600; color: #fff; background: #2563eb; border: none; border-radius: 6px; cursor: default; }
+
+  @media print {
+    body { background: #fff; padding: .5rem; }
+    .report-section { border: none; padding: .5rem; margin-bottom: 1.5rem; }
+    .report-label { display: none; }
+    .page-title { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="page-title">Ibrahim Shah Kitchen Ledger — PDF Report Mockups</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     EXPORT DIALOG
+════════════════════════════════════════════════════════════ -->
+<div class="report-section">
+  <div class="report-label">Export Dialog</div>
+  <div class="dialog-wrap">
+    <div class="dialog">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:.75rem">
+        <div>
+          <div class="dialog-title">Export PDF &nbsp;<span style="font-family:'Noto Nastaliq Urdu',serif;font-size:.9rem">· رپورٹ</span></div>
+          <div class="dialog-sub">Select a time range for the report</div>
+        </div>
+        <span style="font-size:1.1rem;color:#94a3b8;cursor:default">✕</span>
+      </div>
+      <div class="opt-grid">
+        <div class="opt sel">
+          <div class="opt-en">Today</div>
+          <div class="opt-ur">آج</div>
+        </div>
+        <div class="opt">
+          <div class="opt-en">This week</div>
+          <div class="opt-ur">اس ہفتے</div>
+        </div>
+        <div class="opt">
+          <div class="opt-en">This month</div>
+          <div class="opt-ur">اس مہینے</div>
+        </div>
+        <div class="opt">
+          <div class="opt-en">This year</div>
+          <div class="opt-ur">اس سال</div>
+        </div>
+        <div class="opt opt-full">
+          <div class="opt-en">Custom date range</div>
+          <div class="opt-ur">مخصوص تاریخیں</div>
+        </div>
+      </div>
+      <div class="date-row" style="display:none">
+        <div><div class="date-lbl">From · سے</div><input class="date-inp" type="date"></div>
+        <div><div class="date-lbl">To · تک</div><input class="date-inp" type="date"></div>
+      </div>
+      <div class="chk-list">
+        <div class="chk-lbl">Include in report</div>
+        <div class="chk-item"><input type="checkbox" checked> Daily item summary (opening / purchased / consumed / remaining)</div>
+        <div class="chk-item"><input type="checkbox" checked> Meal-wise breakdown (ناشتہ · دوپہر · رات)</div>
+        <div class="chk-item"><input type="checkbox" checked> Students fed per day</div>
+        <div class="chk-item"><input type="checkbox"> PKR totals and per-student cost</div>
+      </div>
+      <div class="btn-row">
+        <button class="btn-cancel">Cancel</button>
+        <button class="btn-gen">⬇ Generate PDF · PDF بنائیں</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     DAILY REPORT
+════════════════════════════════════════════════════════════ -->
+<div class="report-section">
+  <div class="report-label">Daily Report</div>
+
+  <div class="rpt-header">
+    <div class="rpt-institution">جامعہ دارالعلوم عیدگاہ — کابروالہ</div>
+    <div class="rpt-subtitle">Kitchen Ledger · Daily Report</div>
+    <div class="rpt-date">20 / 08 / 2026 · Thursday &nbsp;|&nbsp; <span style="font-family:'Noto Nastaliq Urdu',serif">۸ ربیع الاول ۱۴۴۸ھ · جمعرات</span></div>
+  </div>
+
+  <div class="stu-bar">
+    <div class="stu-card stu-boys">
+      <div class="stu-lbl">BOYS · <span class="ur">بنین</span></div>
+      <div class="stu-val">1,820</div>
+    </div>
+    <div class="stu-card stu-girls">
+      <div class="stu-lbl">GIRLS · <span class="ur">بنات</span></div>
+      <div class="stu-val">1,180</div>
+    </div>
+    <div class="stu-card stu-total">
+      <div class="stu-lbl">TOTAL · <span class="ur">کل</span></div>
+      <div class="stu-val">3,000</div>
+    </div>
+  </div>
+
+  <table class="tbl">
+    <thead>
+      <tr>
+        <th rowspan="2" class="ur-cell" style="min-width:90px">اشیاء<br><span class="en-sub">ITEM</span></th>
+        <th rowspan="2" class="ltr" style="width:44px">UNIT</th>
+        <th rowspan="2" class="c-open ltr" style="width:50px">OPENING<br><span style="font-family:'Noto Nastaliq Urdu',serif;font-size:.75rem;text-transform:none;letter-spacing:0">موجود</span></th>
+        <th colspan="2" class="c-recv ltr" style="text-align:center">خریدا — PURCHASED</th>
+        <th colspan="2" class="c-cons ltr" style="text-align:center">خرچ ناشتہ</th>
+        <th colspan="2" class="c-cons ltr" style="text-align:center">خرچ دوپہر</th>
+        <th colspan="2" class="c-cons ltr" style="text-align:center">خرچ رات</th>
+        <th rowspan="2" class="c-rem ltr" style="width:54px">REMAINING<br><span style="font-family:'Noto Nastaliq Urdu',serif;font-size:.75rem;text-transform:none;letter-spacing:0">باقی</span></th>
+      </tr>
+      <tr>
+        <th class="c-recv ltr">QTY</th><th class="c-recv2 ltr">PKR</th>
+        <th class="c-cons ltr">QTY</th><th class="c-cons2 ltr">PKR</th>
+        <th class="c-cons ltr">QTY</th><th class="c-cons2 ltr">PKR</th>
+        <th class="c-cons ltr">QTY</th><th class="c-cons2 ltr">PKR</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="ur-cell">آٹا<span class="en-sub">Flour</span></td>
+        <td class="num ltr" style="font-family:'Noto Nastaliq Urdu',serif;font-size:.78rem">کلو گرام</td>
+        <td class="num c-open">120</td>
+        <td class="num c-recv">40</td><td class="num c-recv2">1,600</td>
+        <td class="num c-cons">10</td><td class="num c-cons2">400</td>
+        <td class="num c-cons">30</td><td class="num c-cons2">1,200</td>
+        <td class="num c-cons">20</td><td class="num c-cons2">800</td>
+        <td class="num c-rem tot">100</td>
+      </tr>
+      <tr>
+        <td class="ur-cell">چاول<span class="en-sub">Rice</span></td>
+        <td class="num ltr" style="font-family:'Noto Nastaliq Urdu',serif;font-size:.78rem">کلو گرام</td>
+        <td class="num c-open">200</td>
+        <td class="num c-recv">—</td><td class="num c-recv2">—</td>
+        <td class="num c-cons">—</td><td class="num c-cons2">—</td>
+        <td class="num c-cons">50</td><td class="num c-cons2">2,000</td>
+        <td class="num c-cons">—</td><td class="num c-cons2">—</td>
+        <td class="num c-rem tot">150</td>
+      </tr>
+      <tr>
+        <td class="ur-cell">دال<span class="en-sub">Lentils</span></td>
+        <td class="num ltr" style="font-family:'Noto Nastaliq Urdu',serif;font-size:.78rem">کلو گرام</td>
+        <td class="num c-open">40</td>
+        <td class="num c-recv">20</td><td class="num c-recv2">1,200</td>
+        <td class="num c-cons">5</td><td class="num c-cons2">300</td>
+        <td class="num c-cons">15</td><td class="num c-cons2">900</td>
+        <td class="num c-cons">—</td><td class="num c-cons2">—</td>
+        <td class="num c-rem tot">40</td>
+      </tr>
+      <tr>
+        <td class="ur-cell">گھی<span class="en-sub">Ghee</span></td>
+        <td class="num ltr" style="font-family:'Noto Nastaliq Urdu',serif;font-size:.78rem">لیٹر</td>
+        <td class="num c-open">20</td>
+        <td class="num c-recv">5</td><td class="num c-recv2">2,500</td>
+        <td class="num c-cons">2</td><td class="num c-cons2">1,000</td>
+        <td class="num c-cons">3</td><td class="num c-cons2">1,500</td>
+        <td class="num c-cons">—</td><td class="num c-cons2">—</td>
+        <td class="num c-rem tot">20</td>
+      </tr>
+      <tr class="tot">
+        <td colspan="3" class="ltr" style="text-align:right;color:#64748b;font-size:.62rem">DAY TOTALS · میزان</td>
+        <td class="num c-recv">65</td><td class="num c-recv2 tot" style="color:#15803d">5,300</td>
+        <td class="num c-cons">17</td><td class="num c-cons2 tot" style="color:#92400e">1,700</td>
+        <td class="num c-cons">98</td><td class="num c-cons2 tot" style="color:#92400e">5,600</td>
+        <td class="num c-cons">20</td><td class="num c-cons2 tot" style="color:#92400e">800</td>
+        <td class="c-rem"></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="rpt-footer">
+    <span>Generated: 20/08/2026 17:45</span>
+    <span class="ur">ابراہیم شاہ · Kitchen Manager</span>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     WEEKLY REPORT
+════════════════════════════════════════════════════════════ -->
+<div class="report-section">
+  <div class="report-label">Weekly Report</div>
+
+  <div class="rpt-header">
+    <div class="rpt-institution">جامعہ دارالعلوم عیدگاہ — کابروالہ</div>
+    <div class="rpt-subtitle">Kitchen Ledger · Weekly Report</div>
+    <div class="rpt-date">14 Aug – 20 Aug 2026</div>
+  </div>
+
+  <div class="sec-hdr">Students Fed · طلبہ</div>
+  <table class="tbl" style="margin-bottom:1rem;direction:ltr">
+    <thead>
+      <tr>
+        <th>Fri 14</th><th>Sat 15</th><th>Sun 16</th><th>Mon 17</th><th>Tue 18</th><th>Wed 19</th><th>Thu 20</th>
+        <th style="background:#f8fafc;color:#334155">Total</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="num">2,980</td><td class="num">3,000</td><td class="num">2,950</td>
+        <td class="num">3,000</td><td class="num">2,990</td><td class="num">3,000</td><td class="num">3,000</td>
+        <td class="num tot">20,920</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="sec-hdr">Item Summary · اشیاء کا خلاصہ</div>
+  <table class="tbl">
+    <thead>
+      <tr>
+        <th class="ur-cell">اشیاء<span class="en-sub">ITEM</span></th>
+        <th class="ltr">UNIT</th>
+        <th class="c-open ltr">OPENING</th>
+        <th class="c-recv ltr">PURCHASED QTY</th>
+        <th class="c-recv2 ltr">PURCHASED PKR</th>
+        <th class="c-cons ltr">CONSUMED QTY</th>
+        <th class="c-cons2 ltr">CONSUMED PKR</th>
+        <th class="c-rem ltr">CLOSING</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="ur-cell">آٹا<span class="en-sub">Flour</span></td>
+        <td class="num ltr" style="font-family:'Noto Nastaliq Urdu',serif;font-size:.78rem">کلو گرام</td>
+        <td class="num c-open">100</td>
+        <td class="num c-recv">280</td><td class="num c-recv2">11,200</td>
+        <td class="num c-cons">210</td><td class="num c-cons2">8,400</td>
+        <td class="num c-rem tot">170</td>
+      </tr>
+      <tr>
+        <td class="ur-cell">چاول<span class="en-sub">Rice</span></td>
+        <td class="num ltr" style="font-family:'Noto Nastaliq Urdu',serif;font-size:.78rem">کلو گرام</td>
+        <td class="num c-open">200</td>
+        <td class="num c-recv">—</td><td class="num c-recv2">—</td>
+        <td class="num c-cons">350</td><td class="num c-cons2">14,000</td>
+        <td class="num c-rem tot">150</td>
+      </tr>
+      <tr>
+        <td class="ur-cell">دال<span class="en-sub">Lentils</span></td>
+        <td class="num ltr" style="font-family:'Noto Nastaliq Urdu',serif;font-size:.78rem">کلو گرام</td>
+        <td class="num c-open">40</td>
+        <td class="num c-recv">140</td><td class="num c-recv2">8,400</td>
+        <td class="num c-cons">105</td><td class="num c-cons2">6,300</td>
+        <td class="num c-rem tot">75</td>
+      </tr>
+      <tr>
+        <td class="ur-cell">گھی<span class="en-sub">Ghee</span></td>
+        <td class="num ltr" style="font-family:'Noto Nastaliq Urdu',serif;font-size:.78rem">لیٹر</td>
+        <td class="num c-open">20</td>
+        <td class="num c-recv">35</td><td class="num c-recv2">17,500</td>
+        <td class="num c-cons">21</td><td class="num c-cons2">10,500</td>
+        <td class="num c-rem tot">34</td>
+      </tr>
+      <tr class="tot">
+        <td colspan="4" class="ltr" style="text-align:right;color:#64748b;font-size:.62rem">Weekly totals · ہفتہ وار میزان</td>
+        <td class="num c-recv2 tot" style="color:#15803d">37,100</td>
+        <td class="num c-cons"></td>
+        <td class="num c-cons2 tot" style="color:#92400e">39,200</td>
+        <td class="c-rem"></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="rpt-footer">
+    <span>Generated: 20/08/2026</span>
+    <span class="ur">ابراہیم شاہ · Kitchen Manager</span>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     MONTHLY REPORT
+════════════════════════════════════════════════════════════ -->
+<div class="report-section">
+  <div class="report-label">Monthly Report</div>
+
+  <div class="rpt-header">
+    <div class="rpt-institution">جامعہ دارالعلوم عیدگاہ — کابروالہ</div>
+    <div class="rpt-subtitle">Kitchen Ledger · Monthly Report</div>
+    <div class="rpt-date">August 2026 · <span style="font-family:'Noto Nastaliq Urdu',serif">اگست ۲۰۲۶</span></div>
+  </div>
+
+  <div class="stats-bar">
+    <div class="stat stat-neu"><div class="stat-lbl">OPERATING DAYS</div><div class="stat-val">26</div></div>
+    <div class="stat stat-neu"><div class="stat-lbl">TOTAL STUDENTS</div><div class="stat-val">77,900</div></div>
+    <div class="stat stat-grn"><div class="stat-lbl">PURCHASED PKR</div><div class="stat-val">1,42,500</div></div>
+    <div class="stat stat-amb"><div class="stat-lbl">CONSUMED PKR</div><div class="stat-val">1,38,200</div></div>
+  </div>
+
+  <div class="sec-hdr">Weekly Breakdown · ہفتہ وار</div>
+  <table class="tbl" style="margin-bottom:1rem;direction:ltr">
+    <thead>
+      <tr>
+        <th style="text-align:left">Week</th>
+        <th>Days</th><th>Students</th>
+        <th class="c-recv2">Purchased PKR</th>
+        <th class="c-cons2">Consumed PKR</th>
+        <th>Per Student</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td>1–7 Aug</td><td class="num">7</td><td class="num">21,000</td><td class="num c-recv2">38,500</td><td class="num c-cons2">37,200</td><td class="num">₨1.77</td></tr>
+      <tr><td>8–14 Aug</td><td class="num">7</td><td class="num">20,900</td><td class="num c-recv2">36,200</td><td class="num c-cons2">35,100</td><td class="num">₨1.68</td></tr>
+      <tr><td>15–20 Aug</td><td class="num">6</td><td class="num">17,820</td><td class="num c-recv2">31,100</td><td class="num c-cons2">30,200</td><td class="num">₨1.70</td></tr>
+      <tr><td>21–31 Aug</td><td class="num">6</td><td class="num">18,180</td><td class="num c-recv2">36,700</td><td class="num c-cons2">35,700</td><td class="num">₨1.96</td></tr>
+      <tr class="tot"><td>Month total</td><td class="num">26</td><td class="num">77,900</td><td class="num c-recv2 tot" style="color:#15803d">1,42,500</td><td class="num c-cons2 tot" style="color:#92400e">1,38,200</td><td class="num">₨1.78</td></tr>
+    </tbody>
+  </table>
+
+  <div class="sec-hdr">Item Totals · اشیاء کا ماہانہ خلاصہ</div>
+  <table class="tbl">
+    <thead>
+      <tr>
+        <th class="ur-cell">اشیاء<span class="en-sub">ITEM</span></th>
+        <th class="ltr">UNIT</th>
+        <th class="c-recv ltr">PURCHASED QTY</th>
+        <th class="c-recv2 ltr">PURCHASED PKR</th>
+        <th class="c-cons ltr">CONSUMED QTY</th>
+        <th class="c-cons2 ltr">CONSUMED PKR</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td class="ur-cell">آٹا<span class="en-sub">Flour</span></td><td class="num ltr" style="font-family:'Noto Nastaliq Urdu',serif;font-size:.78rem">کلو گرام</td><td class="num c-recv">1,120</td><td class="num c-recv2">44,800</td><td class="num c-cons">840</td><td class="num c-cons2">33,600</td></tr>
+      <tr><td class="ur-cell">چاول<span class="en-sub">Rice</span></td><td class="num ltr" style="font-family:'Noto Nastaliq Urdu',serif;font-size:.78rem">کلو گرام</td><td class="num c-recv">—</td><td class="num c-recv2">—</td><td class="num c-cons">1,400</td><td class="num c-cons2">56,000</td></tr>
+      <tr><td class="ur-cell">دال<span class="en-sub">Lentils</span></td><td class="num ltr" style="font-family:'Noto Nastaliq Urdu',serif;font-size:.78rem">کلو گرام</td><td class="num c-recv">560</td><td class="num c-recv2">33,600</td><td class="num c-cons">420</td><td class="num c-cons2">25,200</td></tr>
+      <tr><td class="ur-cell">گھی<span class="en-sub">Ghee</span></td><td class="num ltr" style="font-family:'Noto Nastaliq Urdu',serif;font-size:.78rem">لیٹر</td><td class="num c-recv">140</td><td class="num c-recv2">70,000</td><td class="num c-cons">84</td><td class="num c-cons2">42,000</td></tr>
+    </tbody>
+  </table>
+
+  <div class="rpt-footer">
+    <span>Generated: 20/08/2026</span>
+    <span class="ur">ابراہیم شاہ · Kitchen Manager</span>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     YEARLY REPORT
+════════════════════════════════════════════════════════════ -->
+<div class="report-section">
+  <div class="report-label">Yearly Report</div>
+
+  <div class="rpt-header">
+    <div class="rpt-institution">جامعہ دارالعلوم عیدگاہ — کابروالہ</div>
+    <div class="rpt-subtitle">Kitchen Ledger · Yearly Report</div>
+    <div class="rpt-date">2026 · <span style="font-family:'Noto Nastaliq Urdu',serif">۱۴۴۸ھ</span></div>
+  </div>
+
+  <div class="stats-bar">
+    <div class="stat stat-neu"><div class="stat-lbl">OPERATING DAYS</div><div class="stat-val">312</div></div>
+    <div class="stat stat-neu"><div class="stat-lbl">TOTAL STUDENTS</div><div class="stat-val">9,36,000</div></div>
+    <div class="stat stat-grn"><div class="stat-lbl">PURCHASED PKR</div><div class="stat-val">17,10,000</div></div>
+    <div class="stat stat-amb"><div class="stat-lbl">CONSUMED PKR</div><div class="stat-val">16,58,400</div></div>
+  </div>
+
+  <div class="sec-hdr">Monthly Breakdown · ماہانہ خلاصہ</div>
+  <table class="tbl" style="margin-bottom:1rem;direction:ltr">
+    <thead>
+      <tr>
+        <th style="text-align:left">Month</th>
+        <th>Days</th><th>Students</th>
+        <th class="c-recv2">Purchased PKR</th>
+        <th class="c-cons2">Consumed PKR</th>
+        <th>Per Student</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td>January</td><td class="num">26</td><td class="num">78,000</td><td class="num c-recv2">1,42,000</td><td class="num c-cons2">1,38,000</td><td class="num">₨1.77</td></tr>
+      <tr><td>February</td><td class="num">24</td><td class="num">72,000</td><td class="num c-recv2">1,31,000</td><td class="num c-cons2">1,27,000</td><td class="num">₨1.76</td></tr>
+      <tr><td>March</td><td class="num">27</td><td class="num">81,000</td><td class="num c-recv2">1,48,000</td><td class="num c-cons2">1,43,500</td><td class="num">₨1.77</td></tr>
+      <tr><td>April</td><td class="num">25</td><td class="num">75,000</td><td class="num c-recv2">1,37,000</td><td class="num c-cons2">1,33,000</td><td class="num">₨1.77</td></tr>
+      <tr><td>May</td><td class="num">26</td><td class="num">78,000</td><td class="num c-recv2">1,43,000</td><td class="num c-cons2">1,38,800</td><td class="num">₨1.78</td></tr>
+      <tr><td>June</td><td class="num">25</td><td class="num">75,000</td><td class="num c-recv2">1,38,000</td><td class="num c-cons2">1,34,000</td><td class="num">₨1.79</td></tr>
+      <tr><td>July</td><td class="num">27</td><td class="num">81,000</td><td class="num c-recv2">1,49,000</td><td class="num c-cons2">1,44,500</td><td class="num">₨1.78</td></tr>
+      <tr style="font-style:italic;color:#94a3b8"><td>August (to date)</td><td class="num">20</td><td class="num">60,000</td><td class="num c-recv2">1,10,000</td><td class="num c-cons2">1,06,600</td><td class="num">₨1.78</td></tr>
+      <tr class="tot"><td>Year total</td><td class="num">200</td><td class="num">6,00,000</td><td class="num c-recv2 tot" style="color:#15803d">11,98,000</td><td class="num c-cons2 tot" style="color:#92400e">11,65,400</td><td class="num">₨1.94</td></tr>
+    </tbody>
+  </table>
+
+  <div class="sec-hdr">Item Yearly Totals · سالانہ اشیاء</div>
+  <table class="tbl">
+    <thead>
+      <tr>
+        <th class="ur-cell">اشیاء<span class="en-sub">ITEM</span></th>
+        <th class="ltr">UNIT</th>
+        <th class="c-recv ltr">PURCHASED QTY</th>
+        <th class="c-recv2 ltr">PURCHASED PKR</th>
+        <th class="c-cons ltr">CONSUMED QTY</th>
+        <th class="c-cons2 ltr">CONSUMED PKR</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td class="ur-cell">آٹا<span class="en-sub">Flour</span></td><td class="num ltr" style="font-family:'Noto Nastaliq Urdu',serif;font-size:.78rem">کلو گرام</td><td class="num c-recv">13,440</td><td class="num c-recv2">5,37,600</td><td class="num c-cons">10,080</td><td class="num c-cons2">4,03,200</td></tr>
+      <tr><td class="ur-cell">چاول<span class="en-sub">Rice</span></td><td class="num ltr" style="font-family:'Noto Nastaliq Urdu',serif;font-size:.78rem">کلو گرام</td><td class="num c-recv">—</td><td class="num c-recv2">—</td><td class="num c-cons">16,800</td><td class="num c-cons2">6,72,000</td></tr>
+      <tr><td class="ur-cell">دال<span class="en-sub">Lentils</span></td><td class="num ltr" style="font-family:'Noto Nastaliq Urdu',serif;font-size:.78rem">کلو گرام</td><td class="num c-recv">6,720</td><td class="num c-recv2">4,03,200</td><td class="num c-cons">5,040</td><td class="num c-cons2">3,02,400</td></tr>
+      <tr><td class="ur-cell">گھی<span class="en-sub">Ghee</span></td><td class="num ltr" style="font-family:'Noto Nastaliq Urdu',serif;font-size:.78rem">لیٹر</td><td class="num c-recv">1,680</td><td class="num c-recv2">8,40,000</td><td class="num c-cons">1,008</td><td class="num c-cons2">5,04,000</td></tr>
+    </tbody>
+  </table>
+
+  <div class="rpt-footer">
+    <span>Generated: 20/08/2026</span>
+    <span class="ur">ابراہیم شاہ · Kitchen Manager</span>
+  </div>
+</div>
+
+</body>
+</html>

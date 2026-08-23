@@ -1,0 +1,43 @@
+# =============================================================================
+# Ibrahim Shah — Kitchen Ledger — Wrangler configuration
+# Place this in the project folder, alongside the .sql files.
+#
+# Minimum needed right now is the [[d1_databases]] block — that is what
+# `--local` was missing. The Worker entry point and R2 binding are commented
+# out until those things exist; uncomment as you build them.
+# =============================================================================
+
+name = "ibrahim-kitchen-api"
+account_id = "e69f0f358f10d166af99d4bc03c1c41b"
+compatibility_date = "2026-08-17"
+
+# Uncomment when src/index.js exists. `wrangler d1 execute` does not need it,
+# but `wrangler dev` and `wrangler deploy` will fail without it.
+main = "src/index.js"
+
+
+# -----------------------------------------------------------------------------
+# D1 — binding name DB is what the Worker will use: env.DB.prepare(...)
+# database_id points at the remote database. Local mode creates a SEPARATE
+# empty SQLite file under .wrangler/state/ — it does not copy remote data.
+# -----------------------------------------------------------------------------
+[[d1_databases]]
+binding = "DB"
+database_name = "ibrahim-kitchen"
+database_id = "f49f9772-a241-4da9-8784-a08d408cfe5e"
+
+
+# -----------------------------------------------------------------------------
+# R2 — receipt photos. Create the bucket before uncommenting:
+#   npx wrangler r2 bucket create ibrahim-kitchen-receipts
+# -----------------------------------------------------------------------------
+# [[r2_buckets]]
+# binding = "RECEIPTS"
+# bucket_name = "ibrahim-kitchen-receipts"
+
+
+# -----------------------------------------------------------------------------
+# Secrets — do NOT put these here. This file goes in git; secrets do not.
+#   npx wrangler secret put OPENROUTER_API_KEY
+# Used for the Qwen2-VL receipt OCR and Qwen2.5 translation calls.
+# -----------------------------------------------------------------------------
