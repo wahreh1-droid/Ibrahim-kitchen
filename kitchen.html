@@ -606,7 +606,8 @@ tfoot td{
 }
 .don-kb-btn:hover{border-color:var(--g500);color:var(--g700)}
 .don-kb-btn.active{background:var(--g100);border-color:var(--g500);color:var(--g700)}
-#don-kb-wrap{margin-top:4px}
+.don-mbody .ur-kb-wrap{margin-top:6px}
+.don-mbody .ur-kb-wrap.open{display:block}
 
 /* Report summary bar */
 .don-summary{
@@ -959,6 +960,7 @@ tfoot td{
           </span>
         </label>
         <input class="finp" id="don-donor" type="text" placeholder="نام لکھیں" dir="rtl">
+        <div class="ur-kb-wrap" id="don-kb-don-donor"></div>
       </div>
       <div class="fg">
         <label class="flbl"><span>Donation Date</span><span class="flbl-ur">تاریخ</span></label>
@@ -973,72 +975,12 @@ tfoot td{
           </span>
         </label>
         <input class="finp" id="don-notes" type="text" placeholder="اضافی معلومات" dir="rtl">
+        <div class="ur-kb-wrap" id="don-kb-don-notes"></div>
       </div>
       <div style="margin-bottom:10px">
         <div class="flbl" style="margin-bottom:8px"><span>Donated Items / Cash</span><span class="flbl-ur">عطیات</span></div>
         <div id="don-items-list" class="don-items-list"></div>
         <button class="btn-add-item-row" id="don-add-row"><span class="plus">+</span> مزید شے شامل کریں</button>
-      </div>
-
-      <!-- Shared Urdu keyboard for the donation modal -->
-      <div class="ur-kb-wrap" id="don-kb-wrap">
-        <div class="ur-kb">
-          <div class="ur-kb-row">
-            <button type="button" class="uk" data-c="ق">ق</button>
-            <button type="button" class="uk" data-c="و">و</button>
-            <button type="button" class="uk" data-c="ع">ع</button>
-            <button type="button" class="uk" data-c="ر">ر</button>
-            <button type="button" class="uk" data-c="ت">ت</button>
-            <button type="button" class="uk" data-c="ے">ے</button>
-            <button type="button" class="uk" data-c="ئ">ئ</button>
-            <button type="button" class="uk" data-c="ی">ی</button>
-            <button type="button" class="uk" data-c="ح">ح</button>
-            <button type="button" class="uk" data-c="پ">پ</button>
-          </div>
-          <div class="ur-kb-row">
-            <button type="button" class="uk" data-c="ا">ا</button>
-            <button type="button" class="uk" data-c="س">س</button>
-            <button type="button" class="uk" data-c="د">د</button>
-            <button type="button" class="uk" data-c="ف">ف</button>
-            <button type="button" class="uk" data-c="گ">گ</button>
-            <button type="button" class="uk" data-c="ہ">ہ</button>
-            <button type="button" class="uk" data-c="ج">ج</button>
-            <button type="button" class="uk" data-c="ک">ک</button>
-            <button type="button" class="uk" data-c="ل">ل</button>
-          </div>
-          <div class="ur-kb-row">
-            <button type="button" class="uk" data-c="ز">ز</button>
-            <button type="button" class="uk" data-c="ش">ش</button>
-            <button type="button" class="uk" data-c="غ">غ</button>
-            <button type="button" class="uk" data-c="ط">ط</button>
-            <button type="button" class="uk" data-c="ب">ب</button>
-            <button type="button" class="uk" data-c="ن">ن</button>
-            <button type="button" class="uk" data-c="م">م</button>
-          </div>
-          <div class="ur-kb-row">
-            <button type="button" class="uk" data-c="خ">خ</button>
-            <button type="button" class="uk" data-c="ذ">ذ</button>
-            <button type="button" class="uk" data-c="ض">ض</button>
-            <button type="button" class="uk" data-c="ظ">ظ</button>
-            <button type="button" class="uk" data-c="ث">ث</button>
-            <button type="button" class="uk" data-c="ص">ص</button>
-            <button type="button" class="uk" data-c="ڈ">ڈ</button>
-            <button type="button" class="uk" data-c="ڑ">ڑ</button>
-            <button type="button" class="uk" data-c="ٹ">ٹ</button>
-            <button type="button" class="uk" data-c="چ">چ</button>
-            <button type="button" class="uk" data-c="ژ">ژ</button>
-            <button type="button" class="uk" data-c="ں">ں</button>
-          </div>
-          <div class="ur-kb-row">
-            <button type="button" class="uk" data-c="آ">آ</button>
-            <button type="button" class="uk" data-c="اً">اً</button>
-            <button type="button" class="uk" data-c="ۃ">ۃ</button>
-            <button type="button" class="uk" data-c="ؤ">ؤ</button>
-            <button type="button" class="uk" data-c="ء">ء</button>
-            <button type="button" class="uk uk-sp" data-c=" ">SPACE</button>
-            <button type="button" class="uk uk-wide" id="don-kb-bs">⌫ DEL</button>
-          </div>
-        </div>
       </div>
     </div>
     <div class="don-mfoot">
@@ -2480,54 +2422,105 @@ function openDonModal() {
   wireDonKeyboard();
 }
 
-/* ─── Shared Urdu keyboard for donation modal ────────────── */
-let donKbTarget = null; // id of the input the keyboard types into
+/* ─── Inline Urdu keyboard for donation modal ────────────── */
+const UR_KB_HTML = `
+  <div class="ur-kb">
+    <div class="ur-kb-row">
+      <button type="button" class="uk" data-c="ق">ق</button>
+      <button type="button" class="uk" data-c="و">و</button>
+      <button type="button" class="uk" data-c="ع">ع</button>
+      <button type="button" class="uk" data-c="ر">ر</button>
+      <button type="button" class="uk" data-c="ت">ت</button>
+      <button type="button" class="uk" data-c="ے">ے</button>
+      <button type="button" class="uk" data-c="ئ">ئ</button>
+      <button type="button" class="uk" data-c="ی">ی</button>
+      <button type="button" class="uk" data-c="ح">ح</button>
+      <button type="button" class="uk" data-c="پ">پ</button>
+    </div>
+    <div class="ur-kb-row">
+      <button type="button" class="uk" data-c="ا">ا</button>
+      <button type="button" class="uk" data-c="س">س</button>
+      <button type="button" class="uk" data-c="د">د</button>
+      <button type="button" class="uk" data-c="ف">ف</button>
+      <button type="button" class="uk" data-c="گ">گ</button>
+      <button type="button" class="uk" data-c="ہ">ہ</button>
+      <button type="button" class="uk" data-c="ج">ج</button>
+      <button type="button" class="uk" data-c="ک">ک</button>
+      <button type="button" class="uk" data-c="ل">ل</button>
+    </div>
+    <div class="ur-kb-row">
+      <button type="button" class="uk" data-c="ز">ز</button>
+      <button type="button" class="uk" data-c="ش">ش</button>
+      <button type="button" class="uk" data-c="غ">غ</button>
+      <button type="button" class="uk" data-c="ط">ط</button>
+      <button type="button" class="uk" data-c="ب">ب</button>
+      <button type="button" class="uk" data-c="ن">ن</button>
+      <button type="button" class="uk" data-c="م">م</button>
+    </div>
+    <div class="ur-kb-row">
+      <button type="button" class="uk" data-c="خ">خ</button>
+      <button type="button" class="uk" data-c="ذ">ذ</button>
+      <button type="button" class="uk" data-c="ض">ض</button>
+      <button type="button" class="uk" data-c="ظ">ظ</button>
+      <button type="button" class="uk" data-c="ث">ث</button>
+      <button type="button" class="uk" data-c="ص">ص</button>
+      <button type="button" class="uk" data-c="ڈ">ڈ</button>
+      <button type="button" class="uk" data-c="ڑ">ڑ</button>
+      <button type="button" class="uk" data-c="ٹ">ٹ</button>
+      <button type="button" class="uk" data-c="چ">چ</button>
+      <button type="button" class="uk" data-c="ژ">ژ</button>
+      <button type="button" class="uk" data-c="ں">ں</button>
+    </div>
+    <div class="ur-kb-row">
+      <button type="button" class="uk" data-c="آ">آ</button>
+      <button type="button" class="uk" data-c="اً">اً</button>
+      <button type="button" class="uk" data-c="ۃ">ۃ</button>
+      <button type="button" class="uk" data-c="ؤ">ؤ</button>
+      <button type="button" class="uk" data-c="ء">ء</button>
+      <button type="button" class="uk uk-sp" data-c=" ">SPACE</button>
+      <button type="button" class="uk uk-wide" data-bs="1">⌫ DEL</button>
+    </div>
+  </div>`;
 
 function wireDonKeyboard() {
-  const wrap = document.getElementById('don-kb-wrap');
-  if (wrap.dataset.wired) return; // wire once
-  wrap.dataset.wired = '1';
+  const body = document.querySelector('.don-mbody');
+  if (body.dataset.wired) return; // wire once
+  body.dataset.wired = '1';
 
-  // Toggle buttons — event delegation on the modal body (item rows are dynamic)
-  document.querySelector('.don-mbody').addEventListener('click', e => {
+  // Toggle: clicking the ⌨ button injects/opens the inline keyboard under that field
+  body.addEventListener('click', e => {
     const btn = e.target.closest('.don-kb-btn');
     if (!btn) return;
     e.preventDefault();
     const targetId = btn.dataset.kbtarget;
+    const wrap = document.getElementById(`don-kb-${targetId}`);
+    if (!wrap) return;
 
-    // If clicking the same target's button while open, close it
-    if (donKbTarget === targetId && wrap.classList.contains('open')) {
+    const isOpen = wrap.classList.contains('open');
+    if (isOpen) {
       wrap.classList.remove('open');
-      donKbTarget = null;
-      document.querySelectorAll('.don-kb-btn').forEach(b => b.classList.remove('active'));
-      return;
-    }
-
-    donKbTarget = targetId;
-    wrap.classList.add('open');
-    document.querySelectorAll('.don-kb-btn').forEach(b =>
-      b.classList.toggle('active', b.dataset.kbtarget === targetId));
-    document.getElementById(targetId)?.focus();
-  });
-
-  // Track focus so the keyboard follows whichever Urdu field is active
-  document.querySelector('.don-mbody').addEventListener('focusin', e => {
-    const inp = e.target;
-    if (inp.id === 'don-donor' || inp.id === 'don-notes' || /^don-iname-\d+$/.test(inp.id)) {
-      donKbTarget = inp.id;
-      document.querySelectorAll('.don-kb-btn').forEach(b =>
-        b.classList.toggle('active', b.dataset.kbtarget === inp.id));
+      btn.classList.remove('active');
+    } else {
+      if (!wrap.innerHTML.trim()) wrap.innerHTML = UR_KB_HTML;
+      wrap.classList.add('open');
+      btn.classList.add('active');
+      document.getElementById(targetId)?.focus();
     }
   });
 
-  // Key presses
-  wrap.addEventListener('click', e => {
+  // Key presses — delegated. Never calls focus() so the modal doesn't scroll.
+  body.addEventListener('click', e => {
     const key = e.target.closest('.uk');
     if (!key) return;
-    const inp = donKbTarget ? document.getElementById(donKbTarget) : null;
+    e.preventDefault();
+    // Which field does this keyboard belong to?
+    const wrap = key.closest('.ur-kb-wrap');
+    if (!wrap) return;
+    const targetId = wrap.id.replace(/^don-kb-/, '');
+    const inp = document.getElementById(targetId);
     if (!inp) return;
 
-    if (key.id === 'don-kb-bs') {
+    if (key.dataset.bs) {
       const s = inp.selectionStart, en = inp.selectionEnd;
       if (s === en && s > 0) {
         inp.value = inp.value.slice(0, s-1) + inp.value.slice(en);
@@ -2543,14 +2536,14 @@ function wireDonKeyboard() {
       inp.value = inp.value.slice(0, s) + ch + inp.value.slice(en);
       inp.setSelectionRange(s + ch.length, s + ch.length);
     }
-    inp.focus();
+    // Do NOT call inp.focus() — that scrolls the modal and causes the jump.
+    // Keep the caret position updated silently.
   });
 }
 
 function closeDonModal() {
   document.getElementById('don-ov').classList.remove('open');
-  document.getElementById('don-kb-wrap')?.classList.remove('open');
-  donKbTarget = null;
+  document.querySelectorAll('.don-mbody .ur-kb-wrap').forEach(w => w.classList.remove('open'));
   document.querySelectorAll('.don-kb-btn').forEach(b => b.classList.remove('active'));
 }
 
@@ -2605,6 +2598,7 @@ function itemFields(idx) {
         </span>
       </label>
       <input class="finp" id="don-iname-${idx}" type="text" placeholder="مثلاً: گندم، چاول" dir="rtl">
+      <div class="ur-kb-wrap" id="don-kb-don-iname-${idx}"></div>
     </div>
     <div class="fg">
       <label class="flbl"><span>Quantity</span><span class="flbl-ur">مقدار</span></label>
