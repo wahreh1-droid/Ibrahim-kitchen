@@ -818,6 +818,7 @@ select.finp.don-unit-sel{
               <button type="button" class="uk" data-c="ف">ف</button>
               <button type="button" class="uk" data-c="گ">گ</button>
               <button type="button" class="uk" data-c="ہ">ہ</button>
+              <button type="button" class="uk" data-c="ھ">ھ</button>
               <button type="button" class="uk" data-c="ج">ج</button>
               <button type="button" class="uk" data-c="ک">ک</button>
               <button type="button" class="uk" data-c="ل">ل</button>
@@ -2490,6 +2491,7 @@ const UR_KB_HTML = `
       <button type="button" class="uk" data-c="ف">ف</button>
       <button type="button" class="uk" data-c="گ">گ</button>
       <button type="button" class="uk" data-c="ہ">ہ</button>
+      <button type="button" class="uk" data-c="ھ">ھ</button>
       <button type="button" class="uk" data-c="ج">ج</button>
       <button type="button" class="uk" data-c="ک">ک</button>
       <button type="button" class="uk" data-c="ل">ل</button>
@@ -2604,7 +2606,7 @@ function addDonItemRow(prefill = null) {
   div.className = 'don-item-row';
   div.dataset.idx = idx;
   div.innerHTML = `
-    ${idx > 0 ? `<button class="btn-rm-item" data-rmidx="${idx}" title="ہٹائیں">×</button>` : ''}
+    <button class="btn-rm-item" data-rmidx="${idx}" title="ہٹائیں">×</button>
     <div class="item-type-tog">
       <button type="button" class="type-btn ${rowType === 'item' ? 'active' : ''}" data-tidx="${idx}" data-type="item">شے / Item</button>
       <button type="button" class="type-btn ${rowType === 'cash' ? 'active' : ''}" data-tidx="${idx}" data-type="cash">نقد رقم / Cash</button>
@@ -2647,12 +2649,10 @@ function addDonItemRow(prefill = null) {
   });
 
   // Wire remove
-  if (idx > 0) {
-    div.querySelector('.btn-rm-item').onclick = () => {
-      div.remove();
-      donItemRows[idx] = null; // mark as removed
-    };
-  }
+  div.querySelector('.btn-rm-item').onclick = () => {
+    div.remove();
+    donItemRows[idx] = null; // mark as removed
+  };
 }
 
 function itemFields(idx) {
@@ -2711,23 +2711,18 @@ async function saveDonation() {
   if (!donation_date) { toast('تاریخ درج کریں', true); return; }
 
   const items = donItemRows
+    .map((row, idx) => row ? { row, idx } : null)
     .filter(Boolean)
-    .map((row, origIdx) => {
-      // find actual index in DOM
-      const allRows = document.querySelectorAll('.don-item-row');
-      let idx = null;
-      allRows.forEach(el => { if (+el.dataset.idx === origIdx) idx = origIdx; });
-      if (idx === null) return null;
-
+    .map(({ row, idx }) => {
       if (row.type === 'cash') {
-        const cash = parseFloat(document.getElementById(`don-cash-${origIdx}`)?.value) || 0;
-        const val  = parseFloat(document.getElementById(`don-val-${origIdx}`)?.value)  || null;
+        const cash = parseFloat(document.getElementById(`don-cash-${idx}`)?.value) || 0;
+        const val  = parseFloat(document.getElementById(`don-val-${idx}`)?.value)  || null;
         return { cash_amount: cash || null, estimated_value: val };
       } else {
-        const name = document.getElementById(`don-iname-${origIdx}`)?.value.trim();
-        const qty  = parseFloat(document.getElementById(`don-qty-${origIdx}`)?.value)  || null;
-        const unit = document.getElementById(`don-unit-${origIdx}`)?.value.trim()      || null;
-        const val  = parseFloat(document.getElementById(`don-val-${origIdx}`)?.value)  || null;
+        const name = document.getElementById(`don-iname-${idx}`)?.value.trim();
+        const qty  = parseFloat(document.getElementById(`don-qty-${idx}`)?.value)  || null;
+        const unit = document.getElementById(`don-unit-${idx}`)?.value.trim()      || null;
+        const val  = parseFloat(document.getElementById(`don-val-${idx}`)?.value)  || null;
         return { item_name: name || null, quantity: qty, unit, estimated_value: val };
       }
     })
