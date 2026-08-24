@@ -147,27 +147,6 @@ a{text-decoration:none}
 .plus{font-size:1.1rem;font-weight:300}
 
 /* TABLE */
-/* Column group color tokens */
-:root {
-  --col-open-bg:   #eff6ff;
-  --col-open-bdr:  #bfdbfe;
-  --col-open-hdr:  #1e40af;
-  --col-recv-bg:   #f0fdf4;
-  --col-recv-bg2:  #dcfce7;
-  --col-recv-bdr:  #86efac;
-  --col-recv-hdr:  #15803d;
-  --col-cons-bg:   #fffbeb;
-  --col-cons-bg2:  #fef3c7;
-  --col-cons-bdr:  #fcd34d;
-  --col-cons-hdr:  #92400e;
-  --col-rem-bg:    #f8fafc;
-  --col-rem-bdr:   #cbd5e1;
-  --col-rem-hdr:   #334155;
-  --col-sadq-bg:   #f0fdfa;
-  --col-sadq-bg2:  #ccfbf1;
-  --col-sadq-bdr:  #5eead4;
-  --col-sadq-hdr:  #0f766e;
-}
 .tbl-wrap{overflow-x:auto;background:var(--sur)}
 table{width:100%;border-collapse:collapse;direction:rtl;min-width:960px}
 thead th{
@@ -175,36 +154,14 @@ thead th{
   color:var(--ink5);padding:9px 13px;text-align:right;
   border-bottom:2px solid var(--bdr);background:var(--ink0);white-space:nowrap;
 }
-thead th .ur-hdr{
-  font-family:var(--ur);font-size:.95rem;letter-spacing:0;text-transform:none;
-  display:block;line-height:1.3;
-}
-th.gh{text-align:center;border-bottom:1px solid;padding-bottom:3px}
-tr.sh th{padding-top:3px;border-bottom:2px solid}
+th.gh{text-align:center;border-bottom:1px solid var(--bdr);padding-bottom:3px}
+tr.sh th{padding-top:3px;border-bottom:2px solid var(--bdr)}
 th.ci{min-width:140px}
-th.cu{text-align:center;width:90px}
+th.cu{text-align:center;width:60px}
 th.cn{text-align:center;width:88px}
 th.cr{min-width:150px}
-th.sep-l{border-left:1px solid rgba(0,0,0,.08)}
-th.sep-r{border-right:1px solid rgba(0,0,0,.08)}
-/* Column group header colors */
-th.col-open{background:var(--col-open-bg)!important;color:var(--col-open-hdr)!important;border-bottom-color:var(--col-open-bdr)!important}
-th.col-recv{background:var(--col-recv-bg)!important;color:var(--col-recv-hdr)!important;border-bottom-color:var(--col-recv-bdr)!important}
-th.col-recv2{background:var(--col-recv-bg2)!important;color:var(--col-recv-hdr)!important;border-bottom-color:var(--col-recv-bdr)!important}
-th.col-cons{background:var(--col-cons-bg)!important;color:var(--col-cons-hdr)!important;border-bottom-color:var(--col-cons-bdr)!important}
-th.col-cons2{background:var(--col-cons-bg2)!important;color:var(--col-cons-hdr)!important;border-bottom-color:var(--col-cons-bdr)!important}
-th.col-rem{background:var(--col-rem-bg)!important;color:var(--col-rem-hdr)!important;border-bottom-color:var(--col-rem-bdr)!important}
-th.col-sadq{background:var(--col-sadq-bg)!important;color:var(--col-sadq-hdr)!important;border-bottom-color:var(--col-sadq-bdr)!important}
-th.col-sadq2{background:var(--col-sadq-bg2)!important;color:var(--col-sadq-hdr)!important;border-bottom-color:var(--col-sadq-bdr)!important}
-/* Column cell tints */
-td.col-open{background:var(--col-open-bg)}
-td.col-recv{background:var(--col-recv-bg)}
-td.col-recv2{background:var(--col-recv-bg2)}
-td.col-cons{background:var(--col-cons-bg)}
-td.col-cons2{background:var(--col-cons-bg2)}
-td.col-rem{background:var(--col-rem-bg)}
-td.col-sadq{background:var(--col-sadq-bg)}
-td.col-sadq2{background:var(--col-sadq-bg2)}
+th.sep-l{border-left:1px solid var(--bdr)}
+th.sep-r{border-right:1px solid var(--bdr)}
 
 tbody tr{border-bottom:1px solid var(--bdr);transition:background .1s}
 tbody tr:hover{background:var(--ink0)}
@@ -219,9 +176,9 @@ td.cn{text-align:center}
 .iur{font-family:var(--ur);font-size:1rem;color:var(--ink9);display:block;line-height:1.4}
 .ien{font-family:var(--en);font-size:.68rem;color:var(--ink5);display:block}
 .ubadge{
-  font-family:var(--ur);font-size:.85rem;
+  font-family:var(--mono);font-size:.68rem;
   background:var(--ink1);color:var(--ink5);
-  border-radius:4px;padding:3px 8px;display:inline-block;white-space:nowrap;
+  border-radius:4px;padding:2px 6px;display:inline-block;text-transform:uppercase;
 }
 .nv{font-family:var(--mono);font-size:.9rem;color:var(--ink7);display:block;text-align:center}
 .np{font-family:var(--mono);font-size:.68rem;color:var(--ink5);display:block;text-align:center;margin-top:1px}
@@ -248,15 +205,15 @@ td.cn{text-align:center}
 
 .rem-cell{text-align:right;direction:ltr}
 .rem-qty{font-family:var(--mono);font-size:1rem;font-weight:600;color:var(--ink9)}
-.rem-unit{font-family:var(--ur);font-size:.82rem;color:var(--ink5);margin-right:3px}
+.rem-unit{font-family:var(--en);font-size:.68rem;color:var(--ink5);margin-right:3px}
 .pb-wrap{width:118px;height:4px;background:var(--bdr);border-radius:2px;margin-top:5px;overflow:hidden}
 .pb-fill{height:100%;border-radius:2px;background:var(--g500);transition:width .3s}
 .pb-fill.med{background:var(--amber)}
 .pb-fill.low{background:var(--red)}
 .ls-badge{
-  font-family:var(--ur);font-size:.85rem;
+  font-family:var(--ur);font-size:.68rem;
   background:var(--amber-bg);color:var(--amber);
-  border-radius:3px;padding:2px 7px;display:inline-block;margin-top:3px;
+  border-radius:3px;padding:1px 5px;display:inline-block;margin-top:3px;
 }
 
 tfoot td{
@@ -353,8 +310,8 @@ tfoot td{
 }
 .unit-tog{display:flex;gap:8px;direction:ltr}
 .uopt{
-  flex:1;padding:8px 6px;border:1.5px solid var(--bdr);border-radius:var(--r);
-  font-family:var(--ur);font-size:.85rem;text-align:center;color:var(--ink7);transition:all .15s;
+  flex:1;padding:8px;border:1.5px solid var(--bdr);border-radius:var(--r);
+  font-family:var(--mono);font-size:.8rem;text-align:center;color:var(--ink7);transition:all .15s;
 }
 .uopt:hover{border-color:var(--g500);color:var(--g700)}
 .uopt.sel{background:var(--g700);border-color:var(--g700);color:#fff}
@@ -410,97 +367,6 @@ tfoot td{
 #toast.err{background:var(--red)}
 
 .hidden{display:none!important}
-
-/* EXPORT PDF DIALOG */
-.pdf-ov{
-  position:fixed;inset:0;background:rgba(0,0,0,.45);
-  z-index:250;display:flex;align-items:center;justify-content:center;
-  opacity:0;pointer-events:none;transition:opacity .2s;
-}
-.pdf-ov.open{opacity:1;pointer-events:all}
-.pdf-box{
-  background:var(--sur);border-radius:var(--rl);
-  width:440px;max-width:calc(100vw - 32px);
-  box-shadow:0 8px 32px rgba(0,0,0,.18);overflow:hidden;
-  transform:translateY(14px);transition:transform .2s;direction:ltr;
-}
-.pdf-ov.open .pdf-box{transform:translateY(0)}
-.pdf-hdr{
-  padding:16px 20px 14px;
-  display:flex;align-items:flex-start;justify-content:space-between;
-  border-bottom:1px solid var(--bdr);
-}
-.pdf-title{font-size:.95rem;font-weight:600;color:var(--ink9)}
-.pdf-title .ur-part{font-family:var(--ur);font-size:.9rem;color:var(--ink5);margin-right:5px}
-.pdf-sub{font-size:.72rem;color:var(--ink5);margin-top:3px}
-.pdf-close{color:var(--ink5);font-size:1.3rem;line-height:1;transition:color .15s;margin-top:-2px}
-.pdf-close:hover{color:var(--ink9)}
-.pdf-body{padding:16px 20px}
-.opt-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px}
-.pdf-opt{
-  border:1.5px solid var(--bdr);border-radius:var(--r);
-  padding:10px 12px;cursor:pointer;transition:all .15s;
-  background:var(--sur);text-align:left;
-}
-.pdf-opt:hover{border-color:#93c5fd;background:#f0f7ff}
-.pdf-opt.sel{border:2px solid #2563eb;background:#eff6ff}
-.pdf-opt.sel .opt-en,.pdf-opt.sel .opt-ur{color:#1d4ed8}
-.pdf-opt.full{grid-column:1 / -1}
-.opt-en{font-size:.78rem;font-weight:500;color:var(--ink9);display:block}
-.opt-ur{font-family:var(--ur);font-size:.78rem;color:var(--ink5);margin-top:3px;display:block;text-align:right;direction:rtl}
-.date-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px}
-.date-row.hidden{display:none}
-.date-lbl{font-size:.65rem;color:var(--ink5);margin-bottom:3px}
-.date-inp{
-  width:100%;padding:7px 8px;font-family:var(--en);font-size:.78rem;
-  border:1.5px solid var(--bdr);border-radius:var(--r);
-  transition:border-color .15s;
-}
-.date-inp:focus{outline:none;border-color:var(--g500)}
-.chk-section{border-top:1px solid var(--bdr);padding-top:12px;margin-bottom:14px}
-.chk-lbl{font-size:.6rem;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:var(--ink5);margin-bottom:8px}
-.chk-item{
-  display:flex;align-items:center;gap:8px;
-  font-size:.75rem;color:var(--ink7);margin-bottom:7px;
-}
-.chk-item input{accent-color:#2563eb;width:14px;height:14px;flex-shrink:0}
-.pdf-foot{
-  display:flex;gap:9px;padding:0 20px 16px;
-}
-.btn-pdf-cancel{
-  flex:1;padding:9px;font-size:.78rem;color:var(--ink7);
-  background:var(--ink0);border:1.5px solid var(--bdr);border-radius:var(--r);
-  transition:all .15s;font-family:var(--en);
-}
-.btn-pdf-cancel:hover{background:var(--ink1)}
-.btn-pdf-gen{
-  flex:2;padding:9px;font-size:.8rem;font-weight:600;color:#fff;
-  background:#2563eb;border:none;border-radius:var(--r);
-  transition:background .15s;font-family:var(--en);
-  display:flex;align-items:center;justify-content:center;gap:6px;
-}
-.btn-pdf-gen:hover{background:#1d4ed8}
-.btn-pdf-gen:disabled{background:var(--ink3);cursor:not-allowed}
-
-/* URDU KEYBOARD */
-.ur-kb-wrap{margin-top:6px;display:none}
-.ur-kb-wrap.open{display:block}
-.ur-kb{
-  background:var(--ink1);border:1.5px solid var(--bdr);border-radius:var(--r);
-  padding:6px;direction:ltr;
-}
-.ur-kb-row{display:flex;gap:4px;margin-bottom:4px;justify-content:center;flex-wrap:wrap}
-.uk{
-  font-family:var(--ur);font-size:1.2rem;line-height:1;
-  min-width:34px;height:40px;border-radius:4px;
-  background:var(--sur);border:1px solid var(--bdr);color:var(--ink9);
-  display:flex;align-items:center;justify-content:center;
-  cursor:pointer;transition:background .1s,border-color .1s;flex-shrink:0;padding:0 4px;
-}
-.uk:hover{background:var(--g100);border-color:var(--g500);color:var(--g700)}
-.uk:active{background:var(--g200,#c8e6cc)}
-.uk.uk-wide{min-width:56px;font-family:var(--en);font-size:.7rem;letter-spacing:.05em;color:var(--ink5)}
-.uk.uk-sp{min-width:100px}
 </style>
 </head>
 <body>
@@ -509,11 +375,11 @@ tfoot td{
 <header class="mast">
   <div class="mast-right">
     <div class="inst-ur">جامعہ دارالعلوم عیدگاہ</div>
-    <div class="inst-sub">Kitchen Ledger · کبیر والا</div>
+    <div class="inst-sub">Kitchen Ledger · Kabirwala</div>
   </div>
 
   <div class="mast-center">
-    <button class="nav-btn" id="btn-prev">&#8249;</button>
+    <button class="nav-btn" id="btn-prev">&#8250;</button>
     <div class="date-block" id="date-block">
       <div class="date-greg">
         <span id="dd">17</span><span>/</span><span id="dm">08</span><span>/</span><span id="dy">2026</span>
@@ -525,25 +391,12 @@ tfoot td{
       </div>
       <input type="date" id="date-picker">
     </div>
-    <button class="nav-btn" id="btn-next">&#8250;</button>
+    <button class="nav-btn" id="btn-next">&#8249;</button>
   </div>
 
   <div class="mast-left">
     <div class="stu-label">Students Fed / طلبہ</div>
-    <div style="display:flex;gap:5px;align-items:flex-end">
-      <div style="display:flex;flex-direction:column;align-items:center;gap:2px">
-        <span style="font-family:var(--ur);font-size:.62rem;opacity:.6;color:#fff">بنین</span>
-        <input type="number" class="stu-input" id="inp-boys" placeholder="0" min="0" max="9999" style="width:72px" oninput="calcStuTotal()" onblur="saveStudents()">
-      </div>
-      <div style="display:flex;flex-direction:column;align-items:center;gap:2px">
-        <span style="font-family:var(--ur);font-size:.62rem;opacity:.6;color:#fff">بنات</span>
-        <input type="number" class="stu-input" id="inp-girls" placeholder="0" min="0" max="9999" style="width:72px" oninput="calcStuTotal()" onblur="saveStudents()">
-      </div>
-      <div style="display:flex;flex-direction:column;align-items:center;gap:2px">
-        <span style="font-family:var(--ur);font-size:.62rem;opacity:.6;color:#fff">کل</span>
-        <input type="number" class="stu-input" id="stu-inp" placeholder="0" min="0" max="9999" style="width:72px;opacity:.75" readonly>
-      </div>
-    </div>
+    <input type="number" class="stu-input" id="stu-inp" placeholder="0" min="0" max="9999">
   </div>
 </header>
 
@@ -563,13 +416,13 @@ tfoot td{
 
 <!-- STATS -->
 <div class="stats">
-  <div><div class="stat-val" id="s-items">—</div><div class="stat-lbl">Items · <span style="font-family:var(--ur);font-size:.75rem;letter-spacing:0;text-transform:none">اشیاء</span></div></div>
+  <div><div class="stat-val" id="s-items">—</div><div class="stat-lbl">Items</div></div>
   <div class="stat-div"></div>
-  <div><div class="stat-val" id="s-recv">—</div><div class="stat-lbl">Purchased PKR · <span style="font-family:var(--ur);font-size:.75rem;letter-spacing:0;text-transform:none">خریداری</span></div></div>
+  <div><div class="stat-val" id="s-recv">—</div><div class="stat-lbl">Received PKR</div></div>
   <div class="stat-div"></div>
-  <div><div class="stat-val" id="s-used">—</div><div class="stat-lbl">Consumed PKR · <span style="font-family:var(--ur);font-size:.75rem;letter-spacing:0;text-transform:none">خرچ</span></div></div>
+  <div><div class="stat-val" id="s-used">—</div><div class="stat-lbl">Consumed PKR</div></div>
   <div class="stat-div"></div>
-  <div><div class="stat-val" id="s-stu">—</div><div class="stat-lbl">Students Fed · <span style="font-family:var(--ur);font-size:.75rem;letter-spacing:0;text-transform:none">طلبہ</span></div></div>
+  <div><div class="stat-val" id="s-stu">—</div><div class="stat-lbl">Students Fed</div></div>
 </div>
 
 <!-- MAIN -->
@@ -582,6 +435,7 @@ tfoot td{
       <span class="blk-lbl">Meal Block / وقت کھانا</span>
       <button class="blk-btn active" data-bid="1">بنین<span class="blk-en">Boys</span></button>
       <button class="blk-btn" data-bid="2">بنات<span class="blk-en">Girls</span></button>
+      <button class="blk-btn" data-bid="3">ناشتہ<span class="blk-en">B'fast</span></button>
     </div>
     <button class="add-btn" id="open-add"><span class="plus">+</span> نیا آئٹم</button>
   </div>
@@ -590,29 +444,31 @@ tfoot td{
     <table>
       <thead>
         <tr>
-          <th class="ci" rowspan="2"><span class="ur-hdr">اشیاء</span><span style="font-size:.56rem">ITEM</span></th>
-          <th class="cu" rowspan="2"><span class="ur-hdr">اکائی</span><span style="font-size:.56rem">UNIT</span></th>
-          <th class="cn sep-l col-open" rowspan="2"><span class="ur-hdr">موجود</span><span style="font-size:.56rem">OPENING</span></th>
-          <th colspan="2" class="gh sep-l col-recv">خریدا — PURCHASED</th>
-          <th class="gh sep-l sep-r col-sadq">صدقہ — SADAQA</th>
-          <th colspan="2" class="gh sep-l col-cons">خرچ ناشتہ</th>
-          <th colspan="2" class="gh sep-l col-cons">خرچ دوپہر</th>
-          <th colspan="2" class="gh sep-l sep-r col-cons">خرچ رات</th>
-          <th class="cr sep-r col-rem" rowspan="2"><span class="ur-hdr">باقی اسٹاک</span><span style="font-size:.56rem">REMAINING</span></th>
+          <th class="ci" rowspan="2">شے<br><span style="font-size:.56rem">ITEM</span></th>
+          <th class="cu" rowspan="2">اکائی<br><span style="font-size:.56rem">UNIT</span></th>
+          <th class="cn sep-l" rowspan="2">سابق<br><span style="font-size:.56rem">OPENING</span></th>
+          <th colspan="2" class="gh sep-l sep-r">لد — RECEIVED</th>
+          <th colspan="2" class="gh sep-l sep-r">خرچ — CONSUMED</th>
+          <th class="cr sep-r" rowspan="2">باقی اسٹاک<br><span style="font-size:.56rem">REMAINING</span></th>
         </tr>
         <tr class="sh">
-          <th class="cn sep-l col-recv"><span class="ur-hdr">مقدار</span><span style="font-size:.56rem">QTY</span></th>
-          <th class="cn sep-r col-recv2"><span class="ur-hdr">مالیت</span><span style="font-size:.56rem">VALUE PKR</span></th>
-          <th class="cn sep-l sep-r col-sadq"><span class="ur-hdr">مقدار</span><span style="font-size:.56rem">QTY</span></th>
-          <th class="cn sep-l col-cons"><span class="ur-hdr">مقدار</span><span style="font-size:.56rem">QTY</span></th>
-          <th class="cn col-cons2"><span class="ur-hdr">مالیت</span><span style="font-size:.56rem">VALUE PKR</span></th>
-          <th class="cn sep-l col-cons"><span class="ur-hdr">مقدار</span><span style="font-size:.56rem">QTY</span></th>
-          <th class="cn col-cons2"><span class="ur-hdr">مالیت</span><span style="font-size:.56rem">VALUE PKR</span></th>
-          <th class="cn sep-l col-cons"><span class="ur-hdr">مقدار</span><span style="font-size:.56rem">QTY</span></th>
-          <th class="cn sep-r col-cons2"><span class="ur-hdr">مالیت</span><span style="font-size:.56rem">VALUE PKR</span></th>
+          <th class="cn sep-l">مقدار<br><span style="font-size:.56rem">QTY</span></th>
+          <th class="cn sep-r">مالیت<br><span style="font-size:.56rem">VALUE PKR</span></th>
+          <th class="cn sep-l">مقدار<br><span style="font-size:.56rem">QTY</span></th>
+          <th class="cn sep-r">مالیت<br><span style="font-size:.56rem">VALUE PKR</span></th>
         </tr>
       </thead>
       <tbody id="tbody"></tbody>
+      <tfoot>
+        <tr>
+          <td colspan="3" class="tot-lbl">میزان · DAY TOTAL</td>
+          <td class="cn sep-l" id="t-rq">—</td>
+          <td class="cn sep-r" id="t-rp">—</td>
+          <td class="cn sep-l" id="t-uq">—</td>
+          <td class="cn sep-r" id="t-up">—</td>
+          <td></td>
+        </tr>
+      </tfoot>
     </table>
   </div>
 
@@ -659,90 +515,21 @@ tfoot td{
     </div>
     <div class="mbody">
       <div class="fg">
-        <label class="flbl">
-          <span>Urdu Name</span>
-          <span style="display:flex;align-items:center;gap:6px">
-            <span class="flbl-ur">اردو نام</span>
-            <button type="button" id="kb-toggle" title="Urdu keyboard"
-              style="background:var(--ink1);border:1px solid var(--bdr);border-radius:4px;padding:2px 6px;font-size:.75rem;color:var(--ink5);cursor:pointer;line-height:1.4;transition:all .15s"
-              onmouseover="this.style.borderColor='var(--g500)';this.style.color='var(--g700)'"
-              onmouseout="this.style.borderColor='var(--bdr)';this.style.color='var(--ink5)'">⌨</button>
-          </span>
-        </label>
+        <label class="flbl"><span>Urdu Name</span><span class="flbl-ur">اردو نام</span></label>
         <input class="finp" id="ni-ur" type="text" placeholder="مثلاً: مکئی کا آٹا" dir="rtl">
-        <div class="ur-kb-wrap" id="ur-kb-wrap">
-          <div class="ur-kb">
-            <div class="ur-kb-row">
-              <button type="button" class="uk" data-c="ق">ق</button>
-              <button type="button" class="uk" data-c="و">و</button>
-              <button type="button" class="uk" data-c="ع">ع</button>
-              <button type="button" class="uk" data-c="ر">ر</button>
-              <button type="button" class="uk" data-c="ت">ت</button>
-              <button type="button" class="uk" data-c="ے">ے</button>
-              <button type="button" class="uk" data-c="ئ">ئ</button>
-              <button type="button" class="uk" data-c="ی">ی</button>
-              <button type="button" class="uk" data-c="ح">ح</button>
-              <button type="button" class="uk" data-c="پ">پ</button>
-            </div>
-            <div class="ur-kb-row">
-              <button type="button" class="uk" data-c="ا">ا</button>
-              <button type="button" class="uk" data-c="س">س</button>
-              <button type="button" class="uk" data-c="د">د</button>
-              <button type="button" class="uk" data-c="ف">ف</button>
-              <button type="button" class="uk" data-c="گ">گ</button>
-              <button type="button" class="uk" data-c="ہ">ہ</button>
-              <button type="button" class="uk" data-c="ج">ج</button>
-              <button type="button" class="uk" data-c="ک">ک</button>
-              <button type="button" class="uk" data-c="ل">ل</button>
-            </div>
-            <div class="ur-kb-row">
-              <button type="button" class="uk" data-c="ز">ز</button>
-              <button type="button" class="uk" data-c="ش">ش</button>
-              <button type="button" class="uk" data-c="غ">غ</button>
-              <button type="button" class="uk" data-c="ط">ط</button>
-              <button type="button" class="uk" data-c="ب">ب</button>
-              <button type="button" class="uk" data-c="ن">ن</button>
-              <button type="button" class="uk" data-c="م">م</button>
-            </div>
-            <div class="ur-kb-row">
-              <button type="button" class="uk" data-c="خ">خ</button>
-              <button type="button" class="uk" data-c="ذ">ذ</button>
-              <button type="button" class="uk" data-c="ض">ض</button>
-              <button type="button" class="uk" data-c="ظ">ظ</button>
-              <button type="button" class="uk" data-c="ث">ث</button>
-              <button type="button" class="uk" data-c="ص">ص</button>
-              <button type="button" class="uk" data-c="ڈ">ڈ</button>
-              <button type="button" class="uk" data-c="ڑ">ڑ</button>
-              <button type="button" class="uk" data-c="ٹ">ٹ</button>
-              <button type="button" class="uk" data-c="چ">چ</button>
-              <button type="button" class="uk" data-c="ژ">ژ</button>
-              <button type="button" class="uk" data-c="ں">ں</button>
-            </div>
-            <div class="ur-kb-row">
-              <button type="button" class="uk" data-c="آ">آ</button>
-              <button type="button" class="uk" data-c="اً">اً</button>
-              <button type="button" class="uk" data-c="ۃ">ۃ</button>
-              <button type="button" class="uk" data-c="ؤ">ؤ</button>
-              <button type="button" class="uk" data-c="ء">ء</button>
-              <button type="button" class="uk uk-sp" data-c=" ">SPACE</button>
-              <button type="button" class="uk uk-wide" id="kb-bs">⌫ DEL</button>
-            </div>
-          </div>
-        </div>
       </div>
       <div class="fg">
-        <label class="flbl"><span>English / Roman Urdu <span style="opacity:.5;font-size:.55rem">(اختیاری · Optional)</span></span><span class="flbl-ur">انگریزی نام</span></label>
-        <input class="finp ltr" id="ni-en" type="text" placeholder="Optional — auto-fills via Qwen when built" dir="ltr">
+        <label class="flbl"><span>English / Roman Urdu</span><span class="flbl-ur">انگریزی نام</span></label>
+        <input class="finp ltr" id="ni-en" type="text" placeholder="Auto-translating via Qwen…" dir="ltr">
         <span class="auto-tag" id="auto-tag">AUTO-TRANSLATED VIA QWEN — TAP TO EDIT</span>
       </div>
       <div class="fg">
         <label class="flbl"><span>Unit</span><span class="flbl-ur">اکائی</span></label>
         <div class="unit-tog" id="unit-tog">
-          <button class="uopt" data-u="g">گرام</button>
-          <button class="uopt" data-u="pcs">عدد</button>
-          <button class="uopt" data-u="L">لیٹر</button>
-          <button class="uopt sel" data-u="kg">کلو گرام</button>
-          <button class="uopt" data-u="mun">مَن</button>
+          <button class="uopt" data-u="g">G</button>
+          <button class="uopt" data-u="pcs">PCS</button>
+          <button class="uopt" data-u="L">L</button>
+          <button class="uopt sel" data-u="kg">KG</button>
         </div>
       </div>
     </div>
@@ -765,79 +552,16 @@ tfoot td{
   </div>
 </div>
 
-<!-- EXPORT PDF DIALOG -->
-<div class="pdf-ov" id="pdf-ov">
-  <div class="pdf-box">
-    <div class="pdf-hdr">
-      <div>
-        <div class="pdf-title">Export PDF <span class="ur-part">· رپورٹ</span></div>
-        <div class="pdf-sub">Select a time range for the report</div>
-      </div>
-      <button class="pdf-close" id="pdf-close">✕</button>
-    </div>
-    <div class="pdf-body">
-      <div class="opt-grid" id="pdf-opt-grid">
-        <button class="pdf-opt sel" data-range="today">
-          <span class="opt-en">Today</span>
-          <span class="opt-ur">آج</span>
-        </button>
-        <button class="pdf-opt" data-range="week">
-          <span class="opt-en">This week</span>
-          <span class="opt-ur">اس ہفتے</span>
-        </button>
-        <button class="pdf-opt" data-range="month">
-          <span class="opt-en">This month</span>
-          <span class="opt-ur">اس مہینے</span>
-        </button>
-        <button class="pdf-opt" data-range="year">
-          <span class="opt-en">This year</span>
-          <span class="opt-ur">اس سال</span>
-        </button>
-        <button class="pdf-opt full" data-range="custom">
-          <span class="opt-en">Custom date range</span>
-          <span class="opt-ur">مخصوص تاریخیں</span>
-        </button>
-      </div>
-      <div class="date-row hidden" id="pdf-date-row">
-        <div>
-          <div class="date-lbl">From · سے</div>
-          <input class="date-inp" type="date" id="pdf-from">
-        </div>
-        <div>
-          <div class="date-lbl">To · تک</div>
-          <input class="date-inp" type="date" id="pdf-to">
-        </div>
-      </div>
-      <div class="chk-section">
-        <div class="chk-lbl">Include in report</div>
-        <label class="chk-item"><input type="checkbox" id="chk-summary" checked> Daily item summary (opening / purchased / consumed / remaining)</label>
-        <label class="chk-item"><input type="checkbox" id="chk-meals" checked> Meal-wise breakdown (ناشتہ · دوپہر · رات)</label>
-        <label class="chk-item"><input type="checkbox" id="chk-students" checked> Students fed per day</label>
-        <label class="chk-item"><input type="checkbox" id="chk-pkr"> PKR totals and per-student cost</label>
-      </div>
-    </div>
-    <div class="pdf-foot">
-      <button class="btn-pdf-cancel" id="pdf-cancel-btn">Cancel</button>
-      <button class="btn-pdf-gen" id="pdf-gen-btn">⬇ Generate PDF · PDF بنائیں</button>
-    </div>
-  </div>
-</div>
-
 <div id="toast"></div>
 
 <script>
-const API = 'https://ibrahim-kitchen-api.wahreh1.workers.dev';
-
-const UNIT_UR = { kg: 'کلو گرام', g: 'گرام', L: 'لیٹر', pcs: 'عدد', mun: 'مَن' };
+const API = 'http://localhost:8787';
 
 /* ─── State ─────────────────────────────────────────────── */
 let curDate   = todayISO();
 let dayData   = null;
-let activeBlk = 1; // Boys block default
-let dirty     = {};      // key: `${blockId}|${itemId}|${mealType}` → {used_qty, used_value_pkr}
-let dirtyOp   = {};      // key: itemId → new opening_qty (day-wide)
-let dirtyRcv  = {};      // key: itemId → {recv_qty, recv_value_pkr, sadaqa_qty} (day-wide received)
-let stuDirty  = false;   // boys/girls headcount edited but not yet saved
+let activeBlk = 1;
+let dirty     = {};      // key: `${blockId}|${itemId}` → {recv_qty,recv_value_pkr,used_qty,used_value_pkr}
 let selUnit   = 'kg';
 let asTimer   = null;
 
@@ -849,46 +573,8 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 /* ─── Date helpers ───────────────────────────────────────── */
-function calcStuTotal() {
-  const b = parseInt(document.getElementById('inp-boys')?.value)||0;
-  const g = parseInt(document.getElementById('inp-girls')?.value)||0;
-  const si = document.getElementById('stu-inp');
-  if (si) si.value = (b + g) || '';
-  stuDirty = true;   // saved via its own route on blur, not the ledger autosave
-}
-
-/* ─── Save students (boys / girls) ───────────────────────── */
-async function saveStudents() {
-  if (!stuDirty || !dayData?.exists) return;
-  const b = document.getElementById('inp-boys')?.value;
-  const g = document.getElementById('inp-girls')?.value;
-  try {
-    const r = await fetch(`${API}/api/day/${curDate}/students`, {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({
-        students_boys:  b === '' ? null : parseInt(b),
-        students_girls: g === '' ? null : parseInt(g),
-        user_id: 'ibrahim',
-      })
-    });
-    const data = await r.json();
-    if (data.error) throw new Error(data.message||data.error);
-    dayData  = data;
-    stuDirty = false;
-    statsUpdate(data);
-    setAS('طلبہ محفوظ کیے گئے');
-  } catch(e) {
-    toast('طلبہ خرابی: '+e.message, true);
-  }
-}
-
 function todayISO() {
-  const now = new Date();
-  const y = now.getFullYear();
-  const m = String(now.getMonth()+1).padStart(2,'0');
-  const d = String(now.getDate()).padStart(2,'0');
-  return `${y}-${m}-${d}`;
+  return new Date().toISOString().slice(0,10);
 }
 function shift(iso, d) {
   const dt = new Date(iso + 'T12:00:00');
@@ -976,61 +662,13 @@ function wireGlobal() {
     if (!v) return;
     window._tt = setTimeout(()=>autoTranslate(v), 800);
   });
-
-  // Urdu keyboard toggle
-  document.getElementById('kb-toggle').addEventListener('click', e => {
-    e.preventDefault();
-    const wrap = document.getElementById('ur-kb-wrap');
-    wrap.classList.toggle('open');
-  });
-
-  // Keyboard key press — insert at cursor position
-  document.getElementById('ur-kb-wrap').addEventListener('click', e => {
-    const key = e.target.closest('.uk');
-    if (!key || key.id === 'kb-toggle') return;
-    if (key.id === 'kb-bs') {
-      // Backspace
-      const inp = document.getElementById('ni-ur');
-      const s = inp.selectionStart, en = inp.selectionEnd;
-      if (s === en && s > 0) {
-        inp.value = inp.value.slice(0, s-1) + inp.value.slice(en);
-        inp.setSelectionRange(s-1, s-1);
-      } else if (s !== en) {
-        inp.value = inp.value.slice(0, s) + inp.value.slice(en);
-        inp.setSelectionRange(s, s);
-      }
-    } else {
-      const ch = key.dataset.c;
-      if (!ch) return;
-      const inp = document.getElementById('ni-ur');
-      const s = inp.selectionStart, en = inp.selectionEnd;
-      inp.value = inp.value.slice(0, s) + ch + inp.value.slice(en);
-      inp.setSelectionRange(s + ch.length, s + ch.length);
-    }
-    // Trigger autotranslate debounce
-    const inp = document.getElementById('ni-ur');
-    inp.dispatchEvent(new Event('input'));
-    inp.focus();
-  });
 }
 
-async function navigate(d) {
-  // Flush pending edits before leaving the day
-  if (dayData?.exists) {
-    try {
-      if (stuDirty) await saveStudents();
-      if (Object.keys(dirty).length) await saveBlock();
-    } catch(e) { /* ignore nav errors */ }
-  }
+function navigate(d) {
   curDate = shift(curDate, d); reset(); renderDate(); loadDay(curDate);
 }
 function reset() {
-  dayData = null; dirty = {}; dirtyOp = {}; dirtyRcv = {}; stuDirty = false;
-  // Clear headcount inputs so the previous day's numbers never bleed into the next
-  ['inp-boys','inp-girls','stu-inp'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.value = '';
-  });
+  dayData = null; dirty = {};
 }
 
 /* ─── Load day ───────────────────────────────────────────── */
@@ -1079,8 +717,6 @@ function renderCreate(date) {
           hijri_date: document.getElementById('hijri-disp').textContent,
           day_of_week_ur: DOW_UR[dow],
           day_of_week_en: DOW_EN[dow],
-          students_boys:  parseInt(document.getElementById('inp-boys')?.value)  || null,
-          students_girls: parseInt(document.getElementById('inp-girls')?.value) || null,
           students_fed: stu,
         })
       });
@@ -1103,15 +739,9 @@ function renderKitchen(data) {
   document.getElementById('main').appendChild(tpl);
 
   // Students
-  // Headcount comes from the saved header — never from whatever was typed
-  // on the previously viewed day.
-  const eb = document.getElementById('inp-boys');
-  const eg = document.getElementById('inp-girls');
   const si = document.getElementById('stu-inp');
-  if (eb) eb.value = data.header.students_boys  ?? '';
-  if (eg) eg.value = data.header.students_girls ?? '';
-  if (si) si.value = data.header.students_fed   ?? '';
-  stuDirty = false;
+  si.value = data.header.students_fed ?? '';
+  si.onchange = () => schedAS();
 
   // Block buttons
   activeBlk = data.blocks?.[0]?.id ?? 1;
@@ -1129,7 +759,7 @@ function renderKitchen(data) {
 
   document.getElementById('open-add').onclick = openAdd;
   document.getElementById('btn-save').onclick  = saveBlock;
-  document.getElementById('btn-pdf').onclick   = openPdfDialog;
+  document.getElementById('btn-pdf').onclick   = () => toast('PDF رپورٹ — جلد آ رہی ہے');
   document.getElementById('btn-receipt').onclick = () => toast('رسید منسلک کریں — جلد آ رہی ہے');
 
   renderRows(data, activeBlk);
@@ -1142,33 +772,27 @@ function renderRows(data, blkId) {
   if (!tbody) return;
   tbody.innerHTML = '';
 
-  // Use first block's item list as the master item list (all blocks have same items)
-  const firstBlkId  = data.blocks?.[0]?.id ?? blkId;
-  const firstMap    = data.rows_by_block?.[firstBlkId] ?? {};
-  const masterItems = Array.isArray(firstMap) ? firstMap : Object.values(firstMap);
-
-  // Build lookup for day-wide received
-  const rcvMap = {};
-  for (const r of (data.daily_received ?? [])) rcvMap[r.item_id] = r;
-
+  const rows = data.rows_by_block?.[blkId] ?? [];
   const totMap = {};
   for (const t of (data.day_totals??[])) totMap[t.item_id] = t;
 
-  for (const row of masterItems) {
-    const drk      = dirtyRcv[row.item_id] ?? {};
-    const savedRcv = rcvMap[row.item_id]   ?? {};
+  let srq=0, srp=0, suq=0, sup=0;
 
-    // Received — day-wide (constant across blocks)
-    const rq = drk.recv_qty       ?? savedRcv.recv_qty       ?? 0;
-    const rp = drk.recv_value_pkr ?? savedRcv.recv_value_pkr ?? 0;
-    const sq = drk.sadaqa_qty     ?? savedRcv.sadaqa_qty     ?? 0;
-
+  for (const row of rows) {
+    const key  = `${blkId}|${row.item_id}`;
+    const dk   = dirty[key] ?? {};
+    const rq   = dk.recv_qty       ?? row.recv_qty       ?? 0;
+    const rp   = dk.recv_value_pkr ?? row.recv_value_pkr ?? 0;
+    const uq   = dk.used_qty       ?? row.used_qty       ?? 0;
+    const up   = dk.used_value_pkr ?? row.used_value_pkr ?? 0;
     const tot  = totMap[row.item_id] ?? {};
-    const open = dirtyOp[row.item_id] ?? tot.opening_qty ?? 0;
+    const open = tot.opening_qty ?? 0;
     const rem  = calcRem(tot, blkId, row.item_id, data);
     const pct  = open>0 ? Math.max(0,Math.min(100,(rem/open)*100)) : (rem>0?100:0);
     const cls  = pct<15?'low':pct<35?'med':'';
     const isls = pct<15;
+
+    srq+=rq; srp+=rp; suq+=uq; sup+=up;
 
     const tr = document.createElement('tr');
     if (isls) tr.classList.add('ls');
@@ -1177,51 +801,28 @@ function renderRows(data, blkId) {
         <span class="iur">${row.name_ur}</span>
         <span class="ien">${row.name_en??''}</span>
       </td>
-      <td class="cu col-open"><span class="ubadge">${UNIT_UR[row.unit]||row.unit}</span></td>
-      <td class="cn sep-l col-open">
-        <input class="qi${(dirtyOp[row.item_id]!==undefined)?' chg':''}"
-               data-oid="${row.item_id}" type="number" min="0"
-               value="${openVal(row.item_id, open)}" placeholder="—"
-               title="سابق · Opening balance">
-      </td>
-      <td class="cn sep-l col-recv">
-        <input class="qi${(drk.recv_qty!==undefined)?' chg':''}"
-               data-rid="${row.item_id}" data-rf="recv_qty"
+      <td class="cu"><span class="ubadge">${row.unit}</span></td>
+      <td class="cn sep-l"><span class="nv">${fmt(open)}</span></td>
+      <td class="cn sep-l">
+        <input class="qi${rq!==(row.recv_qty??0)?' chg':''}" data-k="${key}" data-f="recv_qty"
                type="number" min="0" value="${rq||''}" placeholder="—">
       </td>
-      <td class="cn sep-r col-recv2">
-        <input class="vi${(drk.recv_value_pkr!==undefined)?' chg':''}"
-               data-rid="${row.item_id}" data-rf="recv_value_pkr"
+      <td class="cn sep-r">
+        <input class="vi" data-k="${key}" data-f="recv_value_pkr"
                type="number" min="0" value="${rp||''}" placeholder="—">
       </td>
-      <td class="cn sep-l sep-r col-sadq">
-        <input class="qi${(drk.sadaqa_qty!==undefined)?' chg':''}"
-               data-rid="${row.item_id}" data-rf="sadaqa_qty"
-               type="number" min="0" value="${sq||''}" placeholder="—"
-               title="صدقہ مقدار · Sadaqa quantity">
+      <td class="cn sep-l">
+        <input class="qi${uq!==(row.used_qty??0)?' chg':''}" data-k="${key}" data-f="used_qty"
+               type="number" min="0" value="${uq||''}" placeholder="—">
       </td>
-      ${['breakfast','lunch','dinner'].map(mt => {
-        const mk  = `${blkId}|${row.item_id}|${mt}`;
-        const dmk = dirty[mk] ?? {};
-        const muq = dmk.used_qty       ?? row[mt]?.used_qty       ?? 0;
-        const mup = dmk.used_value_pkr ?? row[mt]?.used_value_pkr ?? 0;
-        const isl = mt==='dinner';
-        return `
-      <td class="cn sep-l col-cons">
-        <input class="qi${(dmk.used_qty!==undefined)?' chg':''}"
-               data-mk="${mk}" data-mf="used_qty"
-               type="number" min="0" value="${muq||''}" placeholder="—">
+      <td class="cn sep-r">
+        <input class="vi" data-k="${key}" data-f="used_value_pkr"
+               type="number" min="0" value="${up||''}" placeholder="—">
       </td>
-      <td class="cn${isl?' sep-r':''} col-cons2">
-        <input class="vi${(dmk.used_value_pkr!==undefined)?' chg':''}"
-               data-mk="${mk}" data-mf="used_value_pkr"
-               type="number" min="0" value="${mup||''}" placeholder="—">
-      </td>`;
-      }).join('')}
-      <td class="cr sep-r col-rem">
+      <td class="cr sep-r">
         <div class="rem-cell">
-          <span class="rem-qty" data-rid2="${row.item_id}">${fmt(rem)}</span>
-          <span class="rem-unit">${UNIT_UR[row.unit]||row.unit}</span>
+          <span class="rem-qty" data-rid="${row.item_id}">${fmt(rem)}</span>
+          <span class="rem-unit">${row.unit}</span>
           <div class="pb-wrap"><div class="pb-fill ${cls}" style="width:${pct}%"></div></div>
           ${isls?`<span class="ls-badge">کم · LOW</span>`:''}
         </div>
@@ -1229,10 +830,9 @@ function renderRows(data, blkId) {
     tbody.appendChild(tr);
   }
 
-  // Consumed inputs — per block per meal type
-  tbody.querySelectorAll('input[data-mk]').forEach(inp => {
+  tbody.querySelectorAll('input[data-k]').forEach(inp => {
     inp.addEventListener('input', () => {
-      const k = inp.dataset.mk, f = inp.dataset.mf;
+      const k = inp.dataset.k, f = inp.dataset.f;
       dirty[k] = dirty[k] ?? {};
       dirty[k][f] = parseFloat(inp.value)||0;
       inp.classList.add('chg');
@@ -1241,68 +841,31 @@ function renderRows(data, blkId) {
     });
   });
 
-  // Received inputs — day-wide, save on blur
-  tbody.querySelectorAll('input[data-rid][data-rf]').forEach(inp => {
-    inp.addEventListener('input', () => {
-      const itemId = +inp.dataset.rid, f = inp.dataset.rf;
-      dirtyRcv[itemId] = dirtyRcv[itemId] ?? {};
-      dirtyRcv[itemId][f] = parseFloat(inp.value)||0;
-      inp.classList.add('chg');
-      liveRem(data, blkId);
-      schedAS();
-    });
-    inp.addEventListener('blur', async () => {
-      const itemId = +inp.dataset.rid;
-      if (!dirtyRcv[itemId] || !dayData?.exists) return;
-      await saveReceived(itemId);
-    });
-  });
-
-  // Opening inputs — track on input, save on blur
-  tbody.querySelectorAll('input[data-oid]').forEach(inp => {
-    inp.addEventListener('input', () => {
-      const itemId = +inp.dataset.oid;
-      dirtyOp[itemId] = parseFloat(inp.value)||0;
-      inp.classList.add('chg');
-      const tot = totMap[itemId];
-      if (tot) tot.opening_qty = dirtyOp[itemId];
-      liveRem(data, blkId);
-    });
-    inp.addEventListener('blur', async () => {
-      const itemId = +inp.dataset.oid;
-      if (dirtyOp[itemId] === undefined) return;
-      await saveOpening(itemId, dirtyOp[itemId]);
-    });
-  });
+  const e = id => document.getElementById(id);
+  e('t-rq').textContent = srq ? fmt(srq) : '—';
+  e('t-rp').textContent = srp ? fmtP(srp) : '—';
+  e('t-uq').textContent = suq ? fmt(suq) : '—';
+  e('t-up').textContent = sup ? fmtP(sup) : '—';
 }
 
 function calcRem(tot, blkId, itemId, data) {
-  // Received and sadaqa are day-wide
-  const savedRcv = (data.daily_received??[]).find(x=>x.item_id===itemId) ?? {};
-  const recv   = dirtyRcv[itemId]?.recv_qty    ?? savedRcv.recv_qty    ?? 0;
-  const sadaqa = dirtyRcv[itemId]?.sadaqa_qty  ?? savedRcv.sadaqa_qty  ?? 0;
-
-  // Consumed summed across all blocks and all 3 meal types
-  let used = 0;
-  const MEALS = ['breakfast','lunch','dinner'];
+  let recv=0, used=0;
   for (const blk of (data.blocks??[])) {
-    const itemMap = data.rows_by_block?.[blk.id] ?? {};
-    const itemRows = Array.isArray(itemMap) ? itemMap : Object.values(itemMap);
-    const r = itemRows.find(x=>x.item_id===itemId);
-    for (const mt of MEALS) {
-      const mk = `${blk.id}|${itemId}|${mt}`;
-      used += dirty[mk]?.used_qty ?? r?.[mt]?.used_qty ?? 0;
-    }
+    const brows = data.rows_by_block?.[blk.id]??[];
+    const r = brows.find(x=>x.item_id===itemId);
+    if (!r) continue;
+    const k = `${blk.id}|${itemId}`;
+    recv += dirty[k]?.recv_qty ?? r.recv_qty ?? 0;
+    used += dirty[k]?.used_qty ?? r.used_qty ?? 0;
   }
-  const opening = dirtyOp[itemId] ?? tot.opening_qty ?? 0;
-  return opening + recv + sadaqa - used;
+  return (tot.opening_qty??0)+recv-used;
 }
 
 function liveRem(data, blkId) {
   const totMap = {};
   for (const t of (data.day_totals??[])) totMap[t.item_id]=t;
-  document.querySelectorAll('[data-rid2]').forEach(el => {
-    const id = +el.dataset.rid2;
+  document.querySelectorAll('[data-rid]').forEach(el => {
+    const id = +el.dataset.rid;
     const tot = totMap[id]??{};
     const rem = calcRem(tot, blkId, id, data);
     el.textContent = fmt(rem);
@@ -1323,11 +886,7 @@ function statsUpdate(data) {
     recv += t.recv_pkr_total??0;
     used += t.used_pkr_total??0;
   }
-  // Count items actually assigned to blocks (what's rendered), not all opening_balances rows
-  const firstBlkId = data.blocks?.[0]?.id;
-  const firstMap   = data.rows_by_block?.[firstBlkId] ?? {};
-  const itemCount  = Array.isArray(firstMap) ? firstMap.length : Object.keys(firstMap).length;
-  document.getElementById('s-items').textContent = itemCount || '—';
+  document.getElementById('s-items').textContent = data.day_totals?.length??'—';
   document.getElementById('s-recv').textContent  = fmtP(recv);
   document.getElementById('s-used').textContent  = fmtP(used);
   document.getElementById('s-stu').textContent   = fmtN(data.header?.students_fed??0);
@@ -1337,98 +896,15 @@ function statsEmpty() {
     document.getElementById(id).textContent='—');
 }
 
-/* ─── Save opening balance (inline on blur + bundled into main save) ── */
-async function saveOpening(itemId, qty) {
-  if (!dayData?.exists) return;
-  // New items added mid-day may not have an opening_balance row yet — skip gracefully
-  const totRow = (dayData.day_totals??[]).find(t=>t.item_id===itemId);
-  if (!totRow) return; // item not in day_totals yet, opening row doesn't exist
-  try {
-    const r = await fetch(`${API}/api/day/${curDate}/opening`, {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({
-        item_id:     itemId,
-        opening_qty: qty,
-        user_id:     'ibrahim',
-        reason_type: 'physical_count',
-        reason_note: '',
-      })
-    });
-    const data = await r.json();
-    if (data.error) throw new Error(data.message||data.error);
-    // Sync day_totals in memory from fresh response
-    if (data.day_totals) {
-      dayData.day_totals = data.day_totals;
-    }
-    delete dirtyOp[itemId];
-    setAS('سابق محفوظ کیا گیا');
-  } catch(e) {
-    toast('سابق خرابی: '+e.message, true);
-  }
-}
-
-/* ─── Save day-wide received ─────────────────────────────── */
-async function saveReceived(itemId) {
-  if (!dayData?.exists) return;
-  const d = dirtyRcv[itemId];
-  if (!d) return;
-  // Skip items that don't have a day_totals row yet (newly added mid-day)
-  const totRow = (dayData.day_totals??[]).find(t=>t.item_id===itemId);
-  if (!totRow) return;
-  try {
-    const r = await fetch(`${API}/api/day/${curDate}/received`, {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({
-        rows: [{ item_id: itemId, recv_qty: d.recv_qty??0, recv_value_pkr: d.recv_value_pkr??0, sadaqa_qty: d.sadaqa_qty??0 }],
-        user_id: 'ibrahim',
-      })
-    });
-    const data = await r.json();
-    if (data.error) throw new Error(data.message||data.error);
-    if (data.daily_received) dayData.daily_received = data.daily_received;
-    if (data.day_totals)     dayData.day_totals     = data.day_totals;
-    delete dirtyRcv[itemId];
-    statsUpdate(dayData);
-    setAS('وصول محفوظ کیا گیا');
-  } catch(e) {
-    toast('وصول خرابی: '+e.message, true);
-  }
-}
-
 /* ─── Save block ─────────────────────────────────────────── */
 async function saveBlock() {
   if (!dayData?.exists) return;
+  const rows = buildRows(activeBlk);
+  if (!rows.length) { toast('کوئی تبدیلی نہیں'); return; }
 
   const btn = document.getElementById('btn-save');
   btn.disabled=true; btn.textContent='محفوظ ہو رہا ہے…';
-
   try {
-    // 1. Collect any in-flight received/sadaqa values directly from DOM (blur may not have fired)
-    document.querySelectorAll('input[data-rid][data-rf]').forEach(inp => {
-      const itemId = +inp.dataset.rid, f = inp.dataset.rf;
-      const val = parseFloat(inp.value) || 0;
-      dirtyRcv[itemId] = dirtyRcv[itemId] ?? {};
-      dirtyRcv[itemId][f] = val;
-    });
-
-    // 2. Flush dirty opening balances and received in parallel
-    const opKeys  = Object.keys(dirtyOp);
-    const rcvKeys = Object.keys(dirtyRcv);
-    await Promise.all([
-      ...opKeys.map(id => saveOpening(+id, dirtyOp[id])),
-      ...rcvKeys.map(id => saveReceived(+id)),
-    ]);
-
-    // 2. Save consumed rows for active block
-    const rows = buildRows(activeBlk);
-    if (!rows.length) {
-      if (!opKeys.length) toast('کوئی تبدیلی نہیں');
-      else { setAS('محفوظ کیا گیا'); toast('محفوظ ہو گیا ✓'); }
-      return;
-    }
-
     const r = await fetch(`${API}/api/day/${curDate}`,{
       method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({
@@ -1439,10 +915,8 @@ async function saveBlock() {
     });
     const data = await r.json();
     if (data.error) throw new Error(data.message||data.error);
-    // Preserve daily_received — it was already saved and returned by saveReceived above
-    // The save_block response may return stale received data if D1 view hasn't caught up
-    if (dayData?.daily_received?.length) data.daily_received = dayData.daily_received;
     dayData = data;
+    // Clear dirty for this block
     Object.keys(dirty).filter(k=>k.startsWith(activeBlk+'|')).forEach(k=>delete dirty[k]);
     renderRows(data, activeBlk);
     statsUpdate(data);
@@ -1456,28 +930,18 @@ async function saveBlock() {
 }
 
 function buildRows(blkId) {
-  const MEALS = ['breakfast','lunch','dinner'];
-  const firstBlkId = dayData.blocks?.[0]?.id ?? blkId;
-  const firstMap   = dayData.rows_by_block?.[firstBlkId] ?? {};
-  const masterItems = Array.isArray(firstMap) ? firstMap : Object.values(firstMap);
-  const blkMap      = dayData.rows_by_block?.[blkId] ?? {};
-  const blkItems    = Array.isArray(blkMap) ? blkMap : Object.values(blkMap);
-
-  const rows = [];
-  for (const row of masterItems) {
-    const saved = blkItems.find(r=>r.item_id===row.item_id) ?? {};
-    for (const mt of MEALS) {
-      const mk = `${blkId}|${row.item_id}|${mt}`;
-      const d  = dirty[mk] ?? {};
-      const s  = saved[mt] ?? {};
-      const uq = d.used_qty       ?? s.used_qty       ?? 0;
-      const up = d.used_value_pkr ?? s.used_value_pkr ?? 0;
-      if (uq || up || dirty[mk]) {
-        rows.push({ item_id: row.item_id, meal_type: mt, used_qty: uq, used_value_pkr: up });
-      }
-    }
-  }
-  return rows;
+  const rows = dayData.rows_by_block?.[blkId]??[];
+  return rows.map(row => {
+    const k = `${blkId}|${row.item_id}`;
+    const d = dirty[k]??{};
+    return {
+      item_id:        row.item_id,
+      recv_qty:       d.recv_qty       ?? row.recv_qty       ?? 0,
+      recv_value_pkr: d.recv_value_pkr ?? row.recv_value_pkr ?? 0,
+      used_qty:       d.used_qty       ?? row.used_qty       ?? 0,
+      used_value_pkr: d.used_value_pkr ?? row.used_value_pkr ?? 0,
+    };
+  }).filter(r => r.recv_qty||r.used_qty||r.recv_value_pkr||r.used_value_pkr||dirty[`${blkId}|${r.item_id}`]);
 }
 
 function schedAS() {
@@ -1506,7 +970,6 @@ function openAdd() {
 }
 function closeAdd() {
   document.getElementById('ov-add').classList.remove('open');
-  document.getElementById('ur-kb-wrap').classList.remove('open');
 }
 
 async function autoTranslate(urdu) {
@@ -1541,559 +1004,7 @@ async function saveItem() {
   }
 }
 
-/* ════════════════════════════════════════════════════════════
- * EXPORT PDF — dialog + print-to-PDF via new browser window
- * ════════════════════════════════════════════════════════════ */
-
-let pdfRange = 'today';
-
-function openPdfDialog() {
-  pdfRange = 'today';
-  document.querySelectorAll('.pdf-opt').forEach(b =>
-    b.classList.toggle('sel', b.dataset.range === 'today'));
-  document.getElementById('pdf-date-row').classList.add('hidden');
-  document.getElementById('pdf-from').value = curDate;
-  document.getElementById('pdf-to').value   = curDate;
-  document.getElementById('pdf-ov').classList.add('open');
-}
-
-function closePdfDialog() {
-  document.getElementById('pdf-ov').classList.remove('open');
-}
-
-document.addEventListener('DOMContentLoaded', () => {
-  document.getElementById('pdf-close').onclick      = closePdfDialog;
-  document.getElementById('pdf-cancel-btn').onclick = closePdfDialog;
-  document.getElementById('pdf-ov').onclick = e => {
-    if (e.target === e.currentTarget) closePdfDialog();
-  };
-  document.getElementById('pdf-opt-grid').addEventListener('click', e => {
-    const btn = e.target.closest('.pdf-opt');
-    if (!btn) return;
-    pdfRange = btn.dataset.range;
-    document.querySelectorAll('.pdf-opt').forEach(b => b.classList.toggle('sel', b === btn));
-    document.getElementById('pdf-date-row').classList.toggle('hidden', pdfRange !== 'custom');
-  });
-  document.getElementById('pdf-gen-btn').onclick = generatePdf;
-});
-
-async function generatePdf() {
-  const btn = document.getElementById('pdf-gen-btn');
-  btn.disabled = true;
-  btn.textContent = 'Loading…';
-
-  const opts = {
-    inclSummary:  document.getElementById('chk-summary').checked,
-    inclMeals:    document.getElementById('chk-meals').checked,
-    inclStudents: document.getElementById('chk-students').checked,
-    inclPkr:      document.getElementById('chk-pkr').checked,
-  };
-
-  try {
-    let html;
-
-    if (pdfRange === 'today') {
-      const data = await fetchReport(`${API}/api/report/daily/${curDate}`);
-      html = buildDailyHtml(data, opts);
-
-    } else if (pdfRange === 'week') {
-      const data = await fetchReport(`${API}/api/report/weekly/${curDate}`);
-      html = buildWeeklyHtml(data, opts);
-
-    } else if (pdfRange === 'month') {
-      const [y, m] = curDate.split('-');
-      const data = await fetchReport(`${API}/api/report/monthly/${y}/${m}`);
-      html = buildMonthlyHtml(data, opts);
-
-    } else if (pdfRange === 'year') {
-      const y = curDate.split('-')[0];
-      const data = await fetchReport(`${API}/api/report/yearly/${y}`);
-      html = buildYearlyHtml(data, opts);
-
-    } else if (pdfRange === 'custom') {
-      const from = document.getElementById('pdf-from').value;
-      const to   = document.getElementById('pdf-to').value;
-      if (!from || !to) { toast('تاریخیں منتخب کریں', true); return; }
-      if (from === to) {
-        // Single day — the daily report carries meal-wise detail the range
-        // report does not, so it is the better choice here.
-        const data = await fetchReport(`${API}/api/report/daily/${from}`);
-        html = buildDailyHtml(data, opts);
-      } else {
-        const data = await fetchReport(`${API}/api/report/range/${from}/${to}`);
-        html = buildWeeklyHtml(data, opts);
-      }
-    }
-
-    closePdfDialog();
-    printHtml(html);
-
-  } catch(e) {
-    toast('PDF خرابی: ' + e.message, true);
-  } finally {
-    btn.disabled = false;
-    btn.innerHTML = '⬇ Generate PDF · PDF بنائیں';
-  }
-}
-
-async function fetchReport(url) {
-  const r = await fetch(url);
-  if (!r.ok) throw new Error(`HTTP ${r.status}`);
-  const d = await r.json();
-  if (d.error) throw new Error(d.message || d.error);
-  return d;
-}
-
-function printHtml(html, filename) {
-  const win = window.open('', '_blank');
-  if (!win) { toast('پاپ اپ بلاک ہے — اجازت دیں', true); return; }
-  win.document.open();
-  win.document.write(html);
-  win.document.close();
-
-  // Wait for webfonts to finish loading, otherwise Nastaliq falls back to a
-  // system font in the printed output. document.fonts.ready is the reliable
-  // signal; the timeout is a floor for browsers that resolve it too eagerly.
-  const fire = () => {
-    try { win.focus(); } catch(e) {}
-    win.print();
-  };
-  const start = () => {
-    const fontsReady = win.document.fonts
-      ? win.document.fonts.ready
-      : Promise.resolve();
-    Promise.race([
-      fontsReady,
-      new Promise(r => setTimeout(r, 3000)),   // hard cap
-    ]).then(() => setTimeout(fire, 350));
-  };
-
-  if (win.document.readyState === 'complete') start();
-  else win.addEventListener('load', start);
-}
-
-/* Browsers print the document title and URL in the page header/footer. Naming
- * the document gives a clean header instead of "about:blank". Ibrahim can turn
- * headers off entirely in the print dialog under "More settings". */
-function reportFilename(kind, stamp) {
-  return `Kitchen Report — ${kind} — ${stamp}`;
-}
-
-/* ── Shared HTML pieces ─────────────────────────────────── */
-const RPT_FONTS = `https://fonts.googleapis.com/css2?family=Noto+Nastaliq+Urdu:wght@400;700&family=IBM+Plex+Mono:wght@400;600&family=Inter:wght@400;500;600&display=swap`;
-
-const RPT_CSS = `
-<link href="${RPT_FONTS}" rel="stylesheet">
-<style>
-*{box-sizing:border-box;margin:0;padding:0}
-body{font-family:Inter,sans-serif;background:#fff;color:#1e293b;padding:0;direction:ltr}
-.ur{font-family:'Noto Nastaliq Urdu',serif}
-.mono{font-family:'IBM Plex Mono',monospace}
-/* Masthead */
-.rpt-mast{background:#1a3d2b;color:#fff;text-align:center;padding:14px 20px}
-.rpt-inst{font-family:'Noto Nastaliq Urdu',serif;font-size:1.3rem;font-weight:700;direction:rtl}
-.rpt-sub{font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;opacity:.6;margin-top:3px}
-.rpt-date{font-size:.7rem;color:rgba(255,255,255,.65);margin-top:4px}
-/* Body */
-.rpt-body{padding:16px 20px}
-/* Students bar */
-.stu-bar{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px}
-.stu-card{border-radius:6px;padding:9px 12px;text-align:center}
-.stu-lbl{font-size:.58rem;letter-spacing:.08em;text-transform:uppercase}
-.stu-lbl .ur{font-size:.72rem;letter-spacing:0;text-transform:none}
-.stu-val{font-family:'IBM Plex Mono',monospace;font-size:1.3rem;font-weight:600;margin-top:3px}
-.stu-boys{background:#eff6ff;border:1px solid #bfdbfe}.stu-boys .stu-lbl,.stu-boys .stu-val{color:#1e40af}
-.stu-girls{background:#f0fdf4;border:1px solid #86efac}.stu-girls .stu-lbl,.stu-girls .stu-val{color:#15803d}
-.stu-tot{background:#f8fafc;border:1px solid #e2e8f0}.stu-tot .stu-lbl{color:#64748b}.stu-tot .stu-val{color:#1e293b}
-/* Stats bar */
-.stats-bar{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px}
-.stats-bar-2{grid-template-columns:repeat(2,1fr)}
-.stat-card{border-radius:6px;padding:9px 12px;text-align:center}
-.stat-lbl{font-size:.58rem;letter-spacing:.08em;text-transform:uppercase}
-.stat-val{font-family:'IBM Plex Mono',monospace;font-size:1.1rem;font-weight:600;margin-top:3px}
-.stat-neu{background:#f8fafc;border:1px solid #e2e8f0}.stat-neu .stat-lbl{color:#64748b}.stat-neu .stat-val{color:#1e293b}
-.stat-grn{background:#f0fdf4;border:1px solid #86efac}.stat-grn .stat-lbl,.stat-grn .stat-val{color:#15803d}
-.stat-amb{background:#fffbeb;border:1px solid #fcd34d}.stat-amb .stat-lbl,.stat-amb .stat-val{color:#92400e}
-/* Section heading */
-.sec-hdr{font-size:.6rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:#64748b;
-         margin:14px 0 6px;padding-bottom:4px;border-bottom:2px solid #1a3d2b}
-/* Tables */
-.tbl{width:100%;border-collapse:collapse;font-size:.72rem;direction:rtl}
-.tbl th,.tbl td{border:.5px solid #e2e8f0;padding:5px 7px}
-.tbl thead th{font-family:Inter,sans-serif;font-size:.58rem;letter-spacing:.07em;text-transform:uppercase;white-space:nowrap}
-.tbl tbody tr:nth-child(even){background:#f8fafc}
-.ur-cell{font-family:'Noto Nastaliq Urdu',serif;font-size:.9rem;text-align:right}
-.en-sub{font-family:Inter,sans-serif;font-size:.58rem;color:#94a3b8;display:block}
-.num{font-family:'IBM Plex Mono',monospace;text-align:center;direction:ltr;unicode-bidi:isolate}
-.tot{font-weight:600}
-.ltr{direction:ltr;text-align:center}
-/* Column tints */
-.c-open{background:#eff6ff!important;color:#1e40af}
-.c-recv{background:#f0fdf4!important;color:#15803d}
-.c-recv2{background:#dcfce7!important;color:#15803d}
-.c-cons{background:#fffbeb!important;color:#92400e}
-.c-cons2{background:#fef3c7!important;color:#92400e}
-.c-rem{background:#f8fafc!important;color:#334155}
-.neg{color:#b91c1c!important;font-weight:600}
-.tot-row td{background:#f1f5f9!important;font-weight:600}
-.wk-empty td{color:#94a3b8;font-style:italic}
-.wk-tag{font-size:.62rem;font-style:normal;color:#cbd5e1;letter-spacing:.04em}
-.day-off{color:#cbd5e1!important;background:#fcfdfe!important}
-/* Footer */
-.rpt-footer{display:flex;justify-content:space-between;margin-top:14px;
-            font-size:.65rem;color:#94a3b8;border-top:1px solid #e2e8f0;padding-top:8px}
-/* Print */
-@page{size:A4 landscape;margin:8mm}
-@media print{
-  html,body{padding:0;margin:0;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-  *{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}
-  .rpt-body{padding:8px 10px}
-  /* Keep the whole report together where it fits; never split a row */
-  .tbl{page-break-inside:auto}
-  .tbl tr{page-break-inside:avoid;page-break-after:auto}
-  .tbl thead{display:table-header-group}
-  .tbl tfoot{display:table-footer-group}
-  .tot-row td{page-break-before:avoid}
-  .stu-bar,.stats-bar{page-break-inside:avoid;page-break-after:avoid}
-  .sec-hdr{page-break-after:avoid;page-break-inside:avoid}
-  .rpt-mast{page-break-after:avoid}
-  .rpt-footer{page-break-before:avoid}
-  /* A table must not begin so late on the page that only one row fits.
-     orphans/widows keep at least three rows together on each side of a break. */
-  .tbl tbody{orphans:3;widows:3}
-  /* Section header plus the first rows of its table travel together */
-  .sec-hdr + .tbl thead{page-break-after:avoid}
-  /* Tighter rows so a normal day fits one page */
-  .tbl th,.tbl td{padding:3px 5px;font-size:.66rem}
-  .ur-cell{font-size:.78rem}
-  .stu-card,.stat-card{padding:6px 9px}
-  .stu-val{font-size:1rem}
-  .stat-val{font-size:.9rem}
-  .sec-hdr{margin:9px 0 4px}
-  .rpt-body{padding:7px 9px}
-}
-</style>`;
-
-function rptShell(title, dateLabel, bodyHtml, docTitle) {
-  const now = new Date().toLocaleDateString('en-PK');
-  return `<!DOCTYPE html><html lang="ur" dir="rtl"><head>
-<meta charset="UTF-8">
-<title>${docTitle || ('Kitchen Report · ' + title)}</title>
-${RPT_CSS}
-</head><body>
-<div class="rpt-mast">
-  <div class="rpt-inst">جامعہ دارالعلوم عیدگاہ — کبیر والا</div>
-  <div class="rpt-sub">Kitchen Ledger · ${title}</div>
-  <div class="rpt-date">${dateLabel}</div>
-</div>
-<div class="rpt-body">
-${bodyHtml}
-<div class="rpt-footer">
-  <span>Generated: ${now}</span>
-  <span class="ur">ابراہیم شاہ · Kitchen Manager</span>
-</div>
-</div>
-</body></html>`;
-}
-
-function numCell(v, cls='') {
-  const display = (v == null || v === 0) ? '\u2014' : fmtN(v);
-  const neg = (typeof v === 'number' && v < 0) ? ' neg' : '';
-  return `<td class="num ${cls}${neg}">${display}</td>`;
-}
-function pkrCell(v, cls='') {
-  const display = (v == null || v === 0) ? '—' : fmtP(v);
-  return `<td class="num ${cls}">${display}</td>`;
-}
-
-/* ── Daily HTML ─────────────────────────────────────────── */
-function buildDailyHtml(data, opts) {
-  const h = data.header;
-  const dateLabel = `${h.entry_date} · ${h.day_of_week_en||''} &nbsp;|&nbsp; <span class="ur">${h.hijri_date||''}</span>`;
-
-  // Students bar
-  const stuBar = `
-<div class="stu-bar">
-  <div class="stu-card stu-boys"><div class="stu-lbl">BOYS · <span class="ur">بنین</span></div><div class="stu-val">${fmtN(h.students_boys||0)}</div></div>
-  <div class="stu-card stu-girls"><div class="stu-lbl">GIRLS · <span class="ur">بنات</span></div><div class="stu-val">${fmtN(h.students_girls||0)}</div></div>
-  <div class="stu-card stu-tot"><div class="stu-lbl">TOTAL · <span class="ur">کل</span></div><div class="stu-val">${fmtN(h.students_fed||0)}</div></div>
-</div>`;
-
-  // Table header — colspan structure matching mockup
-  const mealCols = opts.inclMeals ? `
-    <th colspan="2" class="c-cons ltr">خرچ ناشتہ</th>
-    <th colspan="2" class="c-cons ltr">خرچ دوپہر</th>
-    <th colspan="2" class="c-cons ltr">خرچ رات</th>` : '';
-  const mealSubCols = opts.inclMeals ? `
-    <th class="c-cons ltr">QTY</th><th class="c-cons2 ltr">${opts.inclPkr?'PKR':'—'}</th>
-    <th class="c-cons ltr">QTY</th><th class="c-cons2 ltr">${opts.inclPkr?'PKR':'—'}</th>
-    <th class="c-cons ltr">QTY</th><th class="c-cons2 ltr">${opts.inclPkr?'PKR':'—'}</th>` : '';
-
-  const thead = `<thead>
-    <tr>
-      <th class="ur-cell" rowspan="2">اشیاء<span class="en-sub">ITEM</span></th>
-      <th class="ltr" rowspan="2">UNIT</th>
-      <th class="c-open ltr" rowspan="2">OPENING<br><span class="ur" style="font-size:.78rem;text-transform:none;letter-spacing:0">موجود</span></th>
-      <th colspan="2" class="c-recv ltr">خریدا — PURCHASED</th>
-      <th class="ltr" rowspan="2" style="background:#f0fdfa!important;color:#0f766e!important">صدقہ QTY</th>
-      ${mealCols}
-      <th class="c-rem ltr" rowspan="2">REMAINING<br><span class="ur" style="font-size:.78rem;text-transform:none;letter-spacing:0">باقی</span></th>
-    </tr>
-    <tr>
-      <th class="c-recv ltr">QTY</th><th class="c-recv2 ltr">${opts.inclPkr?'PKR':'—'}</th>
-      ${mealSubCols}
-    </tr>
-  </thead>`;
-
-  const rows = data.items.map(r => {
-    const mealTds = opts.inclMeals ? `
-      ${numCell(r.breakfast?.used_qty,'c-cons')}${opts.inclPkr?pkrCell(r.breakfast?.used_pkr,'c-cons2'):'<td class="num c-cons2">—</td>'}
-      ${numCell(r.lunch?.used_qty,'c-cons')}${opts.inclPkr?pkrCell(r.lunch?.used_pkr,'c-cons2'):'<td class="num c-cons2">—</td>'}
-      ${numCell(r.dinner?.used_qty,'c-cons')}${opts.inclPkr?pkrCell(r.dinner?.used_pkr,'c-cons2'):'<td class="num c-cons2">—</td>'}` : '';
-    return `<tr>
-      <td class="ur-cell">${r.name_ur}<span class="en-sub">${r.name_en||''}</span></td>
-      <td class="ltr" style="font-family:'Noto Nastaliq Urdu',serif;font-size:.85rem">${unitUr(r.unit)}</td>
-      ${numCell(r.opening_qty,'c-open')}
-      ${numCell(r.recv_qty,'c-recv')}${opts.inclPkr?pkrCell(r.recv_pkr,'c-recv2'):'<td class="num c-recv2">—</td>'}
-      ${numCell(r.sadaqa_qty||0, '')}
-      ${mealTds}
-      <td class="num c-rem tot">${fmt(r.remaining_qty)}</td>
-    </tr>`;
-  }).join('');
-
-  // Totals row
-  const t = data.totals;
-  const sadaqaTot = data.items.reduce((s,i)=>s+(i.sadaqa_qty||0),0);
-  const mealTotTds = opts.inclMeals ? `
-    ${numCell(t.breakfast_qty,'c-cons')}${opts.inclPkr?pkrCell(t.breakfast_pkr,'c-cons2'):'<td class="c-cons2"></td>'}
-    ${numCell(t.lunch_qty,'c-cons')}${opts.inclPkr?pkrCell(t.lunch_pkr,'c-cons2'):'<td class="c-cons2"></td>'}
-    ${numCell(t.dinner_qty,'c-cons')}${opts.inclPkr?pkrCell(t.dinner_pkr,'c-cons2'):'<td class="c-cons2"></td>'}` : '';
-
-  const totRow = `<tr class="tot-row">
-    <td colspan="3" class="ltr" style="text-align:right;color:#64748b;font-size:.62rem">DAY TOTALS · میزان</td>
-    ${numCell(t.recv_qty_total,'c-recv')}${opts.inclPkr?pkrCell(t.recv_pkr_total,'c-recv2'):'<td class="c-recv2"></td>'}
-    ${numCell(sadaqaTot,'')}
-    ${mealTotTds}
-    <td class="c-rem"></td>
-  </tr>`;
-
-  const body = `
-${stuBar}
-<table class="tbl">${thead}<tbody>${rows}${totRow}</tbody></table>`;
-
-  return rptShell('Daily Report', dateLabel, body,
-    reportFilename('Daily', h.entry_date));
-}
-
-/* ── Weekly HTML ────────────────────────────────────────── */
-function buildWeeklyHtml(data, opts) {
-  const period = data.week || data.range;
-  const isRange = data.report_type === 'range';
-  const dateLabel = `${period.start} – ${period.end}`;
-
-  let body = '';
-
-  // Students per day
-  if (opts.inclStudents && data.students.length) {
-    const stuCols = data.students.map(d =>
-      `<th${d.has_entry === false ? ' class="day-off"' : ''}>${d.day_of_week_en?.slice(0,3)||''} ${d.entry_date.slice(5)}</th>`).join('') +
-      `<th style="background:#f8fafc;color:#334155">Total</th>`;
-    const stuVals = data.students.map(d =>
-      `<td class="num${d.has_entry === false ? ' day-off' : ''}">${d.has_entry === false ? '\u2014' : fmtN(d.students_fed||0)}</td>`).join('') +
-      `<td class="num tot">${fmtN(data.students_total)}</td>`;
-    body += `<div class="sec-hdr">Students Fed · طلبہ</div>
-<table class="tbl" style="direction:ltr;margin-bottom:12px">
-  <thead><tr>${stuCols}</tr></thead>
-  <tbody><tr>${stuVals}</tr></tbody>
-</table>`;
-  }
-
-  // Item summary
-  body += `<div class="sec-hdr">Item Summary · اشیاء کا خلاصہ</div>
-<table class="tbl"><thead><tr>
-  <th class="ur-cell">اشیاء<span class="en-sub">ITEM</span></th>
-  <th class="ltr">UNIT</th>
-  <th class="c-open ltr">OPENING</th>
-  <th class="c-recv ltr">PURCHASED QTY</th>
-  ${opts.inclPkr?'<th class="c-recv2 ltr">PURCHASED PKR</th>':''}
-  <th style="background:#f0fdfa!important;color:#0f766e!important" class="ltr">SADAQA QTY</th>
-  <th class="c-cons ltr">CONSUMED QTY</th>
-  ${opts.inclPkr?'<th class="c-cons2 ltr">CONSUMED PKR</th>':''}
-  <th class="c-rem ltr">CLOSING</th>
-</tr></thead><tbody>`;
-
-  body += data.items.map(r => `<tr>
-  <td class="ur-cell">${r.name_ur}<span class="en-sub">${r.name_en||''}</span></td>
-  <td class="ltr" style="font-family:'Noto Nastaliq Urdu',serif;font-size:.85rem">${unitUr(r.unit)}</td>
-  ${numCell(r.opening_qty,'c-open')}
-  ${numCell(r.recv_qty,'c-recv')}
-  ${opts.inclPkr?pkrCell(r.recv_pkr,'c-recv2'):''}
-  ${numCell(r.sadaqa_qty||0,'')}
-  ${numCell(r.used_qty,'c-cons')}
-  ${opts.inclPkr?pkrCell(r.used_pkr,'c-cons2'):''}
-  <td class="num c-rem tot">${fmt(r.closing_qty)}</td>
-</tr>`).join('');
-
-  // Totals
-  const recvQtyTot = data.items.reduce((s,i)=>s+(i.recv_qty||0),0);
-  const recvPkrTot = data.items.reduce((s,i)=>s+(i.recv_pkr||0),0);
-  const usedQtyTot = data.items.reduce((s,i)=>s+(i.used_qty||0),0);
-  const usedPkrTot = data.items.reduce((s,i)=>s+(i.used_pkr||0),0);
-  const colSpan = 3;
-  body += `<tr class="tot-row">
-  <td colspan="${colSpan}" class="ltr" style="text-align:right;color:#64748b;font-size:.62rem">${isRange ? "Range totals · میزان" : "Weekly totals · ہفتہ وار میزان"}</td>
-  ${numCell(recvQtyTot,'c-recv')}
-  ${opts.inclPkr?pkrCell(recvPkrTot,'c-recv2'):''}
-  ${numCell(usedQtyTot,'c-cons')}
-  ${opts.inclPkr?pkrCell(usedPkrTot,'c-cons2'):''}
-  <td class="c-rem"></td>
-</tr>`;
-
-  body += `</tbody></table>`;
-  return rptShell(isRange ? 'Custom Range Report' : 'Weekly Report', dateLabel, body,
-    reportFilename(isRange ? 'Range' : 'Weekly', period.start + ' to ' + period.end));
-}
-
-/* ── Monthly HTML ───────────────────────────────────────── */
-function buildMonthlyHtml(data, opts) {
-  const dateLabel = `${data.period.label_en} · <span class="ur">${data.period.label_ur}</span>`;
-
-  const s = data.summary;
-  let body = `
-<div class="stats-bar${opts.inclPkr?'':' stats-bar-2'}">
-  <div class="stat-card stat-neu"><div class="stat-lbl">OPERATING DAYS</div><div class="stat-val">${s.operating_days}</div></div>
-  <div class="stat-card stat-neu"><div class="stat-lbl">TOTAL STUDENTS</div><div class="stat-val">${fmtN(s.total_students)}</div></div>
-  ${opts.inclPkr?`<div class="stat-card stat-grn"><div class="stat-lbl">PURCHASED PKR</div><div class="stat-val">${fmtP(s.purchased_pkr)}</div></div>
-  <div class="stat-card stat-amb"><div class="stat-lbl">CONSUMED PKR</div><div class="stat-val">${fmtP(s.consumed_pkr)}</div></div>`:''}
-</div>`;
-
-  // Weekly breakdown
-  body += `<div class="sec-hdr">Weekly Breakdown · ہفتہ وار</div>
-<table class="tbl" style="direction:ltr;margin-bottom:12px"><thead><tr>
-  <th style="text-align:left">Week</th>
-  <th>Days</th>
-  ${opts.inclStudents?'<th>Students</th>':''}
-  ${opts.inclPkr?'<th class="c-recv2">Purchased PKR</th><th class="c-cons2">Consumed PKR</th><th>Per Student</th>':''}
-</tr></thead><tbody>`;
-
-  body += data.weekly_rows.map(r => `<tr${r.is_empty?' class="wk-empty"':''}>
-  <td>${r.week_label}${r.is_empty?' <span class="wk-tag">no entries</span>':''}</td>
-  <td class="num">${r.days}</td>
-  ${opts.inclStudents?`<td class="num">${r.is_empty?'—':fmtN(r.students)}</td>`:''}
-  ${opts.inclPkr?`<td class="num c-recv2 tot" style="color:#15803d">${r.is_empty?'—':fmtP(r.purchased_pkr)}</td>
-   <td class="num c-cons2 tot" style="color:#92400e">${r.is_empty?'—':fmtP(r.consumed_pkr)}</td>
-   <td class="num">${r.is_empty?'—':'₨'+(r.per_student_pkr||0).toFixed(2)}</td>`:''}
-</tr>`).join('');
-
-  body += `<tr class="tot-row">
-  <td>Month total</td><td class="num">${s.operating_days}</td>
-  ${opts.inclStudents?`<td class="num">${fmtN(s.total_students)}</td>`:''}
-  ${opts.inclPkr?`<td class="num c-recv2" style="color:#15803d">${fmtP(s.purchased_pkr)}</td>
-   <td class="num c-cons2" style="color:#92400e">${fmtP(s.consumed_pkr)}</td>
-   <td class="num">₨${(s.per_student_pkr||0).toFixed(2)}</td>`:''}
-</tr></tbody></table>`;
-
-  // Item totals
-  body += `<div class="sec-hdr">Item Totals · اشیاء کا ماہانہ خلاصہ</div>
-<table class="tbl"><thead><tr>
-  <th class="ur-cell">اشیاء<span class="en-sub">ITEM</span></th>
-  <th class="ltr">UNIT</th>
-  <th class="c-recv ltr">PURCHASED QTY</th>
-  ${opts.inclPkr?'<th class="c-recv2 ltr">PURCHASED PKR</th>':''}
-  <th style="background:#f0fdfa!important;color:#0f766e!important" class="ltr">SADAQA QTY</th>
-  <th class="c-cons ltr">CONSUMED QTY</th>
-  ${opts.inclPkr?'<th class="c-cons2 ltr">CONSUMED PKR</th>':''}
-</tr></thead><tbody>`;
-
-  body += data.items.map(r => `<tr>
-  <td class="ur-cell">${r.name_ur}<span class="en-sub">${r.name_en||''}</span></td>
-  <td class="ltr" style="font-family:'Noto Nastaliq Urdu',serif;font-size:.85rem">${unitUr(r.unit)}</td>
-  ${numCell(r.recv_qty,'c-recv')}
-  ${opts.inclPkr?pkrCell(r.recv_pkr,'c-recv2'):''}
-  ${numCell(r.sadaqa_qty||0,'')}
-  ${numCell(r.used_qty,'c-cons')}
-  ${opts.inclPkr?pkrCell(r.used_pkr,'c-cons2'):''}
-</tr>`).join('');
-
-  body += `</tbody></table>`;
-  return rptShell('Monthly Report', dateLabel, body,
-    reportFilename('Monthly', data.period.label_en));
-}
-
-/* ── Yearly HTML ────────────────────────────────────────── */
-function buildYearlyHtml(data, opts) {
-  const s = data.summary;
-  let body = `
-<div class="stats-bar${opts.inclPkr?'':' stats-bar-2'}">
-  <div class="stat-card stat-neu"><div class="stat-lbl">OPERATING DAYS</div><div class="stat-val">${s.operating_days}</div></div>
-  <div class="stat-card stat-neu"><div class="stat-lbl">TOTAL STUDENTS</div><div class="stat-val">${fmtN(s.total_students)}</div></div>
-  ${opts.inclPkr?`<div class="stat-card stat-grn"><div class="stat-lbl">PURCHASED PKR</div><div class="stat-val">${fmtP(s.purchased_pkr)}</div></div>
-  <div class="stat-card stat-amb"><div class="stat-lbl">CONSUMED PKR</div><div class="stat-val">${fmtP(s.consumed_pkr)}</div></div>`:''}
-</div>`;
-
-  // Monthly breakdown
-  body += `<div class="sec-hdr">Monthly Breakdown · ماہانہ خلاصہ</div>
-<table class="tbl" style="direction:ltr;margin-bottom:12px"><thead><tr>
-  <th style="text-align:left">Month</th>
-  <th>Days</th>
-  ${opts.inclStudents?'<th>Students</th>':''}
-  ${opts.inclPkr?'<th class="c-recv2">Purchased PKR</th><th class="c-cons2">Consumed PKR</th><th>Per Student</th>':''}
-</tr></thead><tbody>`;
-
-  body += data.monthly_rows.map(r => `<tr${r.is_partial?' style="font-style:italic;color:#94a3b8"':''}>
-  <td>${r.label_en}${r.is_partial?' <span style="font-size:.65rem">(to date)</span>':''}</td>
-  <td class="num">${r.days}</td>
-  ${opts.inclStudents?`<td class="num">${fmtN(r.students)}</td>`:''}
-  ${opts.inclPkr?`<td class="num c-recv2">${fmtP(r.purchased_pkr)}</td>
-   <td class="num c-cons2">${fmtP(r.consumed_pkr)}</td>
-   <td class="num">₨${(r.per_student_pkr||0).toFixed(2)}</td>`:''}
-</tr>`).join('');
-
-  body += `<tr class="tot-row">
-  <td>Year total</td><td class="num">${s.operating_days}</td>
-  ${opts.inclStudents?`<td class="num">${fmtN(s.total_students)}</td>`:''}
-  ${opts.inclPkr?`<td class="num c-recv2" style="color:#15803d">${fmtP(s.purchased_pkr)}</td>
-   <td class="num c-cons2" style="color:#92400e">${fmtP(s.consumed_pkr)}</td>
-   <td class="num">₨${(s.per_student_pkr||0).toFixed(2)}</td>`:''}
-</tr></tbody></table>`;
-
-  // Item yearly totals
-  body += `<div class="sec-hdr">Item Yearly Totals · سالانہ اشیاء</div>
-<table class="tbl"><thead><tr>
-  <th class="ur-cell">اشیاء<span class="en-sub">ITEM</span></th>
-  <th class="ltr">UNIT</th>
-  <th class="c-recv ltr">PURCHASED QTY</th>
-  ${opts.inclPkr?'<th class="c-recv2 ltr">PURCHASED PKR</th>':''}
-  <th style="background:#f0fdfa!important;color:#0f766e!important" class="ltr">SADAQA QTY</th>
-  <th class="c-cons ltr">CONSUMED QTY</th>
-  ${opts.inclPkr?'<th class="c-cons2 ltr">CONSUMED PKR</th>':''}
-</tr></thead><tbody>`;
-
-  body += data.items.map(r => `<tr>
-  <td class="ur-cell">${r.name_ur}<span class="en-sub">${r.name_en||''}</span></td>
-  <td class="ltr" style="font-family:'Noto Nastaliq Urdu',serif;font-size:.85rem">${unitUr(r.unit)}</td>
-  ${numCell(r.recv_qty,'c-recv')}
-  ${opts.inclPkr?pkrCell(r.recv_pkr,'c-recv2'):''}
-  ${numCell(r.sadaqa_qty||0,'')}
-  ${numCell(r.used_qty,'c-cons')}
-  ${opts.inclPkr?pkrCell(r.used_pkr,'c-cons2'):''}
-</tr>`).join('');
-
-  body += `</tbody></table>`;
-  return rptShell('Yearly Report', data.period.year, body,
-    reportFilename('Yearly', data.period.year));
-}
-
-/* ── Unit label helper ──────────────────────────────────── */
-function unitUr(u) {
-  return {kg:'کلو گرام',g:'گرام',L:'لیٹر',pcs:'عدد',mun:'مَن'}[u] || u;
-}
-
 /* ─── Formatters ─────────────────────────────────────────── */
-function openVal(itemId, fallback) {
-  const v = dirtyOp[itemId];
-  return (v !== undefined) ? v : (fallback || '');
-}
 function fmt(n)  { return n==null||n===0?'0':parseFloat(n).toLocaleString('en-PK',{maximumFractionDigits:2}); }
 function fmtP(n) { return n?parseFloat(n).toLocaleString('en-PK',{maximumFractionDigits:0}):'0'; }
 function fmtN(n) { return (+n||0).toLocaleString('en-PK'); }
