@@ -689,7 +689,7 @@ select.finp.don-unit-sel{
 </div>
 
 <!-- STATS -->
-<div class="stats">
+<div class="stats" id="kitchen-stats">
   <div><div class="stat-val" id="s-items">—</div><div class="stat-lbl">Items · <span style="font-family:var(--ur);font-size:.75rem;letter-spacing:0;text-transform:none">اشیاء</span></div></div>
   <div class="stat-div"></div>
   <div><div class="stat-val" id="s-recv">—</div><div class="stat-lbl">Purchased PKR · <span style="font-family:var(--ur);font-size:.75rem;letter-spacing:0;text-transform:none">خریداری</span></div></div>
@@ -1033,11 +1033,14 @@ document.addEventListener('DOMContentLoaded', () => {
       document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       const tab = btn.dataset.tab;
+      const kitchenStats = document.getElementById('kitchen-stats');
       if (tab === 'kitchen') {
+        if (kitchenStats) kitchenStats.style.display = '';
         if (dayData?.exists) renderKitchen(dayData);
         else if (dayData) renderCreate(curDate);
         else loadDay(curDate);
       } else if (tab === 'qurbani') {
+        if (kitchenStats) kitchenStats.style.display = 'none';
         loadDonations();
       }
     });
