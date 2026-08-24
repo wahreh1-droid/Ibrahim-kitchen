@@ -532,6 +532,11 @@ tfoot td{
   transition:all .15s;margin-right:auto;margin-left:0;
 }
 .btn-don-del:hover{color:var(--red);background:var(--red-bg)}
+.btn-don-edit{
+  color:var(--ink5);font-size:1.05rem;line-height:1;padding:3px 7px;border-radius:4px;
+  transition:all .15s;
+}
+.btn-don-edit:hover{color:var(--g700);background:var(--g100)}
 .don-items{padding:12px 16px;display:flex;flex-direction:column;gap:8px}
 .don-item{
   display:flex;align-items:center;justify-content:space-between;
@@ -2349,7 +2354,10 @@ function renderDonations(data) {
             <div class="don-donor">${esc(d.donor_name)}</div>
             <div class="don-date">${dateStr}</div>
           </div>
-          <button class="btn-don-del" data-did="${d.id}" title="حذف کریں">🗑</button>
+          <div style="display:flex;gap:4px;margin-right:auto">
+            <button class="btn-don-edit" data-did="${d.id}" title="ترمیم کریں">✎</button>
+            <button class="btn-don-del" data-did="${d.id}" title="حذف کریں">🗑</button>
+          </div>
         </div>
         <div class="don-items">`;
 
@@ -2398,27 +2406,54 @@ function renderDonations(data) {
     };
   });
 
+  // Wire edit buttons
+  document.querySelectorAll('.btn-don-edit').forEach(btn => {
+    btn.onclick = () => {
+      const id = +btn.dataset.did;
+      const donation = (data.donations ?? []).find(d => d.id === id);
+      if (donation) openDonModal(donation);
+    };
+  });
+
   // Wire add button
-  document.getElementById('btn-don-open').onclick = openDonModal;
+  document.getElementById('btn-don-open').onclick = () => openDonModal();
 }
 
 /* ─── Donation modal ─────────────────────────────────────── */
 let donItemRows = [];
+let editingDonationId = null;
 
-function openDonModal() {
+function openDonModal(donation = null) {
   donItemRows = [];
-  document.getElementById('don-donor').value = '';
-  document.getElementById('don-date').value  = curDate;
-  document.getElementById('don-notes').value = '';
+  editingDonationId = donation ? donation.id : null;
+
+  // Modal title reflects mode
+  const titleUr = document.querySelector('#don-ov .mtitle-ur');
+  const titleEn = document.querySelector('#don-ov .mtitle-en');
+  if (titleUr) titleUr.textContent = donation ? 'عطیہ میں ترمیم کریں' : 'نیا عطیہ درج کریں';
+  if (titleEn) titleEn.textContent = donation ? 'Edit Donation' : 'Add New Donation';
+
+  document.getElementById('don-donor').value = donation ? donation.donor_name : '';
+  document.getElementById('don-date').value  = donation ? donation.donation_date : curDate;
+  document.getElementById('don-notes').value = donation ? (donation.notes ?? '') : '';
   document.getElementById('don-items-list').innerHTML = '';
-  addDonItemRow(); // start with one row
+
+  if (donation && donation.items && donation.items.length) {
+    donation.items.forEach(item => addDonItemRow(item));
+  } else {
+    addDonItemRow(); // start with one empty row
+  }
+
   document.getElementById('don-ov').classList.add('open');
+  const saveBtn = document.getElementById('don-save');
+  saveBtn.disabled = false;
+  saveBtn.textContent = 'محفوظ کریں · SAVE';
   document.getElementById('don-donor').focus();
   document.getElementById('don-save').onclick   = saveDonation;
   document.getElementById('don-cancel').onclick = closeDonModal;
   document.getElementById('don-close').onclick  = closeDonModal;
   document.getElementById('don-ov').onclick = e => { if (e.target === e.currentTarget) closeDonModal(); };
-  document.getElementById('don-add-row').onclick = addDonItemRow;
+  document.getElementById('don-add-row').onclick = () => addDonItemRow();
   wireDonKeyboard();
 }
 
@@ -2548,9 +2583,11 @@ function closeDonModal() {
   document.querySelectorAll('.don-kb-btn').forEach(b => b.classList.remove('active'));
 }
 
-function addDonItemRow() {
+function addDonItemRow(prefill = null) {
   const idx = donItemRows.length;
-  donItemRows.push({ type: 'item' }); // default to item type
+  const isCash = prefill && (prefill.cash_amount != null && prefill.cash_amount !== '');
+  const rowType = isCash ? 'cash' : 'item';
+  donItemRows.push({ type: rowType });
 
   const div = document.createElement('div');
   div.className = 'don-item-row';
@@ -2558,14 +2595,33 @@ function addDonItemRow() {
   div.innerHTML = `
     ${idx > 0 ? `<button class="btn-rm-item" data-rmidx="${idx}" title="ہٹائیں">×</button>` : ''}
     <div class="item-type-tog">
-      <button type="button" class="type-btn active" data-tidx="${idx}" data-type="item">شے / Item</button>
-      <button type="button" class="type-btn" data-tidx="${idx}" data-type="cash">نقد رقم / Cash</button>
+      <button type="button" class="type-btn ${rowType === 'item' ? 'active' : ''}" data-tidx="${idx}" data-type="item">شے / Item</button>
+      <button type="button" class="type-btn ${rowType === 'cash' ? 'active' : ''}" data-tidx="${idx}" data-type="cash">نقد رقم / Cash</button>
     </div>
     <div class="don-item-fields" id="don-fields-${idx}">
-      ${itemFields(idx)}
+      ${rowType === 'cash' ? cashFields(idx) : itemFields(idx)}
     </div>`;
 
   document.getElementById('don-items-list').appendChild(div);
+
+  // Pre-fill values if editing
+  if (prefill) {
+    if (rowType === 'cash') {
+      const cashEl = document.getElementById(`don-cash-${idx}`);
+      const valEl  = document.getElementById(`don-val-${idx}`);
+      if (cashEl && prefill.cash_amount != null) cashEl.value = prefill.cash_amount;
+      if (valEl && prefill.estimated_value != null) valEl.value = prefill.estimated_value;
+    } else {
+      const nameEl = document.getElementById(`don-iname-${idx}`);
+      const qtyEl  = document.getElementById(`don-qty-${idx}`);
+      const unitEl = document.getElementById(`don-unit-${idx}`);
+      const valEl  = document.getElementById(`don-val-${idx}`);
+      if (nameEl && prefill.item_name != null) nameEl.value = prefill.item_name;
+      if (qtyEl && prefill.quantity != null) qtyEl.value = prefill.quantity;
+      if (unitEl && prefill.unit != null) unitEl.value = prefill.unit;
+      if (valEl && prefill.estimated_value != null) valEl.value = prefill.estimated_value;
+    }
+  }
 
   // Wire type toggle
   div.querySelectorAll('.type-btn').forEach(btn => {
@@ -2663,15 +2719,19 @@ async function saveDonation() {
   const btn = document.getElementById('don-save');
   btn.disabled = true; btn.textContent = 'محفوظ ہو رہا ہے…';
 
+  const isEdit = editingDonationId != null;
+  const urlPath = isEdit ? `${API}/api/donations/${editingDonationId}` : `${API}/api/donations`;
+  const httpMethod = isEdit ? 'PUT' : 'POST';
+
   try {
-    const r = await fetch(`${API}/api/donations`, {
-      method: 'POST',
+    const r = await fetch(urlPath, {
+      method: httpMethod,
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ donor_name, donation_date, notes: notes || null, items }),
     });
     const data = await r.json();
     if (data.error) throw new Error(data.message || data.error);
-    toast('عطیہ محفوظ ہو گیا ✓');
+    toast(isEdit ? 'عطیہ اپ ڈیٹ ہو گیا ✓' : 'عطیہ محفوظ ہو گیا ✓');
     closeDonModal();
     loadDonations();
   } catch(e) {
