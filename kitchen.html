@@ -2536,8 +2536,9 @@ function wireDonKeyboard() {
       inp.value = inp.value.slice(0, s) + ch + inp.value.slice(en);
       inp.setSelectionRange(s + ch.length, s + ch.length);
     }
-    // Do NOT call inp.focus() — that scrolls the modal and causes the jump.
-    // Keep the caret position updated silently.
+    // Keep focus so the caret position is tracked correctly, but preventScroll
+    // stops the modal from jumping back to the input on every keystroke.
+    inp.focus({ preventScroll: true });
   });
 }
 
