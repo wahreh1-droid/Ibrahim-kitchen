@@ -347,6 +347,11 @@ tfoot td{
 }
 .finp:focus{outline:none;border-color:var(--g500);box-shadow:0 0 0 3px rgba(58,138,78,.1)}
 .finp.ltr{font-family:var(--en);font-size:.92rem;text-align:left;direction:ltr}
+select.finp.don-unit-sel{
+  cursor:pointer;appearance:none;-webkit-appearance:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%236b7280' d='M6 8L0 0h12z'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:left 12px center;padding-left:32px;
+}
 .auto-tag{
   font-family:var(--en);font-size:.58rem;letter-spacing:.08em;text-transform:uppercase;
   color:var(--g600);margin-top:4px;display:none;
@@ -983,9 +988,12 @@ tfoot td{
         <div class="ur-kb-wrap" id="don-kb-don-notes"></div>
       </div>
       <div style="margin-bottom:10px">
-        <div class="flbl" style="margin-bottom:8px"><span>Donated Items / Cash</span><span class="flbl-ur">عطیات</span></div>
+        <div class="flbl" style="margin-bottom:4px"><span>Donated Items / Cash</span><span class="flbl-ur">عطیات</span></div>
+        <div style="font-family:var(--ur);font-size:.8rem;color:var(--ink5);margin-bottom:8px;direction:rtl;line-height:1.6">
+          ایک ہی عطیہ میں اشیاء اور نقد رقم دونوں شامل کر سکتے ہیں — نئی سطر شامل کر کے اس کی قسم منتخب کریں
+        </div>
         <div id="don-items-list" class="don-items-list"></div>
-        <button class="btn-add-item-row" id="don-add-row"><span class="plus">+</span> مزید شے شامل کریں</button>
+        <button class="btn-add-item-row" id="don-add-row"><span class="plus">+</span> مزید شے یا نقد شامل کریں</button>
       </div>
     </div>
     <div class="don-mfoot">
@@ -2663,7 +2671,15 @@ function itemFields(idx) {
     </div>
     <div class="fg">
       <label class="flbl"><span>Unit</span><span class="flbl-ur">اکائی</span></label>
-      <input class="finp ltr" id="don-unit-${idx}" type="text" placeholder="kg / مَن / pcs" dir="ltr">
+      <select class="finp don-unit-sel" id="don-unit-${idx}" dir="rtl">
+        <option value="">— منتخب کریں —</option>
+        <option value="مَن">مَن (Mun)</option>
+        <option value="کلو">کلو (Kg)</option>
+        <option value="گرام">گرام (Gram)</option>
+        <option value="لیٹر">لیٹر (Litre)</option>
+        <option value="عدد">عدد (Pcs)</option>
+        <option value="درجن">درجن (Dozen)</option>
+      </select>
     </div>
     <div class="fg full">
       <label class="flbl"><span>Est. Value PKR (optional)</span><span class="flbl-ur">تخمینی مالیت</span></label>
