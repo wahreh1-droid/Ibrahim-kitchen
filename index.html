@@ -628,6 +628,15 @@ select.finp.don-unit-sel{
 .don-sum-val{font-family:var(--mono);font-size:1rem;font-weight:600;color:var(--ink9)}
 .don-sum-lbl{font-family:var(--en);font-size:.58rem;letter-spacing:.09em;text-transform:uppercase;color:var(--ink5);margin-top:2px}
 .don-sum-div{width:1px;height:28px;background:var(--bdr)}
+
+/* Donation report button */
+.btn-don-rpt{
+  font-family:var(--ur);font-size:.88rem;
+  padding:8px 16px;border-radius:var(--r);
+  border:1.5px solid var(--g500);color:var(--g700);background:var(--g50);
+  display:flex;align-items:center;gap:6px;transition:all .15s;
+}
+.btn-don-rpt:hover{background:var(--g100);border-color:var(--g700)}
 </style>
 </head>
 <body>
@@ -1000,6 +1009,35 @@ select.finp.don-unit-sel{
     <div class="don-mfoot">
       <button class="btn-pri" id="don-save" style="flex:2;justify-content:center">محفوظ کریں · SAVE</button>
       <button class="btn-cancel" id="don-cancel" style="flex:1;text-align:center">منسوخ</button>
+    </div>
+  </div>
+</div>
+
+<!-- DONATION REPORT MODAL -->
+<div class="pdf-ov" id="don-rpt-ov">
+  <div class="pdf-box" style="width:380px">
+    <div class="pdf-hdr">
+      <div>
+        <div class="pdf-title">Donations Report <span class="ur-part">· عطیات رپورٹ</span></div>
+        <div class="pdf-sub">Select a date range to generate the report</div>
+      </div>
+      <button class="pdf-close" id="don-rpt-close">✕</button>
+    </div>
+    <div class="pdf-body">
+      <div class="date-row" style="display:grid">
+        <div>
+          <div class="date-lbl">From · سے</div>
+          <input class="date-inp" type="date" id="don-rpt-from">
+        </div>
+        <div>
+          <div class="date-lbl">To · تک</div>
+          <input class="date-inp" type="date" id="don-rpt-to">
+        </div>
+      </div>
+    </div>
+    <div class="pdf-foot">
+      <button class="btn-pdf-cancel" id="don-rpt-cancel-btn">Cancel</button>
+      <button class="btn-pdf-gen" id="don-rpt-gen-btn">⬇ Generate Report · رپورٹ بنائیں</button>
     </div>
   </div>
 </div>
@@ -2335,9 +2373,12 @@ function renderDonations(data) {
         <div class="don-title">عطیات · قربانی</div>
         <div class="don-title-en">Donations & Qurbani</div>
       </div>
-      <button class="btn-don-add" id="btn-don-open">
-        <span class="plus">+</span> نیا عطیہ
-      </button>
+      <div style="display:flex;gap:8px;align-items:center">
+        <button class="btn-don-rpt" id="btn-don-rpt">📊 رپورٹ · Report</button>
+        <button class="btn-don-add" id="btn-don-open">
+          <span class="plus">+</span> نیا عطیہ
+        </button>
+      </div>
     </div>`;
 
   // Summary bar
@@ -2429,6 +2470,9 @@ function renderDonations(data) {
 
   // Wire add button
   document.getElementById('btn-don-open').onclick = () => openDonModal();
+
+  // Wire report button
+  document.getElementById('btn-don-rpt').onclick = () => openDonReportDialog();
 }
 
 /* ─── Donation modal ─────────────────────────────────────── */
@@ -2756,6 +2800,166 @@ async function saveDonation() {
 
 function esc(str) {
   return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+/* ══════════════════════════════════════════════════════════
+ * DONATIONS REPORT
+ * ══════════════════════════════════════════════════════════ */
+
+document.addEventListener('DOMContentLoaded', () => {
+  const ov  = document.getElementById('don-rpt-ov');
+  document.getElementById('don-rpt-close').onclick      = closeDonReportDialog;
+  document.getElementById('don-rpt-cancel-btn').onclick = closeDonReportDialog;
+  ov.onclick = e => { if (e.target === ov) closeDonReportDialog(); };
+  document.getElementById('don-rpt-gen-btn').onclick    = generateDonReport;
+});
+
+function openDonReportDialog() {
+  // Default to current month
+  const [y, m] = curDate.split('-');
+  document.getElementById('don-rpt-from').value = `${y}-${m}-01`;
+  document.getElementById('don-rpt-to').value   = curDate;
+  document.getElementById('don-rpt-ov').classList.add('open');
+}
+
+function closeDonReportDialog() {
+  document.getElementById('don-rpt-ov').classList.remove('open');
+}
+
+async function generateDonReport() {
+  const from = document.getElementById('don-rpt-from').value;
+  const to   = document.getElementById('don-rpt-to').value;
+  if (!from || !to) { toast('تاریخیں منتخب کریں', true); return; }
+  if (from > to)    { toast('شروع کی تاریخ آخری تاریخ سے پہلے ہونی چاہیے', true); return; }
+
+  const btn = document.getElementById('don-rpt-gen-btn');
+  btn.disabled = true; btn.textContent = 'Loading…';
+
+  try {
+    const data = await fetchReport(`${API}/api/report/donations?from=${from}&to=${to}`);
+    closeDonReportDialog();
+    printHtml(buildDonationsReportHtml(data));
+  } catch(e) {
+    toast('رپورٹ خرابی: ' + e.message, true);
+  } finally {
+    btn.disabled = false; btn.innerHTML = '⬇ Generate Report · رپورٹ بنائیں';
+  }
+}
+
+function buildDonationsReportHtml(data) {
+  const donations = data.donations ?? [];
+  const from = data.period?.from ?? '';
+  const to   = data.period?.to   ?? '';
+  const fmtDate = iso => { const [y,m,d] = iso.split('-'); return `${d}/${m}/${y}`; };
+  const dateLabel = from && to ? `${fmtDate(from)} — ${fmtDate(to)}` : 'All donations';
+
+  const totalCash   = data.summary?.total_cash_pkr        ?? 0;
+  const totalEstVal = data.summary?.total_estimated_value  ?? 0;
+  const totalCount  = data.summary?.total_donations        ?? 0;
+
+  // Build rows
+  const rows = donations.map(d => {
+    const cash   = d.items.reduce((s, i) => s + (i.cash_amount     ?? 0), 0);
+    const estVal = d.items.reduce((s, i) => s + (i.estimated_value ?? 0), 0);
+    const items  = d.items
+      .filter(i => !i.cash_amount)
+      .map(i => [i.item_name, i.quantity ? `${parseFloat(i.quantity).toLocaleString('en-PK',{maximumFractionDigits:2})} ${i.unit??''}`.trim() : '']
+        .filter(Boolean).join(' '))
+      .filter(Boolean)
+      .join(' · ');
+    return { date: d.donation_date, dateDisplay: fmtDate(d.donation_date),
+             donor: d.donor_name, cash, items, estVal, notes: d.notes ?? '' };
+  });
+
+  const statsBar = `
+<div class="stats-bar" style="grid-template-columns:repeat(3,1fr)">
+  <div class="stat-card stat-neu">
+    <div class="stat-lbl">TOTAL DONATIONS · <span class="ur">کل عطیات</span></div>
+    <div class="stat-val">${totalCount}</div>
+  </div>
+  <div class="stat-card stat-grn">
+    <div class="stat-lbl">CASH RECEIVED · <span class="ur">نقد رقم</span></div>
+    <div class="stat-val">₨${fmtP(totalCash)}</div>
+  </div>
+  <div class="stat-card" style="background:#eff6ff;border:1px solid #bfdbfe">
+    <div class="stat-lbl" style="color:#1e40af">EST. VALUE · <span class="ur">تخمینی مالیت</span></div>
+    <div class="stat-val" style="color:#1e40af">₨${fmtP(totalEstVal)}</div>
+  </div>
+</div>`;
+
+  const rowsJson = JSON.stringify(rows).replace(/<\/script>/g, '<\\/script>');
+
+  const tableHtml = `
+<div class="sec-hdr">Donation Ledger · عطیات کا حساب</div>
+<table class="tbl" id="don-tbl">
+  <thead>
+    <tr>
+      <th class="ur-cell" onclick="srt('donor')" style="cursor:pointer;text-align:right">
+        عطیہ دہندہ <span id="arr-donor"></span>
+      </th>
+      <th onclick="srt('date')" style="cursor:pointer;text-align:center;direction:ltr">
+        DATE <span id="arr-date">↓</span>
+      </th>
+      <th class="c-recv2" onclick="srt('cash')" style="cursor:pointer;text-align:center">
+        CASH ₨ <span id="arr-cash"></span>
+      </th>
+      <th style="text-align:right">ITEMS · اشیاء</th>
+      <th class="c-open" onclick="srt('estVal')" style="cursor:pointer;text-align:center">
+        EST. VALUE ₨ <span id="arr-estVal"></span>
+      </th>
+    </tr>
+  </thead>
+  <tbody id="don-tbody"></tbody>
+  <tfoot>
+    <tr class="tot-row">
+      <td colspan="2" class="ur" style="text-align:right">کل — Total</td>
+      <td class="num c-recv2">₨${fmtP(totalCash)}</td>
+      <td></td>
+      <td class="num c-open">₨${fmtP(totalEstVal)}</td>
+    </tr>
+  </tfoot>
+</table>
+<script>
+var rows=${rowsJson},sCol='date',sDir=-1;
+function fe(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+function fp(n){return n?parseFloat(n).toLocaleString('en-PK',{maximumFractionDigits:0}):'—'}
+function render(){
+  var tb=document.getElementById('don-tbody');
+  tb.innerHTML='';
+  rows.forEach(function(r,i){
+    var tr=document.createElement('tr');
+    if(i%2===1)tr.style.background='#f8fafc';
+    tr.innerHTML=
+      '<td class="ur-cell" style="text-align:right">'+fe(r.donor)+'</td>'+
+      '<td class="num" style="direction:ltr;text-align:center">'+r.dateDisplay+'</td>'+
+      '<td class="num c-recv2">'+(r.cash?'₨'+fp(r.cash):'—')+'</td>'+
+      '<td style="text-align:right;font-family:\'Noto Nastaliq Urdu\',serif;font-size:.9rem;line-height:1.5">'+(r.items||'—')+'</td>'+
+      '<td class="num c-open">'+(r.estVal?'₨'+fp(r.estVal):'—')+'</td>';
+    tb.appendChild(tr);
+  });
+}
+function srt(col){
+  if(sCol===col){sDir*=-1}else{sCol=col;sDir=col==='date'?-1:1}
+  ['donor','date','cash','estVal'].forEach(function(c){
+    var el=document.getElementById('arr-'+c);if(el)el.textContent='';
+  });
+  var a=document.getElementById('arr-'+col);if(a)a.textContent=sDir===1?' ↑':' ↓';
+  rows.sort(function(a,b){
+    var av=a[col]??'',bv=b[col]??'';
+    if(typeof av==='string')return sDir*av.localeCompare(bv,'ur');
+    return sDir*(av-bv);
+  });
+  render();
+}
+srt('date');
+<\/script>`;
+
+  return rptShell(
+    'Donations Report · عطیات رپورٹ',
+    dateLabel,
+    statsBar + tableHtml,
+    'عطیات رپورٹ — جامعہ دارالعلوم عیدگاہ'
+  );
 }
 
 /* ─── Toast ──────────────────────────────────────────────── */
