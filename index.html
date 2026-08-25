@@ -68,7 +68,7 @@ a{text-decoration:none}
 
 .date-block{text-align:center;cursor:pointer;position:relative;user-select:none}
 .date-greg{
-  font-family:var(--mono);font-size:2rem;font-weight:600;
+  font-family:var(--mono);font-size:1.4rem;font-weight:600;
   letter-spacing:.04em;line-height:1;color:#fff;
 }
 .date-greg span{opacity:.45;font-weight:400;margin:0 4px}
@@ -639,6 +639,45 @@ select.finp.don-unit-sel{
   display:flex;align-items:center;gap:6px;transition:all .15s;
 }
 .btn-don-rpt:hover{background:var(--g100);border-color:var(--g700)}
+
+/* ═══ MOBILE MASTHEAD (phones only — desktop layout untouched) ═══ */
+@media (max-width:768px){
+  /* Stack the three masthead blocks vertically and centre them so nothing
+     clips off-screen on a narrow phone. */
+  .mast{
+    flex-direction:column;
+    align-items:center;
+    justify-content:flex-start;
+    padding:14px 16px;
+    gap:12px;
+    min-height:0;
+  }
+  .mast-right{text-align:center;flex-shrink:1}
+  .inst-ur{font-size:1.3rem;line-height:1.45}
+  .inst-sub{margin-top:4px}
+
+  .mast-center{width:100%;gap:14px}
+  .date-greg{font-size:1rem}          /* smaller Gregorian date on phones */
+  .date-greg span{margin:0 2px}
+  .date-dow{font-size:.56rem}
+
+  .mast-left{align-items:center;width:100%}
+  .mast-left > div{justify-content:center}  /* centre the بنین/بنات/کل row */
+  .stu-input{width:80px;font-size:1rem;padding:5px 8px}
+
+  /* Footer action row — shrink buttons and let it wrap so the bottom bar
+     stays compact on phones instead of towering. */
+  .foot{
+    padding:8px 12px;
+    flex-wrap:wrap;
+    gap:8px;
+    justify-content:center;
+  }
+  .as-note{font-size:.6rem;width:100%;justify-content:center;order:2}
+  .foot-acts{gap:6px;order:1;flex-wrap:wrap;justify-content:center}
+  .btn-ghost{font-size:.8rem;padding:7px 12px}
+  .btn-pri{font-size:.85rem;padding:8px 16px}
+}
 </style>
 </head>
 <body>
@@ -646,8 +685,8 @@ select.finp.don-unit-sel{
 <!-- MASTHEAD -->
 <header class="mast">
   <div class="mast-right">
-    <div class="inst-ur">جامعہ دارالعلوم عیدگاہ</div>
-    <div class="inst-sub">Kitchen Ledger · کبیر والا</div>
+    <div class="inst-ur">جامعہ دارالعلوم عیدگاہ کبیروالا</div>
+    <div class="inst-sub">Kitchen Ledger</div>
   </div>
 
   <div class="mast-center">
@@ -667,7 +706,6 @@ select.finp.don-unit-sel{
   </div>
 
   <div class="mast-left">
-    <div class="stu-label">Students Fed / طلبہ</div>
     <div style="display:flex;gap:5px;align-items:flex-end">
       <div style="display:flex;flex-direction:column;align-items:center;gap:2px">
         <span style="font-family:var(--ur);font-size:.62rem;opacity:.6;color:#fff">بنین</span>
@@ -761,12 +799,12 @@ select.finp.don-unit-sel{
     </div>
     <div class="foot-acts">
       <button class="btn-ghost" id="btn-pdf">
-        <span class="en-lbl">Export</span> PDF ریپورٹ
+        PDF ریپورٹ
       </button>
       <button class="btn-ghost" id="btn-receipt">
-        <span class="en-lbl">Attach Receipt</span> رسید کی تصویر
+        رسید کی تصویر
       </button>
-      <button class="btn-pri" id="btn-save">محفوظ کریں · SAVE</button>
+      <button class="btn-pri" id="btn-save">محفوظ کریں</button>
     </div>
   </div>
 </template>
