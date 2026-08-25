@@ -706,7 +706,7 @@ select.finp.don-unit-sel{
     <button class="nav-btn" id="btn-next">&#8250;</button>
   </div>
 
-  <div class="mast-left">
+  <div class="mast-left" id="students-block">
     <div style="display:flex;gap:5px;align-items:flex-end">
       <div style="display:flex;flex-direction:column;align-items:center;gap:2px">
         <span style="font-family:var(--ur);font-size:.62rem;opacity:.6;color:#fff">بنین</span>
@@ -1114,13 +1114,16 @@ document.addEventListener('DOMContentLoaded', () => {
       btn.classList.add('active');
       const tab = btn.dataset.tab;
       const kitchenStats = document.getElementById('kitchen-stats');
+      const studentsBlock = document.getElementById('students-block');
       if (tab === 'kitchen') {
         if (kitchenStats) kitchenStats.style.display = '';
+        if (studentsBlock) studentsBlock.style.display = '';
         if (dayData?.exists) renderKitchen(dayData);
         else if (dayData) renderCreate(curDate);
         else loadDay(curDate);
       } else if (tab === 'qurbani') {
         if (kitchenStats) kitchenStats.style.display = 'none';
+        if (studentsBlock) studentsBlock.style.display = 'none';
         loadDonations();
       }
     });
