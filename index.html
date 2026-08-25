@@ -2857,19 +2857,28 @@ function buildDonationsReportHtml(data) {
   const totalEstVal = data.summary?.total_estimated_value  ?? 0;
   const totalCount  = data.summary?.total_donations        ?? 0;
 
-  // Build rows
+  // Build and pre-sort rows (newest first)
   const rows = donations.map(d => {
     const cash   = d.items.reduce((s, i) => s + (i.cash_amount     ?? 0), 0);
     const estVal = d.items.reduce((s, i) => s + (i.estimated_value ?? 0), 0);
     const items  = d.items
       .filter(i => !i.cash_amount)
-      .map(i => [i.item_name, i.quantity ? `${parseFloat(i.quantity).toLocaleString('en-PK',{maximumFractionDigits:2})} ${i.unit??''}`.trim() : '']
-        .filter(Boolean).join(' '))
+      .map(i => [
+        i.item_name,
+        i.quantity
+          ? `${parseFloat(i.quantity).toLocaleString('en-PK',{maximumFractionDigits:2})} ${i.unit ?? ''}`.trim()
+          : ''
+      ].filter(Boolean).join(' '))
       .filter(Boolean)
       .join(' · ');
-    return { date: d.donation_date, dateDisplay: fmtDate(d.donation_date),
-             donor: d.donor_name, cash, items, estVal, notes: d.notes ?? '' };
-  });
+    return {
+      date: d.donation_date,
+      dateDisplay: fmtDate(d.donation_date),
+      donor: d.donor_name,
+      cash, items, estVal,
+      notes: d.notes ?? ''
+    };
+  }).sort((a, b) => b.date.localeCompare(a.date));
 
   const statsBar = `
 <div class="stats-bar" style="grid-template-columns:repeat(3,1fr)">
@@ -2887,18 +2896,31 @@ function buildDonationsReportHtml(data) {
   </div>
 </div>`;
 
-  const rowsJson = JSON.stringify(rows).replace(/<\/script>/g, '<\\/script>');
+  // Build static rows (no JS needed for initial render)
+  const fe = s => String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const fp = n => n ? parseFloat(n).toLocaleString('en-PK',{maximumFractionDigits:0}) : '—';
+
+  const staticRows = rows.map((r, i) => `
+    <tr data-date="${r.date}" data-donor="${fe(r.donor)}" data-cash="${r.cash}" data-estval="${r.estVal}" ${i % 2 === 1 ? 'style="background:#f8fafc"' : ''}>
+      <td class="ur-cell" style="text-align:right">${fe(r.donor)}</td>
+      <td class="num ltr">${r.dateDisplay}</td>
+      <td class="num c-recv2">${r.cash ? '₨' + fp(r.cash) : '—'}</td>
+      <td class="ur-cell" style="font-size:.85rem;line-height:1.6">${r.items || '—'}</td>
+      <td class="num c-open">${r.estVal ? '₨' + fp(r.estVal) : '—'}</td>
+    </tr>`).join('');
+
+  const rowsJson = JSON.stringify(rows).replace(/<\/script>/g,'<\\/script>');
 
   const tableHtml = `
 <div class="sec-hdr">Donation Ledger · عطیات کا حساب</div>
-<table class="tbl" id="don-tbl">
+<table class="tbl" id="don-tbl" style="direction:rtl">
   <thead>
     <tr>
       <th class="ur-cell" onclick="srt('donor')" style="cursor:pointer;text-align:right">
         عطیہ دہندہ <span id="arr-donor"></span>
       </th>
       <th onclick="srt('date')" style="cursor:pointer;text-align:center;direction:ltr">
-        DATE <span id="arr-date">↓</span>
+        DATE <span id="arr-date"> ↓</span>
       </th>
       <th class="c-recv2" onclick="srt('cash')" style="cursor:pointer;text-align:center">
         CASH ₨ <span id="arr-cash"></span>
@@ -2909,7 +2931,7 @@ function buildDonationsReportHtml(data) {
       </th>
     </tr>
   </thead>
-  <tbody id="don-tbody"></tbody>
+  <tbody id="don-tbody">${staticRows}</tbody>
   <tfoot>
     <tr class="tot-row">
       <td colspan="2" class="ur" style="text-align:right">کل — Total</td>
@@ -2923,7 +2945,7 @@ function buildDonationsReportHtml(data) {
 var rows=${rowsJson},sCol='date',sDir=-1;
 function fe(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
 function fp(n){return n?parseFloat(n).toLocaleString('en-PK',{maximumFractionDigits:0}):'—'}
-function render(){
+function renderRows(){
   var tb=document.getElementById('don-tbody');
   tb.innerHTML='';
   rows.forEach(function(r,i){
@@ -2931,27 +2953,26 @@ function render(){
     if(i%2===1)tr.style.background='#f8fafc';
     tr.innerHTML=
       '<td class="ur-cell" style="text-align:right">'+fe(r.donor)+'</td>'+
-      '<td class="num" style="direction:ltr;text-align:center">'+r.dateDisplay+'</td>'+
+      '<td class="num ltr">'+r.dateDisplay+'</td>'+
       '<td class="num c-recv2">'+(r.cash?'₨'+fp(r.cash):'—')+'</td>'+
-      '<td style="text-align:right;font-family:\'Noto Nastaliq Urdu\',serif;font-size:.9rem;line-height:1.5">'+(r.items||'—')+'</td>'+
+      '<td class="ur-cell" style="font-size:.85rem;line-height:1.6">'+(r.items||'—')+'</td>'+
       '<td class="num c-open">'+(r.estVal?'₨'+fp(r.estVal):'—')+'</td>';
     tb.appendChild(tr);
   });
 }
 function srt(col){
-  if(sCol===col){sDir*=-1}else{sCol=col;sDir=col==='date'?-1:1}
+  if(sCol===col){sDir*=-1}else{sCol=col;sDir=(col==='date'?-1:1)}
   ['donor','date','cash','estVal'].forEach(function(c){
     var el=document.getElementById('arr-'+c);if(el)el.textContent='';
   });
-  var a=document.getElementById('arr-'+col);if(a)a.textContent=sDir===1?' ↑':' ↓';
+  var a=document.getElementById('arr-'+col);if(a)a.textContent=(sDir===1?' ↑':' ↓');
   rows.sort(function(a,b){
-    var av=a[col]??'',bv=b[col]??'';
+    var av=a[col]||'',bv=b[col]||'';
     if(typeof av==='string')return sDir*av.localeCompare(bv,'ur');
-    return sDir*(av-bv);
+    return sDir*(Number(av)-Number(bv));
   });
-  render();
+  renderRows();
 }
-srt('date');
 <\/script>`;
 
   return rptShell(
