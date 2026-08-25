@@ -1092,6 +1092,7 @@ const UNIT_UR = { kg: 'کلو گرام', g: 'گرام', L: 'لیٹر', pcs: 'ع�
 
 /* ─── State ─────────────────────────────────────────────── */
 let curDate   = todayISO();
+let currentTab = 'kitchen';   // 'kitchen' | 'qurbani' — which tab is showing
 let dayData   = null;
 let activeBlk = 1; // Boys block default
 let dirty     = {};      // key: `${blockId}|${itemId}|${mealType}` → {used_qty, used_value_pkr}
@@ -1113,6 +1114,7 @@ document.addEventListener('DOMContentLoaded', () => {
       document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       const tab = btn.dataset.tab;
+      currentTab = tab;
       const kitchenStats = document.getElementById('kitchen-stats');
       const studentsBlock = document.getElementById('students-block');
       if (tab === 'kitchen') {
@@ -1297,14 +1299,17 @@ function wireGlobal() {
 }
 
 async function navigate(d) {
-  // Flush pending edits before leaving the day
-  if (dayData?.exists) {
+  // Flush pending kitchen edits before leaving the day (kitchen tab only)
+  if (currentTab === 'kitchen' && dayData?.exists) {
     try {
       if (stuDirty) await saveStudents();
       if (Object.keys(dirty).length) await saveBlock();
     } catch(e) { /* ignore nav errors */ }
   }
-  curDate = shift(curDate, d); reset(); renderDate(); loadDay(curDate);
+  curDate = shift(curDate, d); reset(); renderDate();
+  // Load the view matching the current tab, not always kitchen.
+  if (currentTab === 'qurbani') loadDonations();
+  else loadDay(curDate);
 }
 function reset() {
   dayData = null; dirty = {}; dirtyOp = {}; dirtyRcv = {}; stuDirty = false;
@@ -2391,7 +2396,7 @@ async function loadDonations() {
     `<div class="smsg"><div class="spin"></div>لوڈ ہو رہا ہے…</div>`;
   statsEmpty();
   try {
-    const r = await fetch(`${API}/api/donations`);
+    const r = await fetch(`${API}/api/donations?date=${curDate}`);
     if (!r.ok) throw new Error(`HTTP ${r.status}`);
     donationsData = await r.json();
     renderDonations(donationsData);
@@ -2435,11 +2440,8 @@ function renderDonations(data) {
   </div>`;
 
   if (!donations.length) {
-    html += `<div class="don-empty">
-      <div class="don-empty-icon">🎁</div>
-      <span class="don-empty-ur">ابھی تک کوئی عطیہ درج نہیں ہوا</span>
-      <span class="don-empty-en">No donations recorded yet</span>
-    </div>`;
+    // Empty day: no message — the نیا عطیہ (Add) button in the header is enough.
+    html += ``;
   } else {
     html += `<div class="don-list">`;
     for (const d of donations) {

@@ -80,6 +80,14 @@ export default {
         }
       }
 
+      // POST /api/recompute — one-shot heal: recompute every day's opening
+      // from the earliest day forward. Body may pass { from: "YYYY-MM-DD" } to
+      // start at a specific day; otherwise starts at the earliest day on record.
+      if (path === "/api/recompute" && request.method === "POST") {
+        const body = await request.json().catch(() => ({}));
+        return json(await recomputeAll(env, body?.from ?? null));
+      }
+
       // GET /api/report/daily/:date
       const rptDailyMatch = path.match(/^\/api\/report\/daily\/(\d{4}-\d{2}-\d{2})$/);
       if (rptDailyMatch && request.method === "GET") {
@@ -108,6 +116,41 @@ export default {
       const rptYearlyMatch = path.match(/^\/api\/report\/yearly\/(\d{4})$/);
       if (rptYearlyMatch && request.method === "GET") {
         return json(await reportYearly(env, rptYearlyMatch[1]));
+      }
+
+      // ── DONATIONS ──────────────────────────────────────────
+      // GET /api/donations  (optional ?date=YYYY-MM-DD for a single day)
+      if (path === "/api/donations" && request.method === "GET") {
+        const date = url.searchParams.get("date") ?? null;
+        return json(await getDonations(env, date));
+      }
+
+      // POST /api/donations
+      if (path === "/api/donations" && request.method === "POST") {
+        const body = await request.json().catch(() => null);
+        if (!body) return json({ error: "bad_request", message: "Missing body" }, 400);
+        return json(await addDonation(env, body));
+      }
+
+      // DELETE /api/donations/:id
+      const donationDeleteMatch = path.match(/^\/api\/donations\/(\d+)$/);
+      if (donationDeleteMatch && request.method === "DELETE") {
+        return json(await deleteDonation(env, donationDeleteMatch[1]));
+      }
+
+      // PUT /api/donations/:id — full update (donation + replace items)
+      const donationPutMatch = path.match(/^\/api\/donations\/(\d+)$/);
+      if (donationPutMatch && request.method === "PUT") {
+        const body = await request.json().catch(() => null);
+        if (!body) return json({ error: "bad_request", message: "Missing body" }, 400);
+        return json(await updateDonation(env, donationPutMatch[1], body));
+      }
+
+      // GET /api/report/donations  (optional ?from=YYYY-MM-DD&to=YYYY-MM-DD)
+      if (path === "/api/report/donations" && request.method === "GET") {
+        const from = url.searchParams.get("from") ?? null;
+        const to   = url.searchParams.get("to")   ?? null;
+        return json(await reportDonations(env, from, to));
       }
 
       return json({ error: "not_found", path }, 404);
@@ -334,6 +377,110 @@ async function createDay(env, date, body) {
 
 
 /* ---------------------------------------------------------------------------
+ * propagateOpenings(env, fromDate)
+ *
+ * Opening stock is per item per day and is seeded once, when a day is created,
+ * as a snapshot of the previous day's closing. When an EARLIER day is edited
+ * afterwards (consumption, received, sadaqa, or a manual opening correction),
+ * every later day that already exists still holds its old, now-wrong opening.
+ *
+ * This walks forward through every existing, unlocked day strictly after
+ * fromDate — in date order, so gaps in the calendar are handled — and rewrites
+ * each day's opening_balances.qty to the prior day's actual closing:
+ *
+ *     closing = opening + received + sadaqa - consumed
+ *
+ * which is exactly the remaining_qty formula getDay() returns. Days are chained
+ * (each recomputed day becomes the "prev" for the next), and each is cleared of
+ * its is_stale flag once fixed. Locked days are skipped and also stop the chain,
+ * since a locked closing is authoritative and must not be silently overwritten.
+ *
+ * Called after any edit to a past day. Cheap for this dataset (one kitchen,
+ * chains measured in weeks). value_pkr on opening is intentionally left at 0,
+ * matching createDay's existing behaviour.
+ * ------------------------------------------------------------------------- */
+async function propagateOpenings(env, fromDate) {
+  // The edited day is the first "previous". It must exist.
+  const start = await env.DB.prepare(
+    `SELECT id, entry_date FROM daily_headers WHERE entry_date = ?1`
+  ).bind(fromDate).first();
+  if (!start) return { propagated: 0 };
+
+  // All later days, oldest first. Stop the walk at the first locked day.
+  const laterRes = await env.DB.prepare(
+    `SELECT id, entry_date, locked
+       FROM daily_headers
+      WHERE entry_date > ?1
+      ORDER BY entry_date`
+  ).bind(fromDate).all();
+
+  // Closing of a given header, per item — mirrors getDay()'s remaining_qty.
+  const closingSql =
+    `SELECT ob.item_id,
+            ob.qty
+              + COALESCE(dr.recv_qty,   0)
+              + COALESCE(dr.sadaqa_qty, 0)
+              - COALESCE((SELECT SUM(lr.used_qty)
+                            FROM ledger_rows lr
+                           WHERE lr.header_id = ob.header_id
+                             AND lr.item_id   = ob.item_id), 0) AS closing_qty
+       FROM opening_balances ob
+       LEFT JOIN daily_received dr
+         ON dr.header_id = ob.header_id AND dr.item_id = ob.item_id
+      WHERE ob.header_id = ?1`;
+
+  let prevId = start.id;
+  let count  = 0;
+
+  for (const day of laterRes.results) {
+    if (day.locked) break;  // authoritative closing downstream — do not overwrite
+
+    const closings = await env.DB.prepare(closingSql).bind(prevId).all();
+
+    const stmts = closings.results.map(row =>
+      env.DB.prepare(
+        `UPDATE opening_balances SET qty = ?1 WHERE header_id = ?2 AND item_id = ?3`
+      ).bind(row.closing_qty ?? 0, day.id, row.item_id)
+    );
+    stmts.push(
+      env.DB.prepare(`UPDATE daily_headers SET is_stale = 0 WHERE id = ?1`).bind(day.id)
+    );
+
+    if (stmts.length) await env.DB.batch(stmts);
+
+    prevId = day.id;  // chain forward
+    count++;
+  }
+
+  return { propagated: count };
+}
+
+
+/* ---------------------------------------------------------------------------
+ * recomputeAll(env, fromDate?)
+ *
+ * One-shot repair for historical drift. Starts at fromDate (or the earliest
+ * day on record) and cascades openings forward across the whole ledger, so any
+ * days whose opening was frozen before this fix get corrected in a single call.
+ * The starting day's own opening is treated as the source of truth and is left
+ * untouched — only later days are rewritten.
+ * ------------------------------------------------------------------------- */
+async function recomputeAll(env, fromDate) {
+  let start = fromDate;
+  if (!start) {
+    const earliest = await env.DB.prepare(
+      `SELECT MIN(entry_date) AS d FROM daily_headers`
+    ).first();
+    start = earliest?.d ?? null;
+  }
+  if (!start) return { propagated: 0, from: null, message: "No days on record." };
+
+  const res = await propagateOpenings(env, start);
+  return { ...res, from: start };
+}
+
+
+/* ---------------------------------------------------------------------------
  * POST /api/day/:date  { action: "save_block" }
  * ------------------------------------------------------------------------- */
 async function saveBlock(env, date, body) {
@@ -397,18 +544,17 @@ async function saveBlock(env, date, body) {
     }
   }
 
-  const today = new Date().toISOString().slice(0,10);
-  if (date < today) {
-    audits.push(env.DB.prepare(
-      `UPDATE daily_headers SET is_stale=1 WHERE entry_date>?1`
-    ).bind(date));
-  }
-
   let warning = null;
   if (audits.length) {
     try { await env.DB.batch(audits); }
     catch(e) { warning = e.message; }
   }
+
+  // Editing this day changes its closing, so every later day's opening must be
+  // recomputed and re-chained. (Runs for any edit — a "today" edit simply has
+  // no later days to propagate to.)
+  try { await propagateOpenings(env, date); }
+  catch(e) { warning = warning ? `${warning}; propagate: ${e.message}` : `propagate: ${e.message}`; }
 
   const payload = await getDay(env, date);
   if (warning) payload.warning = `Data saved. Audit log error: ${warning}`;
@@ -443,7 +589,6 @@ async function saveOpening(env, date, body) {
   if (!old) return { error: "not_found", message: "Opening balance row not found for this item." };
 
   const now = new Date().toISOString().replace("T"," ").slice(0,19);
-  const today = new Date().toISOString().slice(0,10);
 
   const stmts = [
     env.DB.prepare(
@@ -457,13 +602,11 @@ async function saveOpening(env, date, body) {
            reason_type??'physical_count', reason_note??null),
   ];
 
-  if (date < today) {
-    stmts.push(env.DB.prepare(
-      `UPDATE daily_headers SET is_stale=1 WHERE entry_date>?1`
-    ).bind(date));
-  }
-
   await env.DB.batch(stmts);
+
+  // A manual opening correction changes this day's closing too, so cascade it
+  // forward into every later day's opening.
+  await propagateOpenings(env, date);
 
   // Return fresh day_totals so frontend can update remaining without a full reload
   return getDay(env, date);
@@ -545,6 +688,12 @@ async function saveReceived(env, date, body) {
     try { await env.DB.batch(audits); }
     catch(e) { warning = e.message; }
   }
+
+  // Received/sadaqa changes this day's closing, so later openings must cascade.
+  // (Previously missing entirely — received edits to a past day never flowed
+  // downstream, a key cause of drifting opening stock.)
+  try { await propagateOpenings(env, date); }
+  catch(e) { warning = warning ? `${warning}; propagate: ${e.message}` : `propagate: ${e.message}`; }
 
   const payload = await getDay(env, date);
   if (warning) payload.warning = `Data saved. Audit log error: ${warning}`;
@@ -1200,6 +1349,217 @@ async function reportYearly(env, year) {
 
 
 /* ---------------------------------------------------------------------------
+ * GET /api/donations — donations with their items array.
+ * Optional `date` (YYYY-MM-DD) restricts to a single day; without it, returns all.
+ * ------------------------------------------------------------------------- */
+async function getDonations(env, date = null) {
+  const { results: donations } = await env.DB.prepare(
+    date
+      ? `SELECT id, donor_name, donation_date, notes, created_at
+           FROM donations
+          WHERE donation_date = ?1
+          ORDER BY id DESC`
+      : `SELECT id, donor_name, donation_date, notes, created_at
+           FROM donations
+          ORDER BY donation_date DESC, id DESC`
+  ).bind(...(date ? [date] : [])).all();
+
+  if (!donations.length) return { donations: [] };
+
+  const ids = donations.map(d => d.id);
+  const ph  = ids.map((_, i) => `?${i + 1}`).join(",");
+
+  const { results: items } = await env.DB.prepare(
+    `SELECT id, donation_id, item_name, quantity, unit,
+            cash_amount, estimated_value, created_at
+       FROM donation_items
+      WHERE donation_id IN (${ph})
+      ORDER BY id`
+  ).bind(...ids).all();
+
+  const itemsByDonation = {};
+  for (const item of items) {
+    (itemsByDonation[item.donation_id] ||= []).push(item);
+  }
+
+  return {
+    donations: donations.map(d => ({
+      ...d,
+      items: itemsByDonation[d.id] ?? [],
+    })),
+  };
+}
+
+
+/* ---------------------------------------------------------------------------
+ * POST /api/donations — create a donation + its items
+ * ------------------------------------------------------------------------- */
+async function addDonation(env, body) {
+  const { donor_name, donation_date, notes, items } = body;
+
+  if (!donor_name?.trim())   return { error: "bad_request", message: "donor_name is required" };
+  if (!donation_date)        return { error: "bad_request", message: "donation_date is required" };
+  if (!Array.isArray(items) || !items.length)
+    return { error: "bad_request", message: "items must be a non-empty array" };
+
+  const ins = await env.DB.prepare(
+    `INSERT INTO donations (donor_name, donation_date, notes)
+     VALUES (?1, ?2, ?3)
+     RETURNING id`
+  ).bind(donor_name.trim(), donation_date, notes ?? null).first();
+
+  const donationId = ins.id;
+
+  const itemStmts = items.map(item =>
+    env.DB.prepare(
+      `INSERT INTO donation_items
+         (donation_id, item_name, quantity, unit, cash_amount, estimated_value)
+       VALUES (?1, ?2, ?3, ?4, ?5, ?6)`
+    ).bind(
+      donationId,
+      item.item_name       ?? null,
+      item.quantity        ?? null,
+      item.unit            ?? null,
+      item.cash_amount     ?? null,
+      item.estimated_value ?? null,
+    )
+  );
+
+  await env.DB.batch(itemStmts);
+
+  return { ok: true, donation_id: donationId };
+}
+
+
+/* ---------------------------------------------------------------------------
+ * DELETE /api/donations/:id — cascade handled by DB
+ * ------------------------------------------------------------------------- */
+async function deleteDonation(env, id) {
+  const existing = await env.DB.prepare(
+    `SELECT id FROM donations WHERE id = ?1`
+  ).bind(id).first();
+
+  if (!existing) return { error: "not_found", message: "Donation not found" };
+
+  await env.DB.prepare(
+    `DELETE FROM donations WHERE id = ?1`
+  ).bind(id).run();
+
+  return { ok: true, deleted_id: +id };
+}
+
+
+/* ---------------------------------------------------------------------------
+ * PUT /api/donations/:id — update donation fields + replace all items
+ * Body: same shape as POST { donor_name, donation_date, notes, items }
+ * ------------------------------------------------------------------------- */
+async function updateDonation(env, id, body) {
+  const { donor_name, donation_date, notes, items } = body;
+
+  if (!donor_name?.trim())   return { error: "bad_request", message: "donor_name is required" };
+  if (!donation_date)        return { error: "bad_request", message: "donation_date is required" };
+  if (!Array.isArray(items) || !items.length)
+    return { error: "bad_request", message: "items must be a non-empty array" };
+
+  const existing = await env.DB.prepare(
+    `SELECT id FROM donations WHERE id = ?1`
+  ).bind(id).first();
+  if (!existing) return { error: "not_found", message: "Donation not found" };
+
+  // Update the parent row
+  await env.DB.prepare(
+    `UPDATE donations
+        SET donor_name = ?2, donation_date = ?3, notes = ?4
+      WHERE id = ?1`
+  ).bind(id, donor_name.trim(), donation_date, notes ?? null).run();
+
+  // Replace items: delete existing, insert new set
+  const stmts = [
+    env.DB.prepare(`DELETE FROM donation_items WHERE donation_id = ?1`).bind(id),
+  ];
+  for (const item of items) {
+    stmts.push(
+      env.DB.prepare(
+        `INSERT INTO donation_items
+           (donation_id, item_name, quantity, unit, cash_amount, estimated_value)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6)`
+      ).bind(
+        id,
+        item.item_name       ?? null,
+        item.quantity        ?? null,
+        item.unit            ?? null,
+        item.cash_amount     ?? null,
+        item.estimated_value ?? null,
+      )
+    );
+  }
+  await env.DB.batch(stmts);
+
+  return { ok: true, donation_id: +id };
+}
+async function reportDonations(env, from, to) {
+  const dateFilter = from && to
+    ? `WHERE d.donation_date >= ?1 AND d.donation_date <= ?2`
+    : from
+      ? `WHERE d.donation_date >= ?1`
+      : to
+        ? `WHERE d.donation_date <= ?1`
+        : "";
+
+  const binds = [from, to].filter(Boolean);
+
+  const { results: rows } = await env.DB.prepare(
+    `SELECT d.id, d.donor_name, d.donation_date, d.notes,
+            di.item_name, di.quantity, di.unit, di.cash_amount, di.estimated_value
+       FROM donations d
+       LEFT JOIN donation_items di ON di.donation_id = d.id
+       ${dateFilter}
+      ORDER BY d.donation_date DESC, d.id DESC`
+  ).bind(...binds).all();
+
+  const donationMap = {};
+  for (const row of rows) {
+    if (!donationMap[row.id]) {
+      donationMap[row.id] = {
+        id:            row.id,
+        donor_name:    row.donor_name,
+        donation_date: row.donation_date,
+        notes:         row.notes,
+        items:         [],
+      };
+    }
+    if (row.item_name || row.cash_amount) {
+      donationMap[row.id].items.push({
+        item_name:       row.item_name,
+        quantity:        row.quantity,
+        unit:            row.unit,
+        cash_amount:     row.cash_amount,
+        estimated_value: row.estimated_value,
+      });
+    }
+  }
+
+  const donationList = Object.values(donationMap);
+
+  const total_cash = donationList.reduce((sum, d) =>
+    sum + d.items.reduce((s, i) => s + (i.cash_amount ?? 0), 0), 0);
+  const total_estimated_value = donationList.reduce((sum, d) =>
+    sum + d.items.reduce((s, i) => s + (i.estimated_value ?? 0), 0), 0);
+
+  return {
+    report_type: "donations",
+    period: { from: from ?? null, to: to ?? null },
+    summary: {
+      total_donations:       donationList.length,
+      total_cash_pkr:        total_cash,
+      total_estimated_value: total_estimated_value,
+    },
+    donations: donationList,
+  };
+}
+
+
+/* ---------------------------------------------------------------------------
  * Helpers
  * ------------------------------------------------------------------------- */
 function json(body, status = 200) {
@@ -1215,7 +1575,7 @@ function json(body, status = 200) {
 // Cloudflare Access will gate it, but CORS should not be a hole behind that.
 function withCors(res) {
   res.headers.set("Access-Control-Allow-Origin", "*");
-  res.headers.set("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+  res.headers.set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
   res.headers.set("Access-Control-Allow-Headers", "Content-Type");
   return res;
 }
