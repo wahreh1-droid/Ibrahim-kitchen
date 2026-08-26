@@ -111,6 +111,15 @@ a{text-decoration:none}
 .tab-btn.active{color:var(--g700);border-bottom-color:var(--g700);font-weight:600}
 .tab-en{font-family:var(--en);font-size:.6rem;letter-spacing:.07em;text-transform:uppercase;display:block;opacity:.55;margin-top:1px}
 
+/* Desktop inline controls inside the tabs bar.
+   Layout: [tabs — right] ......... [Boys/Girls + New item — centered] ......... [stats — left] */
+.tabs-inline{flex:1;display:flex;align-items:center;direction:rtl;min-width:0}
+.tabs-controls{display:flex;align-items:center;gap:10px;direction:rtl;margin:0 auto}
+.tabs-stats{display:flex;align-items:center;gap:16px;direction:rtl;flex-shrink:0}
+.tabs-stats .stat-val{font-family:var(--mono);font-size:1rem;font-weight:600;color:var(--ink9)}
+.tabs-inline .add-btn{padding:6px 14px}
+.tabs-inline .blk-btn{padding:6px 14px}
+
 /* STATS */
 .stats{
   background:var(--sur);border-bottom:1px solid var(--bdr);
@@ -641,8 +650,19 @@ select.finp.don-unit-sel{
 }
 .btn-don-rpt:hover{background:var(--g100);border-color:var(--g700)}
 
+/* ═══ DESKTOP LAYOUT (controls live in the tabs bar) ═══ */
+@media (min-width:769px){
+  /* The standalone stats bar and the template toolbar are replaced by the
+     inline controls in the tabs bar on desktop. */
+  #kitchen-stats{display:none}
+  .toolbar{display:none}
+}
+
 /* ═══ MOBILE MASTHEAD (phones only — desktop layout untouched) ═══ */
 @media (max-width:768px){
+  /* Desktop inline controls hidden on phones — the stats bar and template
+     toolbar handle mobile exactly as before. */
+  .tabs-inline{display:none!important}
   /* Stack the three masthead blocks vertically and centre them so nothing
      clips off-screen on a narrow phone. */
   .mast{
@@ -736,9 +756,29 @@ select.finp.don-unit-sel{
       <span class="tab-en">Qurbani &amp; Donations</span>
     </button>
   </nav>
+
+  <!-- Desktop-only inline controls (hidden on mobile). Centered block: Boys/Girls + New item. Stats pushed to the far end. -->
+  <div class="tabs-inline" id="tabs-inline">
+    <div class="tabs-controls" id="tabs-controls">
+      <div class="block-sel" id="tb-block-sel">
+        <button class="blk-btn active" data-bid="1">بنین<span class="blk-en">Boys</span></button>
+        <button class="blk-btn" data-bid="2">بنات<span class="blk-en">Girls</span></button>
+      </div>
+      <button class="add-btn" id="tb-open-add"><span class="plus">+</span> نیا آئٹم</button>
+    </div>
+    <div class="tabs-stats" id="tabs-stats">
+      <div><div class="stat-val" id="ts-items">—</div><div class="stat-lbl stat-lbl-ur">اشیاء</div></div>
+      <div class="stat-div"></div>
+      <div><div class="stat-val" id="ts-recv">—</div><div class="stat-lbl stat-lbl-ur">آج کی خریداری</div></div>
+      <div class="stat-div"></div>
+      <div><div class="stat-val" id="ts-used">—</div><div class="stat-lbl stat-lbl-ur">آج کا خرچ</div></div>
+      <div class="stat-div"></div>
+      <div><div class="stat-val" id="ts-stu">—</div><div class="stat-lbl stat-lbl-ur">کل طلبہ</div></div>
+    </div>
+  </div>
 </div>
 
-<!-- STATS -->
+<!-- STATS (mobile only) -->
 <div class="stats" id="kitchen-stats">
   <div><div class="stat-val" id="s-items">—</div><div class="stat-lbl stat-lbl-ur">اشیاء</div></div>
   <div class="stat-div"></div>
@@ -1117,15 +1157,18 @@ document.addEventListener('DOMContentLoaded', () => {
       currentTab = tab;
       const kitchenStats = document.getElementById('kitchen-stats');
       const studentsBlock = document.getElementById('students-block');
+      const tabsInline = document.getElementById('tabs-inline');
       if (tab === 'kitchen') {
         if (kitchenStats) kitchenStats.style.display = '';
         if (studentsBlock) studentsBlock.style.display = '';
+        if (tabsInline) tabsInline.style.display = '';
         if (dayData?.exists) renderKitchen(dayData);
         else if (dayData) renderCreate(curDate);
         else loadDay(curDate);
       } else if (tab === 'qurbani') {
         if (kitchenStats) kitchenStats.style.display = 'none';
         if (studentsBlock) studentsBlock.style.display = 'none';
+        if (tabsInline) tabsInline.style.display = 'none';
         loadDonations();
       }
     });
@@ -1400,21 +1443,28 @@ function renderKitchen(data) {
   if (si) si.value = data.header.students_fed   ?? '';
   stuDirty = false;
 
-  // Block buttons
+  // Block buttons — both the template toolbar set AND the desktop tabs-bar set
   activeBlk = data.blocks?.[0]?.id ?? 1;
   document.querySelectorAll('.blk-btn').forEach(b => {
     const bid = +b.dataset.bid;
     const blk = data.blocks?.find(x=>x.id===bid);
     if (blk) b.childNodes[0].textContent = blk.name_ur;
     b.onclick = () => {
-      document.querySelectorAll('.blk-btn').forEach(x=>x.classList.remove('active'));
-      b.classList.add('active');
+      // Toggle active on ALL buttons sharing this bid (keeps both sets in sync)
+      document.querySelectorAll('.blk-btn').forEach(x=>
+        x.classList.toggle('active', +x.dataset.bid === bid));
       activeBlk = bid;
       renderRows(data, bid);
     };
   });
+  // Ensure both sets reflect the active block on initial render
+  document.querySelectorAll('.blk-btn').forEach(x=>
+    x.classList.toggle('active', +x.dataset.bid === activeBlk));
 
-  document.getElementById('open-add').onclick = openAdd;
+  const addT = document.getElementById('open-add');
+  if (addT) addT.onclick = openAdd;
+  const addD = document.getElementById('tb-open-add');
+  if (addD) addD.onclick = openAdd;
   document.getElementById('btn-save').onclick  = saveBlock;
   document.getElementById('btn-pdf').onclick   = openPdfDialog;
   document.getElementById('btn-receipt').onclick = () => toast('رسید منسلک کریں — جلد آ رہی ہے');
@@ -1433,6 +1483,13 @@ function renderRows(data, blkId) {
   const firstBlkId  = data.blocks?.[0]?.id ?? blkId;
   const firstMap    = data.rows_by_block?.[firstBlkId] ?? {};
   const masterItems = Array.isArray(firstMap) ? firstMap : Object.values(firstMap);
+
+  // Active block's saved consumption — meal values are per-block, so display
+  // must read them from the block currently being viewed, not the master list.
+  const activeMap   = data.rows_by_block?.[blkId] ?? {};
+  const activeItems = Array.isArray(activeMap) ? activeMap : Object.values(activeMap);
+  const activeByItem = {};
+  for (const r of activeItems) activeByItem[r.item_id] = r;
 
   // Build lookup for day-wide received
   const rcvMap = {};
@@ -1490,8 +1547,9 @@ function renderRows(data, blkId) {
       ${['breakfast','lunch','dinner'].map(mt => {
         const mk  = `${blkId}|${row.item_id}|${mt}`;
         const dmk = dirty[mk] ?? {};
-        const muq = dmk.used_qty       ?? row[mt]?.used_qty       ?? 0;
-        const mup = dmk.used_value_pkr ?? row[mt]?.used_value_pkr ?? 0;
+        const arow = activeByItem[row.item_id] ?? {};
+        const muq = dmk.used_qty       ?? arow[mt]?.used_qty       ?? 0;
+        const mup = dmk.used_value_pkr ?? arow[mt]?.used_value_pkr ?? 0;
         const isl = mt==='dinner';
         return `
       <td class="cn sep-l col-cons">
@@ -1618,10 +1676,21 @@ function statsUpdate(data) {
   document.getElementById('s-recv').textContent  = fmtP(recv);
   document.getElementById('s-used').textContent  = fmtP(used);
   document.getElementById('s-stu').textContent   = fmtN(data.header?.students_fed??0);
+  // Mirror into tabs-bar stats (desktop)
+  const tsItems = document.getElementById('ts-items');
+  if (tsItems){
+    tsItems.textContent = itemCount || '—';
+    document.getElementById('ts-recv').textContent = fmtP(recv);
+    document.getElementById('ts-used').textContent = fmtP(used);
+    document.getElementById('ts-stu').textContent  = fmtN(data.header?.students_fed??0);
+  }
 }
 function statsEmpty() {
   ['s-items','s-recv','s-used','s-stu'].forEach(id=>
     document.getElementById(id).textContent='—');
+  ['ts-items','ts-recv','ts-used','ts-stu'].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.textContent='—';
+  });
 }
 
 /* ─── Save opening balance (inline on blur + bundled into main save) ── */
