@@ -213,6 +213,21 @@ th.col-sadq2{background:var(--col-sadq-bg2)!important;color:var(--col-sadq-hdr)!
 /* Column cell tints */
 td.col-open{background:var(--col-open-bg)}
 td.col-cost{background:var(--col-cost-bg)}
+
+/* Drag-to-reorder (desktop only) */
+.cdrag{width:26px;text-align:center;padding:0}
+.drag-handle{
+  cursor:grab;color:var(--ink4);font-size:.85rem;line-height:1;
+  user-select:none;display:inline-block;padding:4px 2px;
+}
+.drag-handle:hover{color:var(--g600)}
+tr.dragging{opacity:.5;background:var(--g50)}
+tr.drop-above{box-shadow:inset 0 3px 0 var(--g500)}
+tr.drop-below{box-shadow:inset 0 -3px 0 var(--g500)}
+@media (max-width:768px){
+  /* Reorder is desktop-only — hide the handle column on phones */
+  .cdrag{display:none}
+}
 td.col-recv{background:var(--col-recv-bg)}
 td.col-recv2{background:var(--col-recv-bg2)}
 td.col-cons{background:var(--col-cons-bg)}
@@ -830,6 +845,7 @@ select.finp.don-unit-sel{
     <table>
       <thead>
         <tr>
+          <th class="cdrag" rowspan="2"></th>
           <th class="ci" rowspan="2"><span class="ur-hdr">اشیاء</span><span style="font-size:.56rem">ITEM</span></th>
           <th class="cu" rowspan="2"><span class="ur-hdr">اکائی</span><span style="font-size:.56rem">UNIT</span></th>
           <th class="cn sep-l col-cost" rowspan="2"><span class="ur-hdr">قیمت فی اکائی</span><span style="font-size:.56rem">COST/UNIT</span></th>
@@ -1542,8 +1558,10 @@ function renderRows(data, blkId) {
     const isls = pct<15;
 
     const tr = document.createElement('tr');
+    tr.dataset.itemId = row.item_id;
     if (isls) tr.classList.add('ls');
     tr.innerHTML = `
+      <td class="cdrag"><span class="drag-handle" title="ترتیب بدلیں · Drag to reorder">⣿</span></td>
       <td class="ci">
         <span class="iur">${row.name_ur}</span>
         <span class="ien">${row.name_en??''}</span>
@@ -1700,6 +1718,82 @@ function renderRows(data, blkId) {
       await saveUnit(itemId, unit);
     });
   });
+
+  // Drag-and-drop row reordering (desktop only). Global order → saves on drop.
+  wireDragReorder(tbody);
+}
+
+/* Desktop-only drag reorder. Only the grip handle initiates a drag, so the
+   many input fields in a row are never hijacked. Order is global; on drop we
+   send the full ordered item-id list and persist via /api/items/reorder. */
+function wireDragReorder(tbody) {
+  if (window.matchMedia && window.matchMedia('(max-width:768px)').matches) return; // desktop only
+  let dragRow = null;
+
+  tbody.querySelectorAll('tr').forEach(tr => {
+    const handle = tr.querySelector('.drag-handle');
+    if (!handle) return;
+
+    // Only make the row draggable while the handle is held (prevents input drags)
+    handle.addEventListener('mousedown', () => { tr.setAttribute('draggable','true'); });
+    handle.addEventListener('mouseup',   () => { tr.removeAttribute('draggable'); });
+
+    tr.addEventListener('dragstart', e => {
+      dragRow = tr; tr.classList.add('dragging');
+      e.dataTransfer.effectAllowed = 'move';
+      try { e.dataTransfer.setData('text/plain', tr.dataset.itemId); } catch(_){}
+    });
+    tr.addEventListener('dragend', () => {
+      tr.classList.remove('dragging');
+      tr.removeAttribute('draggable');
+      tbody.querySelectorAll('tr').forEach(r=>r.classList.remove('drop-above','drop-below'));
+      dragRow = null;
+    });
+    tr.addEventListener('dragover', e => {
+      e.preventDefault();
+      if (!dragRow || dragRow===tr) return;
+      const rect = tr.getBoundingClientRect();
+      const below = (e.clientY - rect.top) > rect.height/2;
+      tbody.querySelectorAll('tr').forEach(r=>r.classList.remove('drop-above','drop-below'));
+      tr.classList.add(below ? 'drop-below' : 'drop-above');
+    });
+    tr.addEventListener('drop', async e => {
+      e.preventDefault();
+      if (!dragRow || dragRow===tr) return;
+      const rect = tr.getBoundingClientRect();
+      const below = (e.clientY - rect.top) > rect.height/2;
+      if (below) tr.after(dragRow); else tr.before(dragRow);
+      tbody.querySelectorAll('tr').forEach(r=>r.classList.remove('drop-above','drop-below'));
+      // Persist the new global order
+      const order = [...tbody.querySelectorAll('tr')].map(r=>+r.dataset.itemId).filter(Boolean);
+      await saveOrder(order);
+    });
+  });
+}
+
+/* Persist global item order. */
+async function saveOrder(order) {
+  try {
+    const r = await fetch(`${API}/api/items/reorder`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ order, user_id:'ibrahim' })
+    });
+    const data = await r.json();
+    if (data.error) throw new Error(data.message||data.error);
+    // Update in-memory item order so a re-render keeps the new sequence
+    if (data.items && dayData) {
+      const pos = {}; data.items.forEach((it,i)=>pos[it.id]=i);
+      const sortByPos = (arr) => (arr||[]).sort((a,b)=>(pos[a.item_id]??999)-(pos[b.item_id]??999));
+      sortByPos(dayData.day_totals);
+      for (const bid of Object.keys(dayData.rows_by_block||{})) {
+        const m = dayData.rows_by_block[bid];
+        if (Array.isArray(m)) sortByPos(m);
+      }
+    }
+    setAS('ترتیب محفوظ ہو گئی');
+  } catch(e) {
+    toast('ترتیب خرابی: '+e.message, true);
+  }
 }
 
 function calcRem(tot, blkId, itemId, data) {

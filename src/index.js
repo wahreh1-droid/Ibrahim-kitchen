@@ -37,6 +37,13 @@ export default {
         return json(await addItem(env, body));
       }
 
+      // POST /api/items/reorder — set global item order (sort_order)
+      if (path === "/api/items/reorder" && request.method === "POST") {
+        const body = await request.json().catch(() => null);
+        if (!body) return json({ error: "bad_request", message: "Missing body" }, 400);
+        return json(await reorderItems(env, body));
+      }
+
       // POST /api/items/:id/unit — set an item's (global) unit
       const itemUnitMatch = path.match(/^\/api\/items\/(\d+)\/unit$/);
       if (itemUnitMatch && request.method === "POST") {
@@ -793,6 +800,32 @@ async function saveStudents(env, date, body) {
   return getDay(env, date);
 }
 
+
+/* ---------------------------------------------------------------------------
+ * POST /api/items/reorder — set the global display order of items.
+ * Body: { order: [itemId, itemId, ...], user_id }
+ * Assigns sort_order in clean increments of 10 so future single-row moves have
+ * room to slot between. Order is global — it applies to every day and both
+ * blocks, since all queries ORDER BY items.sort_order.
+ * ------------------------------------------------------------------------- */
+async function reorderItems(env, body) {
+  const { order } = body;
+  if (!Array.isArray(order) || !order.length)
+    return { error: "bad_request", message: "order must be a non-empty array of item ids" };
+
+  const stmts = order.map((itemId, i) =>
+    env.DB.prepare(`UPDATE items SET sort_order = ?1 WHERE id = ?2`)
+      .bind((i + 1) * 10, +itemId)
+  );
+  await env.DB.batch(stmts);
+
+  const { results: items } = await env.DB.prepare(
+    `SELECT id, name_ur, name_en, name_roman, unit, sort_order
+       FROM items WHERE is_active = 1 ORDER BY sort_order, name_ur`
+  ).all();
+
+  return { ok: true, items };
+}
 
 /* ---------------------------------------------------------------------------
  * POST /api/items/:id/unit — set an item's global unit.
