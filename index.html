@@ -1477,8 +1477,11 @@ function renderKitchen(data) {
   if (si) si.value = data.header.students_fed   ?? '';
   stuDirty = false;
 
-  // Block buttons — both the template toolbar set AND the desktop tabs-bar set
-  activeBlk = data.blocks?.[0]?.id ?? 1;
+  // Block buttons — both the template toolbar set AND the desktop tabs-bar set.
+  // Preserve the currently active block across re-renders; only default to the
+  // first block if the current one isn't valid for this day.
+  const validBlk = data.blocks?.some(x=>x.id===activeBlk);
+  activeBlk = validBlk ? activeBlk : (data.blocks?.[0]?.id ?? 1);
   document.querySelectorAll('.blk-btn').forEach(b => {
     const bid = +b.dataset.bid;
     const blk = data.blocks?.find(x=>x.id===bid);
@@ -1488,7 +1491,9 @@ function renderKitchen(data) {
       document.querySelectorAll('.blk-btn').forEach(x=>
         x.classList.toggle('active', +x.dataset.bid === bid));
       activeBlk = bid;
-      renderRows(data, bid);
+      // Use the live dayData (fresh after any save), not the captured closure,
+      // so consumption saved since the last full render is not lost on switch.
+      renderRows(dayData || data, bid);
     };
   });
   // Ensure both sets reflect the active block on initial render
@@ -2082,7 +2087,10 @@ async function saveBlock() {
     if (dayData?.daily_received?.length) data.daily_received = dayData.daily_received;
     dayData = data;
     Object.keys(dirty).filter(k=>k.startsWith(activeBlk+'|')).forEach(k=>delete dirty[k]);
-    renderRows(data, activeBlk);
+    // Full re-render so the block-switch buttons re-bind to the fresh data
+    // (activeBlk is preserved inside renderKitchen), preventing a later switch
+    // from rendering stale pre-save consumption.
+    renderKitchen(data);
     statsUpdate(data);
     setAS('محفوظ کیا گیا');
     toast('محفوظ ہو گیا ✓');
