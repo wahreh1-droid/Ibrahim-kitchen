@@ -37,6 +37,14 @@ export default {
         return json(await addItem(env, body));
       }
 
+      // POST /api/items/:id/unit — set an item's (global) unit
+      const itemUnitMatch = path.match(/^\/api\/items\/(\d+)\/unit$/);
+      if (itemUnitMatch && request.method === "POST") {
+        const body = await request.json().catch(() => null);
+        if (!body) return json({ error: "bad_request", message: "Missing body" }, 400);
+        return json(await setItemUnit(env, +itemUnitMatch[1], body));
+      }
+
       // POST /api/day/:date/opening — must be matched before the broader day route
       const openingMatch = path.match(/^\/api\/day\/(\d{4}-\d{2}-\d{2})\/opening$/);
       if (openingMatch && request.method === "POST") {
@@ -785,6 +793,31 @@ async function saveStudents(env, date, body) {
   return getDay(env, date);
 }
 
+
+/* ---------------------------------------------------------------------------
+ * POST /api/items/:id/unit — set an item's global unit.
+ * Body: { unit, user_id }. unit must be one of kg|g|L|pcs|dozen.
+ * ------------------------------------------------------------------------- */
+async function setItemUnit(env, itemId, body) {
+  const { unit } = body;
+  const ALLOWED = ['kg','g','L','pcs','dozen'];
+  if (!ALLOWED.includes(unit))
+    return { error: "bad_request", message: "unit must be one of " + ALLOWED.join(',') };
+
+  const exists = await env.DB.prepare(`SELECT id FROM items WHERE id = ?1`).bind(itemId).first();
+  if (!exists) return { error: "not_found", message: "Item not found" };
+
+  await env.DB.prepare(
+    `UPDATE items SET unit = ?1 WHERE id = ?2`
+  ).bind(unit, itemId).run();
+
+  const { results: items } = await env.DB.prepare(
+    `SELECT id, name_ur, name_en, name_roman, unit, sort_order
+       FROM items WHERE is_active = 1 ORDER BY sort_order, name_ur`
+  ).all();
+
+  return { ok: true, item_id: itemId, unit, items };
+}
 
 /* ---------------------------------------------------------------------------
  * POST /api/items — add a new item and assign it to all blocks

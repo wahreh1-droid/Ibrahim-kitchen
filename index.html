@@ -378,6 +378,18 @@ select.finp.don-unit-sel{
   color:var(--g600);margin-top:4px;display:none;
 }
 .unit-tog{display:flex;gap:8px;direction:ltr}
+/* In-grid unit dropdown */
+.unit-sel{
+  font-family:var(--ur);font-size:.82rem;color:var(--ink8);
+  width:100%;max-width:110px;cursor:pointer;text-align:center;
+  border:1.5px solid var(--bdr);border-radius:var(--r);
+  padding:5px 6px;background:var(--sur);
+  appearance:none;-webkit-appearance:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='7' viewBox='0 0 12 8'%3E%3Cpath fill='%239ca3af' d='M6 8L0 0h12z'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:left 8px center;padding-left:22px;
+  transition:border-color .15s;
+}
+.unit-sel:focus{outline:none;border-color:var(--g500);box-shadow:0 0 0 3px rgba(58,138,78,.1)}
 .uopt{
   flex:1;padding:8px 6px;border:1.5px solid var(--bdr);border-radius:var(--r);
   font-family:var(--ur);font-size:.85rem;text-align:center;color:var(--ink7);transition:all .15s;
@@ -965,16 +977,6 @@ select.finp.don-unit-sel{
         <input class="finp ltr" id="ni-en" type="text" placeholder="Optional — auto-fills via Qwen when built" dir="ltr">
         <span class="auto-tag" id="auto-tag">AUTO-TRANSLATED VIA QWEN — TAP TO EDIT</span>
       </div>
-      <div class="fg">
-        <label class="flbl"><span>Unit</span><span class="flbl-ur">اکائی</span></label>
-        <div class="unit-tog" id="unit-tog">
-          <button class="uopt" data-u="g">گرام</button>
-          <button class="uopt" data-u="pcs">عدد</button>
-          <button class="uopt" data-u="L">لیٹر</button>
-          <button class="uopt sel" data-u="kg">کلو گرام</button>
-          <button class="uopt" data-u="mun">مَن</button>
-        </div>
-      </div>
     </div>
     <div class="mfoot">
       <button class="btn-pri" id="btn-save-item">محفوظ کریں</button>
@@ -1140,7 +1142,16 @@ select.finp.don-unit-sel{
 <script>
 const API = 'https://ibrahim-kitchen-api.wahreh1.workers.dev';
 
-const UNIT_UR = { kg: 'کلو گرام', g: 'گرام', L: 'لیٹر', pcs: 'عدد', mun: 'مَن' };
+const UNIT_UR = { kg: 'کلو گرام', g: 'گرام', L: 'لیٹر', pcs: 'عدد', dozen: 'درجن' };
+// Options for the in-grid unit dropdown (code → bilingual label)
+const UNIT_OPTS = [
+  ['',      '— منتخب کریں —'],
+  ['kg',    'کلو (Kg)'],
+  ['g',     'گرام (Gram)'],
+  ['L',     'لیٹر (Litre)'],
+  ['pcs',   'عدد (Pcs)'],
+  ['dozen', 'درجن (Dozen)'],
+];
 
 /* ─── State ─────────────────────────────────────────────── */
 let curDate   = todayISO();
@@ -1152,7 +1163,6 @@ let dirtyOp   = {};      // key: itemId → new opening_qty (day-wide)
 let dirtyCost = {};      // key: itemId → new cost_per_unit (day-wide, per-day price)
 let dirtyRcv  = {};      // key: itemId → {recv_qty, recv_value_pkr, sadaqa_qty} (day-wide received)
 let stuDirty  = false;   // boys/girls headcount edited but not yet saved
-let selUnit   = 'kg';
 let asTimer   = null;
 
 /* ─── Boot ───────────────────────────────────────────────── */
@@ -1305,11 +1315,6 @@ function wireGlobal() {
   document.getElementById('btn-cancel-item').onclick = closeAdd;
   document.getElementById('ov-add').onclick = e => { if (e.target===e.currentTarget) closeAdd(); };
   document.getElementById('btn-save-item').onclick = saveItem;
-  document.getElementById('unit-tog').onclick = e => {
-    const b = e.target.closest('.uopt'); if (!b) return;
-    document.querySelectorAll('.uopt').forEach(x=>x.classList.remove('sel'));
-    b.classList.add('sel'); selUnit = b.dataset.u;
-  };
   document.getElementById('ni-ur').addEventListener('input', () => {
     clearTimeout(window._tt);
     const v = document.getElementById('ni-ur').value.trim();
@@ -1543,7 +1548,11 @@ function renderRows(data, blkId) {
         <span class="iur">${row.name_ur}</span>
         <span class="ien">${row.name_en??''}</span>
       </td>
-      <td class="cu"><span class="ubadge">${UNIT_UR[row.unit]||row.unit}</span></td>
+      <td class="cu">
+        <select class="unit-sel" data-uid="${row.item_id}" dir="rtl" title="اکائی · Unit">
+          ${UNIT_OPTS.map(([v,l]) => `<option value="${v}"${(row.unit===v)?' selected':''}>${l}</option>`).join('')}
+        </select>
+      </td>
       <td class="cn sep-l col-cost">
         <input class="qi${(dirtyCost[row.item_id]!==undefined)?' chg':''}"
                data-cid="${row.item_id}" type="number" min="0" step="0.01"
@@ -1681,6 +1690,16 @@ function renderRows(data, blkId) {
       await saveOpening(itemId, dirtyOp[itemId]);
     });
   });
+
+  // Unit dropdown — global per item, saves immediately on change
+  tbody.querySelectorAll('select[data-uid]').forEach(sel => {
+    sel.addEventListener('change', async () => {
+      const itemId = +sel.dataset.uid;
+      const unit = sel.value;
+      if (!unit) return; // placeholder chosen — nothing to save
+      await saveUnit(itemId, unit);
+    });
+  });
 }
 
 function calcRem(tot, blkId, itemId, data) {
@@ -1783,6 +1802,35 @@ async function saveOpening(itemId, qty) {
     setAS('سابق محفوظ کیا گیا');
   } catch(e) {
     toast('سابق خرابی: '+e.message, true);
+  }
+}
+
+/* ─── Save item unit (global) ────────────────────────────── */
+async function saveUnit(itemId, unit) {
+  try {
+    const r = await fetch(`${API}/api/items/${itemId}/unit`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ unit, user_id: 'ibrahim' })
+    });
+    const data = await r.json();
+    if (data.error) throw new Error(data.message||data.error);
+    // Update unit in the in-memory day data so re-renders and the REMAINING
+    // unit label reflect the new unit without a full reload.
+    const patch = (arr) => (arr||[]).forEach(row => { if (row.item_id===itemId) row.unit = unit; });
+    if (dayData) {
+      patch(dayData.day_totals);
+      for (const bid of Object.keys(dayData.rows_by_block||{})) {
+        const m = dayData.rows_by_block[bid];
+        patch(Array.isArray(m)?m:Object.values(m));
+      }
+    }
+    // Refresh the REMAINING unit label for this row live
+    const remUnit = document.querySelector(`[data-rid2="${itemId}"]`)?.closest('.rem-cell')?.querySelector('.rem-unit');
+    if (remUnit) remUnit.textContent = UNIT_UR[unit] || unit;
+    setAS('اکائی محفوظ کی گئی');
+  } catch(e) {
+    toast('اکائی خرابی: '+e.message, true);
   }
 }
 
@@ -1997,8 +2045,6 @@ function openAdd() {
   document.getElementById('ni-en').value='';
   document.getElementById('ni-en').placeholder='Auto-translating via Qwen…';
   document.getElementById('auto-tag').style.display='none';
-  selUnit='kg';
-  document.querySelectorAll('.uopt').forEach(b=>b.classList.toggle('sel',b.dataset.u==='kg'));
   document.getElementById('ov-add').classList.add('open');
   setTimeout(()=>document.getElementById('ni-ur').focus(),120);
 }
@@ -2025,7 +2071,7 @@ async function saveItem() {
   try {
     const r = await fetch(`${API}/api/items`,{
       method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({name_ur:ur, name_en:en, name_roman:en, unit:selUnit, user_id:'ibrahim'})
+      body: JSON.stringify({name_ur:ur, name_en:en, name_roman:en, unit:'kg', user_id:'ibrahim'})
     });
     const data = await r.json();
     if (data.error) throw new Error(data.message||data.error);
@@ -2584,7 +2630,7 @@ function buildYearlyHtml(data, opts) {
 
 /* ── Unit label helper ──────────────────────────────────── */
 function unitUr(u) {
-  return {kg:'کلو گرام',g:'گرام',L:'لیٹر',pcs:'عدد',mun:'مَن'}[u] || u;
+  return {kg:'کلو گرام',g:'گرام',L:'لیٹر',pcs:'عدد',dozen:'درجن'}[u] || u;
 }
 
 /* ─── Formatters ─────────────────────────────────────────── */
