@@ -45,6 +45,14 @@ export default {
         return json(await saveOpening(env, openingMatch[1], body));
       }
 
+      // POST /api/day/:date/cost — per-day per-item cost_per_unit
+      const costMatch = path.match(/^\/api\/day\/(\d{4}-\d{2}-\d{2})\/cost$/);
+      if (costMatch && request.method === "POST") {
+        const body = await request.json().catch(() => null);
+        if (!body) return json({ error: "bad_request", message: "Missing body" }, 400);
+        return json(await saveCost(env, costMatch[1], body));
+      }
+
       // POST /api/day/:date/students — boys / girls / total headcount
       const studentsMatch = path.match(/^\/api\/day\/(\d{4}-\d{2}-\d{2})\/students$/);
       if (studentsMatch && request.method === "POST") {
@@ -216,6 +224,7 @@ async function getDay(env, date) {
               i.name_ur, i.name_en, i.name_roman, i.unit,
               ob.qty                                      AS opening_qty,
               ob.value_pkr                                AS opening_pkr,
+              COALESCE(ob.cost_per_unit,      0)          AS cost_per_unit,
               COALESCE(dr.recv_qty,            0)         AS recv_qty_total,
               COALESCE(dr.recv_value_pkr,      0)         AS recv_pkr_total,
               COALESCE(dr.sadaqa_qty,          0)         AS sadaqa_qty_total,
@@ -234,7 +243,7 @@ async function getDay(env, date) {
            ON  lr.header_id = ob.header_id
            AND lr.item_id   = ob.item_id
         WHERE ob.header_id = ?1
-        GROUP BY i.id, ob.qty, ob.value_pkr, dr.recv_qty, dr.recv_value_pkr, dr.sadaqa_qty
+        GROUP BY i.id, ob.qty, ob.value_pkr, ob.cost_per_unit, dr.recv_qty, dr.recv_value_pkr, dr.sadaqa_qty
         ORDER BY i.sort_order, i.name_ur`
     ).bind(header.id),
 
@@ -345,7 +354,7 @@ async function createDay(env, date, body) {
   const headerId = headerInsert.id;
 
   await env.DB.prepare(
-    `INSERT INTO opening_balances (header_id, item_id, qty, value_pkr)
+    `INSERT INTO opening_balances (header_id, item_id, qty, value_pkr, cost_per_unit)
      WITH last_hdr AS (
        SELECT ob.item_id, MAX(h.entry_date) AS last_date
        FROM opening_balances ob
@@ -358,15 +367,16 @@ async function createDay(env, date, body) {
               ob.qty
                 + COALESCE(dr.recv_qty,   0)
                 + COALESCE(dr.sadaqa_qty, 0)
-                - COALESCE(SUM(lr.used_qty), 0) AS closing_qty
+                - COALESCE(SUM(lr.used_qty), 0) AS closing_qty,
+              ob.cost_per_unit                  AS prev_cost
        FROM last_hdr lh
        JOIN daily_headers h     ON h.entry_date  = lh.last_date
        JOIN opening_balances ob ON ob.header_id  = h.id AND ob.item_id = lh.item_id
        LEFT JOIN daily_received dr ON dr.header_id = h.id AND dr.item_id = lh.item_id
        LEFT JOIN ledger_rows lr    ON lr.header_id  = h.id AND lr.item_id = lh.item_id
-       GROUP BY lh.item_id, ob.qty, dr.recv_qty, dr.sadaqa_qty
+       GROUP BY lh.item_id, ob.qty, dr.recv_qty, dr.sadaqa_qty, ob.cost_per_unit
      )
-     SELECT ?1, i.id, COALESCE(pc.closing_qty, 0), 0
+     SELECT ?1, i.id, COALESCE(pc.closing_qty, 0), 0, COALESCE(pc.prev_cost, 0)
      FROM items i
      LEFT JOIN prev_closing pc ON pc.item_id = i.id
      WHERE i.is_active = 1`
@@ -609,6 +619,43 @@ async function saveOpening(env, date, body) {
   await propagateOpenings(env, date);
 
   // Return fresh day_totals so frontend can update remaining without a full reload
+  return getDay(env, date);
+}
+
+
+/* ---------------------------------------------------------------------------
+ * POST /api/day/:date/cost — set per-day cost_per_unit for one or more items.
+ * Cost is a per-day price: it does NOT propagate to other days. Editing a past
+ * day's cost stays on that day only. Carry-forward to future days happens only
+ * at day-creation time (see createDay).
+ * Body: { user_id, rows: [ { item_id, cost_per_unit }, ... ] }
+ * ------------------------------------------------------------------------- */
+async function saveCost(env, date, body) {
+  const { rows, user_id } = body;
+  if (!user_id) return { error: "bad_request", message: "user_id required" };
+  if (!Array.isArray(rows) || !rows.length)
+    return { error: "bad_request", message: "rows must be non-empty" };
+
+  const header = await env.DB.prepare(
+    `SELECT id, locked FROM daily_headers WHERE entry_date = ?1`
+  ).bind(date).first();
+  if (!header) return { error: "not_found", message: "Day does not exist." };
+  if (header.locked) return { error: "locked", message: "This day is locked." };
+
+  const stmts = [];
+  for (const r of rows) {
+    if (!r || r.item_id == null) continue;
+    const cost = Number.isFinite(+r.cost_per_unit) ? +r.cost_per_unit : 0;
+    stmts.push(
+      env.DB.prepare(
+        `UPDATE opening_balances SET cost_per_unit = ?1 WHERE header_id = ?2 AND item_id = ?3`
+      ).bind(cost, header.id, r.item_id)
+    );
+  }
+  if (stmts.length) await env.DB.batch(stmts);
+
+  // No propagation — cost is per-day. Return fresh day so the client can
+  // recompute values from the saved cost.
   return getDay(env, date);
 }
 

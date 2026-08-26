@@ -162,6 +162,9 @@ a{text-decoration:none}
   --col-open-bg:   #eff6ff;
   --col-open-bdr:  #bfdbfe;
   --col-open-hdr:  #1e40af;
+  --col-cost-bg:   #faf5ff;
+  --col-cost-bdr:  #e9d5ff;
+  --col-cost-hdr:  #6b21a8;
   --col-recv-bg:   #f0fdf4;
   --col-recv-bg2:  #dcfce7;
   --col-recv-bdr:  #86efac;
@@ -199,6 +202,7 @@ th.sep-l{border-left:1px solid rgba(0,0,0,.08)}
 th.sep-r{border-right:1px solid rgba(0,0,0,.08)}
 /* Column group header colors */
 th.col-open{background:var(--col-open-bg)!important;color:var(--col-open-hdr)!important;border-bottom-color:var(--col-open-bdr)!important}
+th.col-cost{background:var(--col-cost-bg)!important;color:var(--col-cost-hdr)!important;border-bottom-color:var(--col-cost-bdr)!important}
 th.col-recv{background:var(--col-recv-bg)!important;color:var(--col-recv-hdr)!important;border-bottom-color:var(--col-recv-bdr)!important}
 th.col-recv2{background:var(--col-recv-bg2)!important;color:var(--col-recv-hdr)!important;border-bottom-color:var(--col-recv-bdr)!important}
 th.col-cons{background:var(--col-cons-bg)!important;color:var(--col-cons-hdr)!important;border-bottom-color:var(--col-cons-bdr)!important}
@@ -208,6 +212,7 @@ th.col-sadq{background:var(--col-sadq-bg)!important;color:var(--col-sadq-hdr)!im
 th.col-sadq2{background:var(--col-sadq-bg2)!important;color:var(--col-sadq-hdr)!important;border-bottom-color:var(--col-sadq-bdr)!important}
 /* Column cell tints */
 td.col-open{background:var(--col-open-bg)}
+td.col-cost{background:var(--col-cost-bg)}
 td.col-recv{background:var(--col-recv-bg)}
 td.col-recv2{background:var(--col-recv-bg2)}
 td.col-cons{background:var(--col-cons-bg)}
@@ -255,6 +260,12 @@ td.cn{text-align:center}
   display:block;margin:2px auto 0;
 }
 .vi:focus{outline:none;border-color:var(--g400)}
+/* Read-only computed value (qty x cost). Not an input — display only. */
+.vcomp{
+  font-family:var(--mono);font-size:.78rem;color:var(--ink7);
+  display:block;text-align:center;padding:5px 6px;
+  opacity:.85;
+}
 
 .rem-cell{text-align:right;direction:ltr}
 .rem-qty{font-family:var(--mono);font-size:1rem;font-weight:600;color:var(--ink9)}
@@ -809,6 +820,7 @@ select.finp.don-unit-sel{
         <tr>
           <th class="ci" rowspan="2"><span class="ur-hdr">اشیاء</span><span style="font-size:.56rem">ITEM</span></th>
           <th class="cu" rowspan="2"><span class="ur-hdr">اکائی</span><span style="font-size:.56rem">UNIT</span></th>
+          <th class="cn sep-l col-cost" rowspan="2"><span class="ur-hdr">قیمت فی اکائی</span><span style="font-size:.56rem">COST/UNIT</span></th>
           <th class="cn sep-l col-open" rowspan="2"><span class="ur-hdr">موجود</span><span style="font-size:.56rem">OPENING</span></th>
           <th colspan="2" class="gh sep-l col-recv">خریدا — PURCHASED</th>
           <th class="gh sep-l sep-r col-sadq">صدقہ — SADAQA</th>
@@ -1137,6 +1149,7 @@ let dayData   = null;
 let activeBlk = 1; // Boys block default
 let dirty     = {};      // key: `${blockId}|${itemId}|${mealType}` → {used_qty, used_value_pkr}
 let dirtyOp   = {};      // key: itemId → new opening_qty (day-wide)
+let dirtyCost = {};      // key: itemId → new cost_per_unit (day-wide, per-day price)
 let dirtyRcv  = {};      // key: itemId → {recv_qty, recv_value_pkr, sadaqa_qty} (day-wide received)
 let stuDirty  = false;   // boys/girls headcount edited but not yet saved
 let selUnit   = 'kg';
@@ -1355,7 +1368,7 @@ async function navigate(d) {
   else loadDay(curDate);
 }
 function reset() {
-  dayData = null; dirty = {}; dirtyOp = {}; dirtyRcv = {}; stuDirty = false;
+  dayData = null; dirty = {}; dirtyOp = {}; dirtyRcv = {}; dirtyCost = {}; stuDirty = false;
   // Clear headcount inputs so the previous day's numbers never bleed into the next
   ['inp-boys','inp-girls','stu-inp'].forEach(id => {
     const el = document.getElementById(id);
@@ -1498,6 +1511,15 @@ function renderRows(data, blkId) {
   const totMap = {};
   for (const t of (data.day_totals??[])) totMap[t.item_id] = t;
 
+  // Per-day cost_per_unit comes back on day_totals (from opening_balances)
+  const costOf = (itemId) => dirtyCost[itemId] ?? totMap[itemId]?.cost_per_unit ?? 0;
+  // Computed value = qty x cost; blank when either is 0 (spec: show — )
+  const compVal = (qty, itemId) => {
+    const c = costOf(itemId), q = +qty || 0;
+    if (!c || !q) return '';
+    return (q * c).toFixed(2);
+  };
+
   for (const row of masterItems) {
     const drk      = dirtyRcv[row.item_id] ?? {};
     const savedRcv = rcvMap[row.item_id]   ?? {};
@@ -1521,7 +1543,13 @@ function renderRows(data, blkId) {
         <span class="iur">${row.name_ur}</span>
         <span class="ien">${row.name_en??''}</span>
       </td>
-      <td class="cu col-open"><span class="ubadge">${UNIT_UR[row.unit]||row.unit}</span></td>
+      <td class="cu"><span class="ubadge">${UNIT_UR[row.unit]||row.unit}</span></td>
+      <td class="cn sep-l col-cost">
+        <input class="qi${(dirtyCost[row.item_id]!==undefined)?' chg':''}"
+               data-cid="${row.item_id}" type="number" min="0" step="0.01"
+               value="${costOf(row.item_id)||''}" placeholder="—"
+               title="قیمت فی اکائی · Cost per unit">
+      </td>
       <td class="cn sep-l col-open">
         <input class="qi${(dirtyOp[row.item_id]!==undefined)?' chg':''}"
                data-oid="${row.item_id}" type="number" min="0"
@@ -1534,9 +1562,7 @@ function renderRows(data, blkId) {
                type="number" min="0" value="${rq||''}" placeholder="—">
       </td>
       <td class="cn sep-r col-recv2">
-        <input class="vi${(drk.recv_value_pkr!==undefined)?' chg':''}"
-               data-rid="${row.item_id}" data-rf="recv_value_pkr"
-               type="number" min="0" value="${rp||''}" placeholder="—">
+        <span class="vcomp" data-vfor="recv|${row.item_id}">${compVal(rq, row.item_id)||'—'}</span>
       </td>
       <td class="cn sep-l sep-r col-sadq">
         <input class="qi${(drk.sadaqa_qty!==undefined)?' chg':''}"
@@ -1549,7 +1575,6 @@ function renderRows(data, blkId) {
         const dmk = dirty[mk] ?? {};
         const arow = activeByItem[row.item_id] ?? {};
         const muq = dmk.used_qty       ?? arow[mt]?.used_qty       ?? 0;
-        const mup = dmk.used_value_pkr ?? arow[mt]?.used_value_pkr ?? 0;
         const isl = mt==='dinner';
         return `
       <td class="cn sep-l col-cons">
@@ -1558,9 +1583,7 @@ function renderRows(data, blkId) {
                type="number" min="0" value="${muq||''}" placeholder="—">
       </td>
       <td class="cn${isl?' sep-r':''} col-cons2">
-        <input class="vi${(dmk.used_value_pkr!==undefined)?' chg':''}"
-               data-mk="${mk}" data-mf="used_value_pkr"
-               type="number" min="0" value="${mup||''}" placeholder="—">
+        <span class="vcomp" data-vfor="${mt}|${row.item_id}">${compVal(muq, row.item_id)||'—'}</span>
       </td>`;
       }).join('')}
       <td class="cr sep-r col-rem">
@@ -1574,6 +1597,25 @@ function renderRows(data, blkId) {
     tbody.appendChild(tr);
   }
 
+  // Helper: recompute a single value cell (qty x cost) live
+  const recompCell = (vfor, qty, itemId) => {
+    const el = tbody.querySelector(`[data-vfor="${vfor}|${itemId}"]`);
+    if (el) el.textContent = compVal(qty, itemId) || '—';
+  };
+  // Helper: recompute ALL value cells for one item (used when its cost changes)
+  const recompItem = (itemId) => {
+    const drk = dirtyRcv[itemId] ?? {};
+    const savedRcv = rcvMap[itemId] ?? {};
+    const rq = drk.recv_qty ?? savedRcv.recv_qty ?? 0;
+    recompCell('recv', rq, itemId);
+    const arow = activeByItem[itemId] ?? {};
+    for (const mt of ['breakfast','lunch','dinner']) {
+      const mk = `${blkId}|${itemId}|${mt}`;
+      const q = dirty[mk]?.used_qty ?? arow[mt]?.used_qty ?? 0;
+      recompCell(mt, q, itemId);
+    }
+  };
+
   // Consumed inputs — per block per meal type
   tbody.querySelectorAll('input[data-mk]').forEach(inp => {
     inp.addEventListener('input', () => {
@@ -1581,6 +1623,9 @@ function renderRows(data, blkId) {
       dirty[k] = dirty[k] ?? {};
       dirty[k][f] = parseFloat(inp.value)||0;
       inp.classList.add('chg');
+      // Recompute this meal's value cell (mealType|itemId encoded in the key)
+      const [bid, itemId, mt] = k.split('|');
+      recompCell(mt, dirty[k].used_qty, +itemId);
       liveRem(data, blkId);
       schedAS();
     });
@@ -1593,6 +1638,7 @@ function renderRows(data, blkId) {
       dirtyRcv[itemId] = dirtyRcv[itemId] ?? {};
       dirtyRcv[itemId][f] = parseFloat(inp.value)||0;
       inp.classList.add('chg');
+      if (f === 'recv_qty') recompCell('recv', dirtyRcv[itemId].recv_qty, itemId);
       liveRem(data, blkId);
       schedAS();
     });
@@ -1600,6 +1646,22 @@ function renderRows(data, blkId) {
       const itemId = +inp.dataset.rid;
       if (!dirtyRcv[itemId] || !dayData?.exists) return;
       await saveReceived(itemId);
+    });
+  });
+
+  // Cost-per-unit inputs — day-wide (per-day price), save on blur, recompute values live
+  tbody.querySelectorAll('input[data-cid]').forEach(inp => {
+    inp.addEventListener('input', () => {
+      const itemId = +inp.dataset.cid;
+      dirtyCost[itemId] = parseFloat(inp.value)||0;
+      inp.classList.add('chg');
+      recompItem(itemId);           // all value cells for this item follow the new cost
+      schedAS();
+    });
+    inp.addEventListener('blur', async () => {
+      const itemId = +inp.dataset.cid;
+      if (dirtyCost[itemId] === undefined || !dayData?.exists) return;
+      await saveCost(itemId);
     });
   });
 
@@ -1724,6 +1786,76 @@ async function saveOpening(itemId, qty) {
   }
 }
 
+/* ─── Save per-day cost_per_unit ─────────────────────────── */
+async function saveCost(itemId) {
+  if (!dayData?.exists) return;
+  const totRow = (dayData.day_totals??[]).find(t=>t.item_id===itemId);
+  if (!totRow) return;
+  try {
+    const r = await fetch(`${API}/api/day/${curDate}/cost`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        rows: [{ item_id: itemId, cost_per_unit: dirtyCost[itemId]??0 }],
+        user_id: 'ibrahim',
+      })
+    });
+    const data = await r.json();
+    if (data.error) throw new Error(data.message||data.error);
+    if (data.day_totals) dayData.day_totals = data.day_totals;
+    // Re-save any stored values that depend on this cost so reports stay correct:
+    // received value + all meal values for this item, across both blocks.
+    await persistComputedValues(itemId);
+    delete dirtyCost[itemId];
+    statsUpdate(dayData);
+    setAS('قیمت محفوظ کی گئی');
+  } catch(e) {
+    toast('قیمت خرابی: '+e.message, true);
+  }
+}
+
+/* Current per-day cost for an item (dirty overrides saved). */
+function costForItem(itemId) {
+  if (dirtyCost[itemId] !== undefined) return dirtyCost[itemId];
+  const t = (dayData?.day_totals??[]).find(x=>x.item_id===itemId);
+  return t?.cost_per_unit ?? 0;
+}
+
+/* When cost changes, rewrite the stored *_value_pkr for received and every
+   block's meal rows so the (report-facing) stored values match qty x cost. */
+async function persistComputedValues(itemId) {
+  const cost = costForItem(itemId);
+  // Received value (day-wide)
+  const rcv = (dayData.daily_received??[]).find(x=>x.item_id===itemId);
+  const rq  = rcv?.recv_qty ?? 0;
+  if (rcv) {
+    await fetch(`${API}/api/day/${curDate}/received`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        rows:[{ item_id:itemId, recv_qty:rq, recv_value_pkr:+(rq*cost).toFixed(2), sadaqa_qty:rcv.sadaqa_qty??0 }],
+        user_id:'ibrahim'
+      })
+    }).catch(()=>{});
+  }
+  // Meal values for every block
+  for (const blk of (dayData.blocks??[])) {
+    const map = dayData.rows_by_block?.[blk.id] ?? {};
+    const items = Array.isArray(map)?map:Object.values(map);
+    const arow = items.find(x=>x.item_id===itemId);
+    const rows = [];
+    for (const mt of ['breakfast','lunch','dinner']) {
+      const q = arow?.[mt]?.used_qty ?? 0;
+      if (q) rows.push({ item_id:itemId, meal_type:mt, used_qty:q, used_value_pkr:+(q*cost).toFixed(2) });
+    }
+    if (rows.length) {
+      await fetch(`${API}/api/day/${curDate}`, {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ action:'save_block', block_id:blk.id, rows, user_id:'ibrahim' })
+      }).catch(()=>{});
+    }
+  }
+}
+
 /* ─── Save day-wide received ─────────────────────────────── */
 async function saveReceived(itemId) {
   if (!dayData?.exists) return;
@@ -1737,7 +1869,7 @@ async function saveReceived(itemId) {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({
-        rows: [{ item_id: itemId, recv_qty: d.recv_qty??0, recv_value_pkr: d.recv_value_pkr??0, sadaqa_qty: d.sadaqa_qty??0 }],
+        rows: [{ item_id: itemId, recv_qty: d.recv_qty??0, recv_value_pkr: +(((d.recv_qty??0))*costForItem(itemId)).toFixed(2), sadaqa_qty: d.sadaqa_qty??0 }],
         user_id: 'ibrahim',
       })
     });
@@ -1769,12 +1901,20 @@ async function saveBlock() {
       dirtyRcv[itemId][f] = val;
     });
 
-    // 2. Flush dirty opening balances and received in parallel
-    const opKeys  = Object.keys(dirtyOp);
-    const rcvKeys = Object.keys(dirtyRcv);
+    // 1b. Collect any in-flight cost edits from DOM (blur may not have fired)
+    document.querySelectorAll('input[data-cid]').forEach(inp => {
+      const itemId = +inp.dataset.cid;
+      if (inp.value !== '') dirtyCost[itemId] = parseFloat(inp.value)||0;
+    });
+
+    // 2. Flush dirty opening balances, received, and cost in parallel
+    const opKeys   = Object.keys(dirtyOp);
+    const rcvKeys  = Object.keys(dirtyRcv);
+    const costKeys = Object.keys(dirtyCost);
     await Promise.all([
       ...opKeys.map(id => saveOpening(+id, dirtyOp[id])),
       ...rcvKeys.map(id => saveReceived(+id)),
+      ...costKeys.map(id => saveCost(+id)),
     ]);
 
     // 2. Save consumed rows for active block
@@ -1822,13 +1962,15 @@ function buildRows(blkId) {
   const rows = [];
   for (const row of masterItems) {
     const saved = blkItems.find(r=>r.item_id===row.item_id) ?? {};
+    const cost  = costForItem(row.item_id);
     for (const mt of MEALS) {
       const mk = `${blkId}|${row.item_id}|${mt}`;
       const d  = dirty[mk] ?? {};
       const s  = saved[mt] ?? {};
-      const uq = d.used_qty       ?? s.used_qty       ?? 0;
-      const up = d.used_value_pkr ?? s.used_value_pkr ?? 0;
-      if (uq || up || dirty[mk]) {
+      const uq = d.used_qty ?? s.used_qty ?? 0;
+      // Value is computed from qty x per-day cost (not typed anymore)
+      const up = +((+uq || 0) * cost).toFixed(2);
+      if (uq || dirty[mk]) {
         rows.push({ item_id: row.item_id, meal_type: mt, used_qty: uq, used_value_pkr: up });
       }
     }
