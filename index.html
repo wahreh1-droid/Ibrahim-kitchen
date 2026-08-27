@@ -1180,6 +1180,7 @@ let dirtyCost = {};      // key: itemId → new cost_per_unit (day-wide, per-day
 let dirtyRcv  = {};      // key: itemId → {recv_qty, recv_value_pkr, sadaqa_qty} (day-wide received)
 let stuDirty  = false;   // boys/girls headcount edited but not yet saved
 let asTimer   = null;
+let itemOrder = null;    // last-known global item order (array of item_ids) — survives saves
 
 /* ─── Boot ───────────────────────────────────────────────── */
 document.addEventListener('DOMContentLoaded', () => {
@@ -1405,6 +1406,8 @@ async function loadDay(date) {
     if (!r.ok) throw new Error(`HTTP ${r.status}`);
     const data = await r.json();
     dayData = data;
+    // A full day load reflects the authoritative DB sort_order — adopt it.
+    if (data.day_totals?.length) itemOrder = data.day_totals.map(t=>t.item_id);
     renderDate();
     if (data.exists) renderKitchen(data);
     else renderCreate(date);
@@ -1776,8 +1779,22 @@ function wireDragReorder(tbody) {
   });
 }
 
+/* Apply a known item order (array of item_ids) to a day-data object in place.
+   Used to keep a just-saved reorder from being reverted by a lagging read. */
+function applyItemOrder(d, order) {
+  if (!d || !Array.isArray(order) || !order.length) return;
+  const pos = {}; order.forEach((id,i)=>pos[+id]=i);
+  const byPos = (arr) => (arr||[]).sort((a,b)=>(pos[a.item_id]??999)-(pos[b.item_id]??999));
+  byPos(d.day_totals);
+  for (const bid of Object.keys(d.rows_by_block||{})) {
+    const m = d.rows_by_block[bid];
+    if (Array.isArray(m)) byPos(m);
+  }
+}
+
 /* Persist global item order. */
 async function saveOrder(order) {
+  itemOrder = order.slice(); // remember it so later saves can't revert the order
   try {
     const r = await fetch(`${API}/api/items/reorder`, {
       method:'POST', headers:{'Content-Type':'application/json'},
@@ -1785,16 +1802,8 @@ async function saveOrder(order) {
     });
     const data = await r.json();
     if (data.error) throw new Error(data.message||data.error);
-    // Update in-memory item order so a re-render keeps the new sequence
-    if (data.items && dayData) {
-      const pos = {}; data.items.forEach((it,i)=>pos[it.id]=i);
-      const sortByPos = (arr) => (arr||[]).sort((a,b)=>(pos[a.item_id]??999)-(pos[b.item_id]??999));
-      sortByPos(dayData.day_totals);
-      for (const bid of Object.keys(dayData.rows_by_block||{})) {
-        const m = dayData.rows_by_block[bid];
-        if (Array.isArray(m)) sortByPos(m);
-      }
-    }
+    if (data.items) itemOrder = data.items.map(it=>it.id); // authoritative order from server
+    applyItemOrder(dayData, itemOrder);
     setAS('ترتیب محفوظ ہو گئی');
   } catch(e) {
     toast('ترتیب خرابی: '+e.message, true);
@@ -2086,12 +2095,15 @@ async function saveBlock() {
     // The save_block response may return stale received data if D1 view hasn't caught up
     if (dayData?.daily_received?.length) data.daily_received = dayData.daily_received;
     dayData = data;
+    // A just-saved reorder can be reverted if this fresh read lagged behind the
+    // sort_order write (D1 read replicas). Re-apply the known order defensively.
+    applyItemOrder(dayData, itemOrder);
     Object.keys(dirty).filter(k=>k.startsWith(activeBlk+'|')).forEach(k=>delete dirty[k]);
     // Full re-render so the block-switch buttons re-bind to the fresh data
     // (activeBlk is preserved inside renderKitchen), preventing a later switch
     // from rendering stale pre-save consumption.
-    renderKitchen(data);
-    statsUpdate(data);
+    renderKitchen(dayData);
+    statsUpdate(dayData);
     setAS('محفوظ کیا گیا');
     toast('محفوظ ہو گیا ✓');
   } catch(e) {
