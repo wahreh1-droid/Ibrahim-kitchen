@@ -81,6 +81,13 @@ a{text-decoration:none}
 }
 .hijri-val:hover{opacity:1;border-color:rgba(255,255,255,.7)}
 .hijri-suffix{font-size:.65rem;opacity:.4;color:#fff}
+.hijri-reminder{
+  font-family:var(--ur);font-size:.72rem;color:#fde68a;margin-top:3px;
+  background:rgba(180,83,9,.35);border:1px solid rgba(253,230,138,.4);
+  border-radius:6px;padding:2px 10px;text-align:center;
+}
+.h-pick{display:flex;gap:8px;margin:4px 0 2px}
+.h-pick select{flex:1;text-align:center}
 #date-picker{position:absolute;opacity:0;width:0;height:0;top:0;left:50%}
 
 .mast-left{display:flex;flex-direction:column;align-items:flex-start;gap:4px;flex-shrink:0}
@@ -759,6 +766,7 @@ select.finp.don-unit-sel{
         <span class="hijri-val" id="hijri-disp" title="تبدیل کریں">—</span>
         <span class="hijri-suffix">ھ</span>
       </div>
+      <div class="hijri-reminder" id="hijri-reminder" style="display:none">ہجری تاریخ ایڈجسٹ کریں</div>
       <input type="date" id="date-picker">
     </div>
     <button class="nav-btn" id="btn-next">&#8250;</button>
@@ -1005,7 +1013,11 @@ select.finp.don-unit-sel{
 <div class="hov" id="hov">
   <div class="hbox">
     <h3>ہجری تاریخ تبدیل کریں</h3>
-    <input id="h-inp" type="text" dir="rtl" placeholder="مثلاً: ۲۴ صفر ۱۴۴۸ھ">
+    <div class="h-pick" dir="rtl">
+      <select id="h-day"  class="finp" dir="rtl"></select>
+      <select id="h-mon"  class="finp" dir="rtl"></select>
+      <select id="h-year" class="finp" dir="rtl"></select>
+    </div>
     <div class="h-acts">
       <button class="btn-pri" id="h-ok" style="flex:1;justify-content:center">ٹھیک ہے</button>
       <button class="btn-cancel" id="h-cancel" style="flex:1;text-align:center">منسوخ</button>
@@ -1184,6 +1196,7 @@ let itemOrder = null;    // last-known global item order (array of item_ids) —
 
 /* ─── Boot ───────────────────────────────────────────────── */
 document.addEventListener('DOMContentLoaded', () => {
+  loadHijriAnchors().then(() => renderDate());
   renderDate();
   loadDay(curDate);
   wireGlobal();
@@ -1287,6 +1300,127 @@ function g2h(iso) {
   return `${u(hd)} ${MONTHS[hm-1]||''} ${u(hy)}`;
 }
 
+/* ═══ HIJRI ANCHOR ENGINE ═══════════════════════════════════════════════════
+   Anchors pin a Gregorian date to a Hijri date. For any day we count forward
+   from the most recent anchor at/before it: +1 Hijri day per calendar day,
+   rolling to day 1 of the NEXT month (fixed 12-month cycle) after 30. Before
+   the earliest anchor we fall back to the astronomical g2h() estimate. */
+const HIJRI_MONTHS = ['محرم','صفر','ربیع الاول','ربیع الثانی','جمادی الاول','جمادی الثانی',
+                      'رجب','شعبان','رمضان','شوال','ذوالقعدہ','ذوالحجہ'];
+const HIJRI_MONTHS_EN = ['Muharram','Safar','Rabi ul Awal','Rabi ul Thani','Jumada al-Awwal',
+                         'Jumada al-Thani','Rajab','Shaban','Ramadan','Shawwal','Dhul Qadah','Dhul Hijjah'];
+let hijriAnchors = [];   // [{gregorian_date, hijri_day, hijri_month, hijri_year}] ascending
+const _toArabic = s => String(s).split('').map(c=>'۰۱۲۳۴۵۶۷۸۹'[+c]??c).join('');
+
+/* Whole-day difference (b - a) between two YYYY-MM-DD dates. */
+function daysBetween(aIso, bIso) {
+  const a = new Date(aIso+'T12:00:00'), b = new Date(bIso+'T12:00:00');
+  return Math.round((b - a) / 86400000);
+}
+
+/* Advance a {day,month,year} Hijri date by n days using the fixed-cycle rule:
+   after day 30 → day 1 of next month; month 12 → month 1, year+1. */
+function hijriAdvance(hd, hm, hy, n) {
+  let d = hd, m = hm, y = hy;
+  for (let i = 0; i < n; i++) {
+    d++;
+    if (d > 30) { d = 1; m++; if (m > 12) { m = 1; y++; } }
+  }
+  return { day: d, month: m, year: y };
+}
+
+/* Resolve the Hijri date for a Gregorian ISO date → {day, month, year, anchored}.
+   anchored=false means it came from the astronomical fallback (pre-anchor). */
+function resolveHijri(iso) {
+  // Most recent anchor at or before iso
+  let anchor = null;
+  for (const a of hijriAnchors) {
+    if (a.gregorian_date <= iso) anchor = a; else break;
+  }
+  if (!anchor) {
+    // Before any anchor — astronomical estimate. Parse g2h's numeric output.
+    return { ...g2hParts(iso), anchored: false };
+  }
+  const n = daysBetween(anchor.gregorian_date, iso);
+  const r = hijriAdvance(anchor.hijri_day, anchor.hijri_month, anchor.hijri_year, n);
+  return { ...r, anchored: true };
+}
+
+/* Numeric parts from the astronomical converter (mirrors g2h math). */
+function g2hParts(iso) {
+  const [y,m,d] = iso.split('-').map(Number);
+  const jd = Math.floor((1461*(y+4800+Math.floor((m-14)/12)))/4)
+           + Math.floor((367*(m-2-12*Math.floor((m-14)/12)))/12)
+           - Math.floor((3*Math.floor((y+4900+Math.floor((m-14)/12))/100))/4)
+           + d - 32075;
+  let l = jd-1948440+10632;
+  const n = Math.floor((l-1)/10631);
+  l = l-10631*n+354;
+  const j = Math.floor((10985-l)/5316)*Math.floor((50*l)/17719)
+           +Math.floor(l/5670)*Math.floor((43*l)/15238);
+  l = l-Math.floor((30-j)/15)*Math.floor((17719*j)/50)
+     -Math.floor(j/16)*Math.floor((15238*j)/43)+29;
+  const hm = Math.floor((24*l)/709);
+  const hd = l-Math.floor((709*hm)/24);
+  const hy = 30*n+j-30;
+  return { day: hd, month: hm, year: hy };
+}
+
+/* Formatted Urdu display string for a resolved Hijri date. */
+function hijriDisplay(iso) {
+  const r = resolveHijri(iso);
+  return `${_toArabic(r.day)} ${HIJRI_MONTHS[r.month-1]||''} ${_toArabic(r.year)}`;
+}
+
+/* Load all anchors from the backend (ascending). */
+async function loadHijriAnchors() {
+  try {
+    const r = await fetch(`${API}/api/hijri/anchors`);
+    const data = await r.json();
+    if (data.anchors) hijriAnchors = data.anchors;
+  } catch(_) { /* keep whatever we have; fallback is astronomical */ }
+}
+
+/* Populate the day+month+year dropdowns from the current day's resolved date. */
+function openHijriPicker() {
+  const cur = resolveHijri(curDate);
+  const daySel = document.getElementById('h-day');
+  const monSel = document.getElementById('h-mon');
+  const yrSel  = document.getElementById('h-year');
+  daySel.innerHTML = ''; monSel.innerHTML = ''; yrSel.innerHTML = '';
+  for (let d=1; d<=30; d++) {
+    const o=document.createElement('option'); o.value=d; o.textContent=_toArabic(d);
+    if (d===cur.day) o.selected=true; daySel.appendChild(o);
+  }
+  HIJRI_MONTHS.forEach((name,i) => {
+    const o=document.createElement('option'); o.value=i+1; o.textContent=name;
+    if (i+1===cur.month) o.selected=true; monSel.appendChild(o);
+  });
+  for (let y=cur.year-1; y<=cur.year+1; y++) {
+    const o=document.createElement('option'); o.value=y; o.textContent=_toArabic(y);
+    if (y===cur.year) o.selected=true; yrSel.appendChild(o);
+  }
+  document.getElementById('hov').classList.add('open');
+}
+
+/* Save an anchor for a Gregorian date and refresh the display. */
+async function saveHijriAnchor(iso, day, month, year) {
+  try {
+    const r = await fetch(`${API}/api/hijri/anchors`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ gregorian_date:iso, hijri_day:day, hijri_month:month, hijri_year:year, user_id:'ibrahim' })
+    });
+    const data = await r.json();
+    if (data.error) throw new Error(data.message||data.error);
+    if (data.anchors) hijriAnchors = data.anchors;
+    renderDate(); // re-resolve display + reminder from the new anchor
+    setAS('ہجری تاریخ محفوظ ہو گئی');
+  } catch(e) {
+    toast('ہجری خرابی: '+e.message, true);
+  }
+}
+
+
 function renderDate() {
   const [y,m,d] = curDate.split('-');
   document.getElementById('dd').textContent = d;
@@ -1295,8 +1429,14 @@ function renderDate() {
   const dow = new Date(curDate+'T12:00:00').getDay();
   document.getElementById('ddow').textContent = `${DOW_EN[dow].toUpperCase()} · ${DOW_UR[dow]}`;
   document.getElementById('date-picker').value = curDate;
-  const stored = dayData?.header?.hijri_date;
-  document.getElementById('hijri-disp').textContent = stored || g2h(curDate);
+  // Hijri display comes from the anchor engine (not the per-day stored string)
+  const disp = document.getElementById('hijri-disp');
+  disp.textContent = hijriDisplay(curDate);
+  // Reminder when the displayed Hijri day reaches 29 (moon sighting likely) —
+  // clears once a new anchor is set for this/later day.
+  const r = resolveHijri(curDate);
+  const rem = document.getElementById('hijri-reminder');
+  if (rem) rem.style.display = (r.day >= 29) ? '' : 'none';
 }
 
 /* ─── Global wire ────────────────────────────────────────── */
@@ -1310,19 +1450,17 @@ function wireGlobal() {
     curDate = e.target.value; reset(); renderDate(); loadDay(curDate);
   };
 
-  // Hijri modal
+  // Hijri modal — day+month+year picker that sets an anchor
   document.getElementById('hijri-disp').onclick = e => {
     e.stopPropagation();
-    document.getElementById('h-inp').value = document.getElementById('hijri-disp').textContent;
-    document.getElementById('hov').classList.add('open');
+    openHijriPicker();
   };
-  document.getElementById('h-ok').onclick = () => {
-    const v = document.getElementById('h-inp').value.trim();
-    if (v) {
-      document.getElementById('hijri-disp').textContent = v;
-      if (dayData?.header) dayData.header.hijri_date = v;
-    }
+  document.getElementById('h-ok').onclick = async () => {
+    const day   = +document.getElementById('h-day').value;
+    const month = +document.getElementById('h-mon').value;
+    const year  = +document.getElementById('h-year').value;
     document.getElementById('hov').classList.remove('open');
+    await saveHijriAnchor(curDate, day, month, year);
   };
   document.getElementById('h-cancel').onclick = () =>
     document.getElementById('hov').classList.remove('open');

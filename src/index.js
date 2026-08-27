@@ -52,6 +52,17 @@ export default {
         return json(await setItemUnit(env, +itemUnitMatch[1], body));
       }
 
+      // GET /api/hijri/anchors — list all anchors (ascending by date)
+      if (path === "/api/hijri/anchors" && request.method === "GET") {
+        return json(await listHijriAnchors(env));
+      }
+      // POST /api/hijri/anchors — add/update an anchor for a Gregorian date
+      if (path === "/api/hijri/anchors" && request.method === "POST") {
+        const body = await request.json().catch(() => null);
+        if (!body) return json({ error: "bad_request", message: "Missing body" }, 400);
+        return json(await addHijriAnchor(env, body));
+      }
+
       // POST /api/day/:date/opening — must be matched before the broader day route
       const openingMatch = path.match(/^\/api\/day\/(\d{4}-\d{2}-\d{2})\/opening$/);
       if (openingMatch && request.method === "POST") {
@@ -850,6 +861,40 @@ async function setItemUnit(env, itemId, body) {
   ).all();
 
   return { ok: true, item_id: itemId, unit, items };
+}
+
+/* ---------------------------------------------------------------------------
+ * Hijri anchors
+ * GET  /api/hijri/anchors  — list ascending
+ * POST /api/hijri/anchors  — { gregorian_date, hijri_day, hijri_month,
+ *                              hijri_year, user_id }
+ * Every manual pick creates/updates the anchor for that Gregorian date.
+ * ------------------------------------------------------------------------- */
+async function listHijriAnchors(env) {
+  const { results } = await env.DB.prepare(
+    `SELECT gregorian_date, hijri_day, hijri_month, hijri_year
+       FROM hijri_anchors ORDER BY gregorian_date ASC`
+  ).all();
+  return { ok: true, anchors: results };
+}
+
+async function addHijriAnchor(env, body) {
+  const { gregorian_date, hijri_day, hijri_month, hijri_year, user_id } = body;
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(gregorian_date || ""))
+    return { error: "bad_request", message: "gregorian_date must be YYYY-MM-DD" };
+  const d = +hijri_day, m = +hijri_month, y = +hijri_year;
+  if (!(d >= 1 && d <= 30) || !(m >= 1 && m <= 12) || !(y >= 1))
+    return { error: "bad_request", message: "invalid hijri day/month/year" };
+
+  await env.DB.prepare(
+    `INSERT INTO hijri_anchors (gregorian_date, hijri_day, hijri_month, hijri_year, created_by)
+     VALUES (?1, ?2, ?3, ?4, ?5)
+     ON CONFLICT(gregorian_date) DO UPDATE SET
+       hijri_day=excluded.hijri_day, hijri_month=excluded.hijri_month,
+       hijri_year=excluded.hijri_year, created_by=excluded.created_by`
+  ).bind(gregorian_date, d, m, y, user_id || 'ibrahim').run();
+
+  return listHijriAnchors(env);
 }
 
 /* ---------------------------------------------------------------------------
