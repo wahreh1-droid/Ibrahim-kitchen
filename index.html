@@ -1329,21 +1329,38 @@ function hijriAdvance(hd, hm, hy, n) {
   return { day: d, month: m, year: y };
 }
 
+/* Retreat a Hijri date by n days, but NOT past day 1 of its own month
+   (spec: backward counting stops at the month start, never crosses into the
+   previous month). Returns null if n would go before day 1 of the month. */
+function hijriRetreat(hd, hm, hy, n) {
+  const d = hd - n;
+  if (d < 1) return null;         // would cross below day 1 of this month
+  return { day: d, month: hm, year: hy };
+}
+
 /* Resolve the Hijri date for a Gregorian ISO date → {day, month, year, anchored}.
-   anchored=false means it came from the astronomical fallback (pre-anchor). */
+   anchored=false means it came from the astronomical fallback. */
 function resolveHijri(iso) {
-  // Most recent anchor at or before iso
-  let anchor = null;
+  if (!hijriAnchors.length) return { ...g2hParts(iso), anchored: false };
+
+  // Most recent anchor at or before iso → count FORWARD from it.
+  let prevAnchor = null;
   for (const a of hijriAnchors) {
-    if (a.gregorian_date <= iso) anchor = a; else break;
+    if (a.gregorian_date <= iso) prevAnchor = a; else break;
   }
-  if (!anchor) {
-    // Before any anchor — astronomical estimate. Parse g2h's numeric output.
-    return { ...g2hParts(iso), anchored: false };
+  if (prevAnchor) {
+    const n = daysBetween(prevAnchor.gregorian_date, iso);
+    return { ...hijriAdvance(prevAnchor.hijri_day, prevAnchor.hijri_month, prevAnchor.hijri_year, n), anchored: true };
   }
-  const n = daysBetween(anchor.gregorian_date, iso);
-  const r = hijriAdvance(anchor.hijri_day, anchor.hijri_month, anchor.hijri_year, n);
-  return { ...r, anchored: true };
+
+  // iso is before every anchor → count BACKWARD from the EARLIEST anchor,
+  // but only within that anchor's month (spec). Beyond the month start,
+  // fall back to the astronomical estimate.
+  const first = hijriAnchors[0];
+  const back = daysBetween(iso, first.gregorian_date); // positive: iso is this many days before the anchor
+  const r = hijriRetreat(first.hijri_day, first.hijri_month, first.hijri_year, back);
+  if (r) return { ...r, anchored: true };
+  return { ...g2hParts(iso), anchored: false };
 }
 
 /* Numeric parts from the astronomical converter (mirrors g2h math). */
