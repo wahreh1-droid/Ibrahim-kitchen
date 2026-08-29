@@ -1826,7 +1826,7 @@ function renderRows(data, blkId) {
       <td class="cdrag"><span class="drag-handle" title="ترتیب بدلیں · Drag to reorder">⣿</span></td>
       <td class="ci">
         <span class="iur">${row.name_ur}</span>
-        <span class="ien">${row.name_en??''}</span>
+        ${(row.name_en && row.name_en !== row.name_ur) ? `<span class="ien">${row.name_en}</span>` : ''}
         ${rcptIconHTML(row.item_id)}
       </td>
       <td class="cu">
