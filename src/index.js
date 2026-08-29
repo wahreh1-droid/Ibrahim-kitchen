@@ -187,6 +187,39 @@ export default {
         return json(await reportDonations(env, from, to));
       }
 
+      // ── RECEIPTS ───────────────────────────────────────────
+      // GET /api/day/:date/receipts — all receipt metadata for a day, grouped by item_id
+      const receiptsForDayMatch = path.match(/^\/api\/day\/(\d{4}-\d{2}-\d{2})\/receipts$/);
+      if (receiptsForDayMatch && request.method === "GET") {
+        return json(await getDayReceipts(env, receiptsForDayMatch[1]));
+      }
+
+      // POST /api/day/:date/receipts/upload — upload one photo (multipart/form-data)
+      const receiptsUploadMatch = path.match(/^\/api\/day\/(\d{4}-\d{2}-\d{2})\/receipts\/upload$/);
+      if (receiptsUploadMatch && request.method === "POST") {
+        return json(await uploadReceipt(env, receiptsUploadMatch[1], request));
+      }
+
+      // POST /api/day/:date/receipts/note — save a no-receipt note for one item
+      const receiptsNoteMatch = path.match(/^\/api\/day\/(\d{4}-\d{2}-\d{2})\/receipts\/note$/);
+      if (receiptsNoteMatch && request.method === "POST") {
+        const body = await request.json().catch(() => null);
+        if (!body) return json({ error: "bad_request", message: "Missing body" }, 400);
+        return json(await saveReceiptNote(env, receiptsNoteMatch[1], body));
+      }
+
+      // DELETE /api/receipts/:id — delete one receipt row (+ R2 object if photo)
+      const receiptDeleteMatch = path.match(/^\/api\/receipts\/(\d+)$/);
+      if (receiptDeleteMatch && request.method === "DELETE") {
+        return json(await deleteReceipt(env, receiptDeleteMatch[1]));
+      }
+
+      // GET /api/receipts/:id/image — proxy R2 image bytes to browser
+      const receiptImageMatch = path.match(/^\/api\/receipts\/(\d+)\/image$/);
+      if (receiptImageMatch && request.method === "GET") {
+        return proxyReceiptImage(env, receiptImageMatch[1]);
+      }
+
       return json({ error: "not_found", path }, 404);
     } catch (err) {
       return json({ error: "server_error", message: err.message }, 500);
@@ -1714,6 +1747,238 @@ async function reportDonations(env, from, to) {
     },
     donations: donationList,
   };
+}
+
+
+/* ---------------------------------------------------------------------------
+ * GET /api/day/:date/receipts
+ *
+ * Returns all receipt rows for the day, grouped by item_id.
+ * Each item bucket contains:
+ *   - photos: [ { id, r2_key, uploaded_at } ]   — rows with a photo
+ *   - note:   string | null                      — from the note-only row, if any
+ * ------------------------------------------------------------------------- */
+async function getDayReceipts(env, date) {
+  const header = await env.DB.prepare(
+    `SELECT id FROM daily_headers WHERE entry_date = ?1`
+  ).bind(date).first();
+  if (!header) return { receipts_by_item: {} };
+
+  const { results } = await env.DB.prepare(
+    `SELECT id, item_id, r2_key, no_receipt_note, uploaded_at
+       FROM item_receipts
+      WHERE header_id = ?1
+      ORDER BY item_id, id`
+  ).bind(header.id).all();
+
+  // Group by item_id
+  const byItem = {};
+  for (const row of results) {
+    if (!byItem[row.item_id]) {
+      byItem[row.item_id] = { photos: [], note: null };
+    }
+    if (row.r2_key) {
+      byItem[row.item_id].photos.push({
+        id:          row.id,
+        r2_key:      row.r2_key,
+        uploaded_at: row.uploaded_at,
+      });
+    } else if (row.no_receipt_note) {
+      // Only one note row per item — last one wins (saveReceiptNote upserts)
+      byItem[row.item_id].note = row.no_receipt_note;
+    }
+  }
+
+  return { date, receipts_by_item: byItem };
+}
+
+
+/* ---------------------------------------------------------------------------
+ * POST /api/day/:date/receipts/upload
+ *
+ * Accepts multipart/form-data with fields:
+ *   item_id   — integer
+ *   file      — the image file
+ *
+ * Streams the file to R2, inserts a row in item_receipts, returns the new row.
+ * R2 key pattern: receipts/{header_id}/{item_id}/{timestamp}_{sanitised_filename}
+ * ------------------------------------------------------------------------- */
+async function uploadReceipt(env, date, request) {
+  const header = await env.DB.prepare(
+    `SELECT id FROM daily_headers WHERE entry_date = ?1`
+  ).bind(date).first();
+  if (!header) return { error: "not_found", message: "Day does not exist. Create it first." };
+
+  let formData;
+  try {
+    formData = await request.formData();
+  } catch {
+    return { error: "bad_request", message: "Expected multipart/form-data" };
+  }
+
+  const file = formData.get("file");
+  if (!file || typeof file === "string")
+    return { error: "bad_request", message: "file is required and must be a file upload" };
+
+  // Accept multiple item IDs. Frontend sends repeated `item_id` fields;
+  // a single `item_id` still works (backward compatible).
+  const rawIds = formData.getAll("item_id").map(v => +v).filter(Number.isFinite);
+  if (!rawIds.length) return { error: "bad_request", message: "at least one item_id is required" };
+  // De-dupe in case the same item is sent twice
+  const itemIds = [...new Set(rawIds)];
+
+  // Validate every item exists and is active
+  const ph = itemIds.map((_, i) => `?${i + 1}`).join(",");
+  const { results: validItems } = await env.DB.prepare(
+    `SELECT id FROM items WHERE id IN (${ph}) AND is_active = 1`
+  ).bind(...itemIds).all();
+  const validIds = validItems.map(r => r.id);
+  if (!validIds.length) return { error: "not_found", message: "No valid items found" };
+
+  // Store the file in R2 ONCE. The key is not tied to a single item so it can
+  // be shared by every linked row. Delete only removes the object when the last
+  // referencing row is gone (see deleteReceipt).
+  const timestamp   = Date.now();
+  const safeName    = file.name.replace(/[^a-zA-Z0-9._-]/g, "_").slice(0, 80);
+  const r2Key       = `receipts/${header.id}/${timestamp}_${safeName}`;
+  const contentType = file.type || "application/octet-stream";
+
+  await env.RECEIPTS.put(r2Key, file.stream(), {
+    httpMetadata: { contentType },
+  });
+
+  // One DB row per valid item, all pointing at the same r2_key.
+  const now = new Date().toISOString().replace("T", " ").slice(0, 19);
+  const stmts = validIds.map(itemId =>
+    env.DB.prepare(
+      `INSERT INTO item_receipts (header_id, item_id, r2_key, uploaded_by, uploaded_at)
+       VALUES (?1, ?2, ?3, 'ibrahim', ?4)
+       RETURNING id`
+    ).bind(header.id, itemId, r2Key, now)
+  );
+  const batchRes = await env.DB.batch(stmts);
+
+  // Map each inserted row id back to its item
+  const created = validIds.map((itemId, i) => ({
+    id:      batchRes[i]?.results?.[0]?.id ?? null,
+    item_id: itemId,
+  }));
+
+  return {
+    ok:          true,
+    r2_key:      r2Key,
+    uploaded_at: now,
+    created,                       // [{ id, item_id }, ...]
+    item_ids:    validIds,
+  };
+}
+
+
+/* ---------------------------------------------------------------------------
+ * POST /api/day/:date/receipts/note
+ *
+ * Saves a no-receipt note for one item on a given day.
+ * Body: { item_id, note }
+ *
+ * Only one note row is kept per (header_id, item_id) — any existing note-only
+ * rows for that item are replaced. Photo rows are untouched.
+ * ------------------------------------------------------------------------- */
+async function saveReceiptNote(env, date, body) {
+  const { item_id, note } = body;
+  if (!item_id) return { error: "bad_request", message: "item_id is required" };
+  if (!note?.trim()) return { error: "bad_request", message: "note is required" };
+
+  const header = await env.DB.prepare(
+    `SELECT id FROM daily_headers WHERE entry_date = ?1`
+  ).bind(date).first();
+  if (!header) return { error: "not_found", message: "Day does not exist." };
+
+  const now = new Date().toISOString().replace("T", " ").slice(0, 19);
+
+  // Delete any existing note-only rows for this item (r2_key IS NULL)
+  await env.DB.prepare(
+    `DELETE FROM item_receipts
+      WHERE header_id = ?1 AND item_id = ?2 AND r2_key IS NULL`
+  ).bind(header.id, +item_id).run();
+
+  // Insert fresh note row
+  const inserted = await env.DB.prepare(
+    `INSERT INTO item_receipts (header_id, item_id, r2_key, no_receipt_note, uploaded_by, uploaded_at)
+     VALUES (?1, ?2, NULL, ?3, 'ibrahim', ?4)
+     RETURNING id`
+  ).bind(header.id, +item_id, note.trim(), now).first();
+
+  return { ok: true, id: inserted.id, item_id: +item_id, note: note.trim() };
+}
+
+
+/* ---------------------------------------------------------------------------
+ * DELETE /api/receipts/:id
+ *
+ * Deletes the item_receipts row. If it had an r2_key, also deletes the object
+ * from R2. Safe to call even if the R2 object is already gone.
+ * ------------------------------------------------------------------------- */
+async function deleteReceipt(env, id) {
+  const row = await env.DB.prepare(
+    `SELECT id, r2_key FROM item_receipts WHERE id = ?1`
+  ).bind(+id).first();
+  if (!row) return { error: "not_found", message: "Receipt not found" };
+
+  // Delete the DB row first.
+  await env.DB.prepare(
+    `DELETE FROM item_receipts WHERE id = ?1`
+  ).bind(+id).run();
+
+  // A single R2 object can be shared by several item rows (one receipt attached
+  // to multiple items). Only remove it from storage once no rows reference it,
+  // otherwise deleting one item's copy would break the others.
+  if (row.r2_key) {
+    const still = await env.DB.prepare(
+      `SELECT COUNT(*) AS n FROM item_receipts WHERE r2_key = ?1`
+    ).bind(row.r2_key).first();
+    if ((still?.n ?? 0) === 0) {
+      await env.RECEIPTS.delete(row.r2_key);
+    }
+  }
+
+  return { ok: true, deleted_id: +id };
+}
+
+
+/* ---------------------------------------------------------------------------
+ * GET /api/receipts/:id/image
+ *
+ * Proxies the R2 object bytes to the browser. The Worker fetches from R2 and
+ * streams the response back — the image URL never exposes R2 directly.
+ * Returns the correct Content-Type so the browser renders it inline.
+ * ------------------------------------------------------------------------- */
+async function proxyReceiptImage(env, id) {
+  const row = await env.DB.prepare(
+    `SELECT r2_key FROM item_receipts WHERE id = ?1 AND r2_key IS NOT NULL`
+  ).bind(+id).first();
+
+  if (!row) {
+    return withCors(new Response(
+      JSON.stringify({ error: "not_found", message: "Receipt image not found" }),
+      { status: 404, headers: { "Content-Type": "application/json" } }
+    ));
+  }
+
+  const object = await env.RECEIPTS.get(row.r2_key);
+  if (!object) {
+    return withCors(new Response(
+      JSON.stringify({ error: "not_found", message: "Image not found in storage" }),
+      { status: 404, headers: { "Content-Type": "application/json" } }
+    ));
+  }
+
+  const headers = new Headers();
+  object.writeHttpMetadata(headers);
+  headers.set("Cache-Control", "private, max-age=3600");
+  // CORS needed so the frontend fetch() call succeeds cross-origin
+  headers.set("Access-Control-Allow-Origin", "*");
+
+  return new Response(object.body, { status: 200, headers });
 }
 
 
