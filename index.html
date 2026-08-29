@@ -249,7 +249,7 @@ tbody tr.ls{background:#fffbeb}
 tbody tr.ls:hover{background:#fef3c7}
 
 td{padding:9px 13px;vertical-align:middle}
-td.ci{text-align:right}
+td.ci{text-align:right;position:relative}
 td.cu{text-align:center}
 td.cn{text-align:center}
 
@@ -1635,6 +1635,8 @@ async function loadDay(date) {
     dayData = data;
     // A full day load reflects the authoritative DB sort_order — adopt it.
     if (data.day_totals?.length) itemOrder = data.day_totals.map(t=>t.item_id);
+    // Load receipt status so inline row icons can render (non-blocking on error)
+    if (data.exists) { try { await loadReceipts(); } catch(_){} }
     renderDate();
     if (data.exists) renderKitchen(data);
     else renderCreate(date);
@@ -1800,6 +1802,7 @@ function renderRows(data, blkId) {
       <td class="ci">
         <span class="iur">${row.name_ur}</span>
         <span class="ien">${row.name_en??''}</span>
+        ${rcptIconHTML(row.item_id)}
       </td>
       <td class="cu">
         <select class="unit-sel" data-uid="${row.item_id}" dir="rtl" title="اکائی · Unit">
@@ -1858,6 +1861,14 @@ function renderRows(data, blkId) {
       </td>`;
     tbody.appendChild(tr);
   }
+
+  // Inline receipt icons — tap to open that item's receipt panel directly
+  tbody.querySelectorAll('.rcpt-inline').forEach(el => {
+    el.onclick = (e) => {
+      e.stopPropagation();
+      openReceiptForItem(+el.dataset.riid);
+    };
+  });
 
   // Helper: recompute a single value cell (qty x cost) live
   const recompCell = (vfor, qty, itemId) => {
@@ -3635,6 +3646,43 @@ function srt(col){
 let rcptData    = {};    // receipts_by_item from the server: { [item_id]: { photos:[], note } }
 let rcptCurItem = null;  // item_id currently open in the per-item panel
 
+// Inline row icon markup — reflects receipt state for an item.
+//   green paperclip = has photo(s), amber note = has note, faint = nothing
+function rcptIconHTML(itemId) {
+  const rec = rcptData[itemId];
+  let color = 'var(--ink3)', title = 'رسید منسلک کریں', glyph = '📎';
+  if (rec?.photos?.length) { color = 'var(--g600)'; title = `${rec.photos.length} رسید`; glyph = '📎'; }
+  else if (rec?.note)      { color = 'var(--amber)'; title = 'نوٹ درج ہے'; glyph = '📝'; }
+  const badge = rec?.photos?.length > 1
+    ? `<span style="font-size:.6rem;font-weight:700;color:var(--g600);margin-inline-start:1px">${rec.photos.length}</span>`
+    : '';
+  return `<button class="rcpt-inline" data-riid="${itemId}" title="${title}"
+    style="position:absolute;top:50%;left:4px;transform:translateY(-50%);
+           background:none;border:none;cursor:pointer;font-size:.95rem;line-height:1;
+           padding:2px 4px;opacity:${rec?.photos?.length||rec?.note?1:.4};
+           filter:${rec?.photos?.length||rec?.note?'none':'grayscale(1)'}">${glyph}${badge}</button>`;
+}
+
+// Refresh just the inline icons in the grid (after a modal change)
+function refreshReceiptIcons() {
+  document.querySelectorAll('.rcpt-inline').forEach(btn => {
+    const itemId = +btn.dataset.riid;
+    const tmp = document.createElement('div');
+    tmp.innerHTML = rcptIconHTML(itemId);
+    const fresh = tmp.firstElementChild;
+    fresh.onclick = (e) => { e.stopPropagation(); openReceiptForItem(itemId); };
+    btn.replaceWith(fresh);
+  });
+}
+
+// Open the receipt modal straight to one item's panel (from the inline icon)
+async function openReceiptForItem(itemId) {
+  if (!dayData || !dayData.header) { toast('پہلے دن شروع کریں', true); return; }
+  document.getElementById('ov-rcpt').classList.add('open');
+  await loadReceipts();
+  openReceiptPanel(itemId);
+}
+
 // Master item list for the current day — from day_totals (id, name, unit)
 function rcptDayItems() {
   return (dayData?.day_totals ?? []).map(t => ({
@@ -3792,6 +3840,7 @@ async function uploadReceiptPhoto(file) {
     rcptData[rcptCurItem].note = null;
 
     renderReceiptPanel();
+    refreshReceiptIcons();
     toast('رسید محفوظ ہو گئی');
   } catch (e) {
     toast('اپلوڈ ناکام: ' + e.message, true);
@@ -3812,6 +3861,7 @@ async function deleteReceiptPhoto(rid) {
     if (rec) rec.photos = rec.photos.filter(p => p.id !== rid);
 
     renderReceiptPanel();
+    refreshReceiptIcons();
     toast('تصویر حذف ہو گئی');
   } catch (e) {
     toast('حذف ناکام: ' + e.message, true);
@@ -3831,6 +3881,7 @@ async function saveReceiptNote(note) {
     if (d.error) throw new Error(d.message || d.error);
 
     (rcptData[rcptCurItem] ||= { photos: [], note: null }).note = trimmed;
+    refreshReceiptIcons();
     toast('نوٹ محفوظ ہو گیا');
   } catch (e) {
     toast('نوٹ محفوظ نہیں ہوا: ' + e.message, true);
