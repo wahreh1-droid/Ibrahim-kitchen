@@ -1042,9 +1042,14 @@ select.finp.don-unit-sel{
 
         <!-- Upload -->
         <input type="file" id="rcpt-file" accept="image/*" capture="environment" style="display:none">
-        <button id="rcpt-upload-btn" class="btn-pri" style="width:100%;justify-content:center;padding:12px;margin-bottom:14px">
+        <button id="rcpt-upload-btn" class="btn-pri" style="width:100%;justify-content:center;padding:12px;margin-bottom:10px">
           <span style="font-family:var(--ur)">📷 تصویر منسلک کریں</span>
         </button>
+
+        <!-- Auto-save hint -->
+        <p id="rcpt-saved-hint" style="display:none;font-family:var(--ur);font-size:.78rem;color:var(--g600);text-align:center;margin-bottom:12px">
+          ✓ تصویریں خود بخود محفوظ ہو جاتی ہیں
+        </p>
 
         <!-- No-receipt note (shown only when zero photos) -->
         <div id="rcpt-note-box" style="display:none">
@@ -1056,6 +1061,11 @@ select.finp.don-unit-sel{
             placeholder="مثلاً: نقد خریداری، رسید دستیاب نہیں"
             style="resize:vertical;font-family:var(--ur);line-height:1.8"></textarea>
         </div>
+
+        <!-- Done -->
+        <button id="rcpt-done" class="btn-pri" style="width:100%;justify-content:center;padding:12px;margin-top:16px;background:var(--g600)">
+          <span style="font-family:var(--ur)">مکمل · Done</span>
+        </button>
       </div>
 
     </div>
@@ -3736,12 +3746,15 @@ function renderReceiptPanel() {
     thumbs.innerHTML = '';
   }
 
-  // Note box only when zero photos
+  // Note box only when zero photos; hint only when photos exist
+  const hint = document.getElementById('rcpt-saved-hint');
   if (!rec.photos?.length) {
     noteBox.style.display = 'block';
     noteInp.value = rec.note ?? '';
+    if (hint) hint.style.display = 'none';
   } else {
     noteBox.style.display = 'none';
+    if (hint) hint.style.display = 'block';
   }
 
   // Wire thumbnail clicks → lightbox
@@ -3844,6 +3857,19 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('rcpt-picker').style.display = 'block';
     rcptCurItem = null;
     renderReceiptPicker();   // refresh badges
+  };
+
+  // Done — save any pending note, then return to picker (badge refreshes)
+  document.getElementById('rcpt-done').onclick = async () => {
+    const noteBox = document.getElementById('rcpt-note-box');
+    if (noteBox.style.display !== 'none') {
+      const v = document.getElementById('rcpt-note').value;
+      if (v.trim()) await saveReceiptNote(v);
+    }
+    document.getElementById('rcpt-panel').style.display  = 'none';
+    document.getElementById('rcpt-picker').style.display = 'block';
+    rcptCurItem = null;
+    renderReceiptPicker();
   };
 
   document.getElementById('rcpt-upload-btn').onclick = () =>
