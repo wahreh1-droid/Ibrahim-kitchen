@@ -1009,6 +1009,68 @@ select.finp.don-unit-sel{
   </div>
 </div>
 
+<!-- RECEIPT MODAL -->
+<div class="ov" id="ov-rcpt">
+  <div class="modal">
+    <div class="mhdr">
+      <div>
+        <div class="mtitle-ur" id="rcpt-title">رسید منسلک کریں</div>
+        <div class="mtitle-en" id="rcpt-subtitle">Attach Receipt</div>
+      </div>
+      <button class="mclose" id="rcpt-close">×</button>
+    </div>
+    <div class="mbody" style="max-height:70vh;overflow-y:auto">
+
+      <!-- STEP 1: item picker -->
+      <div id="rcpt-picker">
+        <p style="font-family:var(--ur);font-size:.9rem;color:var(--ink7);margin-bottom:14px;line-height:1.7">
+          کسی آئٹم کو منتخب کریں تاکہ اس کی رسید منسلک کی جا سکے
+        </p>
+        <div id="rcpt-item-list"></div>
+      </div>
+
+      <!-- STEP 2: per-item panel -->
+      <div id="rcpt-panel" style="display:none">
+        <button id="rcpt-back" style="display:flex;align-items:center;gap:6px;font-family:var(--ur);font-size:.85rem;color:var(--g700);background:var(--g50);border:1px solid var(--g100);border-radius:var(--r);padding:6px 12px;margin-bottom:16px">
+          ← واپس
+        </button>
+        <div style="font-family:var(--ur);font-size:1.15rem;font-weight:700;color:var(--ink9);margin-bottom:4px" id="rcpt-panel-item">—</div>
+        <div style="font-family:var(--en);font-size:.6rem;letter-spacing:.08em;text-transform:uppercase;color:var(--ink5);margin-bottom:18px" id="rcpt-panel-item-en"></div>
+
+        <!-- Existing photos -->
+        <div id="rcpt-thumbs" style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:16px"></div>
+
+        <!-- Upload -->
+        <input type="file" id="rcpt-file" accept="image/*" capture="environment" style="display:none">
+        <button id="rcpt-upload-btn" class="btn-pri" style="width:100%;justify-content:center;padding:12px;margin-bottom:14px">
+          <span style="font-family:var(--ur)">📷 تصویر منسلک کریں</span>
+        </button>
+
+        <!-- No-receipt note (shown only when zero photos) -->
+        <div id="rcpt-note-box" style="display:none">
+          <label class="flbl" style="margin-bottom:8px">
+            <span>Reason — no receipt</span>
+            <span class="flbl-ur">رسید نہ ہونے کی وجہ</span>
+          </label>
+          <textarea id="rcpt-note" class="finp" dir="rtl" rows="2"
+            placeholder="مثلاً: نقد خریداری، رسید دستیاب نہیں"
+            style="resize:vertical;font-family:var(--ur);line-height:1.8"></textarea>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- RECEIPT LIGHTBOX -->
+<div class="ov" id="ov-lightbox" style="z-index:300">
+  <div style="position:relative;max-width:calc(100vw - 40px);max-height:calc(100vh - 80px);display:flex;flex-direction:column;align-items:center">
+    <button id="lightbox-close" style="position:absolute;top:-38px;left:0;color:#fff;font-size:2rem;line-height:1;background:none">×</button>
+    <img id="lightbox-img" src="" alt="Receipt"
+      style="max-width:100%;max-height:calc(100vh - 100px);border-radius:var(--rl);box-shadow:0 8px 40px rgba(0,0,0,.5);background:#fff">
+  </div>
+</div>
+
 <!-- HIJRI MODAL -->
 <div class="hov" id="hov">
   <div class="hbox">
@@ -1664,7 +1726,7 @@ function renderKitchen(data) {
   if (addD) addD.onclick = openAdd;
   document.getElementById('btn-save').onclick  = saveBlock;
   document.getElementById('btn-pdf').onclick   = openPdfDialog;
-  document.getElementById('btn-receipt').onclick = () => toast('رسید منسلک کریں — جلد آ رہی ہے');
+  document.getElementById('btn-receipt').onclick = openReceiptModal;
 
   renderRows(data, activeBlk);
   statsUpdate(data);
@@ -3556,6 +3618,253 @@ function srt(col){
 }
 
 /* ─── Toast ──────────────────────────────────────────────── */
+/* ═══════════════════════════════════════════════════════════
+ * RECEIPTS — attach photo(s) or a no-receipt note per item per day
+ * ═══════════════════════════════════════════════════════════ */
+
+let rcptData    = {};    // receipts_by_item from the server: { [item_id]: { photos:[], note } }
+let rcptCurItem = null;  // item_id currently open in the per-item panel
+
+// Master item list for the current day — from day_totals (id, name, unit)
+function rcptDayItems() {
+  return (dayData?.day_totals ?? []).map(t => ({
+    item_id: t.item_id,
+    name_ur: t.name_ur,
+    name_en: t.name_en,
+    unit:    t.unit,
+  }));
+}
+
+async function openReceiptModal() {
+  if (!dayData || !dayData.header) {
+    toast('پہلے دن شروع کریں', true);
+    return;
+  }
+  // Reset to picker view
+  document.getElementById('rcpt-panel').style.display  = 'none';
+  document.getElementById('rcpt-picker').style.display = 'block';
+  document.getElementById('ov-rcpt').classList.add('open');
+
+  // Load receipts for the day
+  await loadReceipts();
+  renderReceiptPicker();
+}
+
+function closeReceiptModal() {
+  document.getElementById('ov-rcpt').classList.remove('open');
+  rcptCurItem = null;
+}
+
+async function loadReceipts() {
+  try {
+    const r = await fetch(`${API}/api/day/${curDate}/receipts`);
+    const d = await r.json();
+    rcptData = d.receipts_by_item ?? {};
+  } catch (e) {
+    rcptData = {};
+    toast('رسیدیں لوڈ نہیں ہو سکیں', true);
+  }
+}
+
+function rcptStatusBadge(itemId) {
+  const rec = rcptData[itemId];
+  if (rec?.photos?.length) return `<span style="color:var(--g600);font-weight:600">✅ ${rec.photos.length}</span>`;
+  if (rec?.note)           return `<span style="color:var(--amber)">📝</span>`;
+  return `<span style="color:var(--ink3)">⬜</span>`;
+}
+
+function renderReceiptPicker() {
+  const list = document.getElementById('rcpt-item-list');
+  const items = rcptDayItems();
+  if (!items.length) {
+    list.innerHTML = `<p style="font-family:var(--ur);color:var(--ink5);text-align:center;padding:20px">کوئی آئٹم موجود نہیں</p>`;
+    return;
+  }
+  list.innerHTML = items.map(it => `
+    <button class="rcpt-item-btn" data-iid="${it.item_id}"
+      style="width:100%;display:flex;align-items:center;justify-content:space-between;gap:12px;
+             padding:12px 14px;margin-bottom:8px;background:var(--sur);border:1px solid var(--bdr);
+             border-radius:var(--r);transition:all .15s;text-align:right"
+      onmouseover="this.style.borderColor='var(--g500)';this.style.background='var(--g50)'"
+      onmouseout="this.style.borderColor='var(--bdr)';this.style.background='var(--sur)'">
+      <span style="display:flex;align-items:center;gap:10px">
+        <span style="font-size:1rem">${rcptStatusBadge(it.item_id)}</span>
+        <span style="font-family:var(--ur);font-size:1rem;font-weight:600;color:var(--ink9)">${it.name_ur}</span>
+      </span>
+      <span style="font-family:var(--en);font-size:.6rem;letter-spacing:.06em;text-transform:uppercase;color:var(--ink5)">${it.name_en ?? ''}</span>
+    </button>
+  `).join('');
+
+  list.querySelectorAll('.rcpt-item-btn').forEach(btn => {
+    btn.onclick = () => openReceiptPanel(+btn.dataset.iid);
+  });
+}
+
+function openReceiptPanel(itemId) {
+  rcptCurItem = itemId;
+  const item = rcptDayItems().find(i => i.item_id === itemId);
+  document.getElementById('rcpt-panel-item').textContent    = item?.name_ur ?? '';
+  document.getElementById('rcpt-panel-item-en').textContent = item?.name_en ?? '';
+
+  document.getElementById('rcpt-picker').style.display = 'none';
+  document.getElementById('rcpt-panel').style.display  = 'block';
+
+  renderReceiptPanel();
+}
+
+function renderReceiptPanel() {
+  const rec    = rcptData[rcptCurItem] ?? { photos: [], note: null };
+  const thumbs = document.getElementById('rcpt-thumbs');
+  const noteBox = document.getElementById('rcpt-note-box');
+  const noteInp = document.getElementById('rcpt-note');
+
+  // Thumbnails
+  if (rec.photos?.length) {
+    thumbs.innerHTML = rec.photos.map(p => `
+      <div style="position:relative;width:84px;height:84px">
+        <img src="${API}/api/receipts/${p.id}/image" data-rid="${p.id}"
+          class="rcpt-thumb"
+          style="width:84px;height:84px;object-fit:cover;border-radius:var(--r);
+                 border:1px solid var(--bdr);cursor:pointer;background:var(--ink1)">
+        <button class="rcpt-del" data-rid="${p.id}"
+          style="position:absolute;top:-6px;left:-6px;width:22px;height:22px;border-radius:50%;
+                 background:var(--red);color:#fff;font-size:.9rem;line-height:1;display:flex;
+                 align-items:center;justify-content:center;box-shadow:0 1px 4px rgba(0,0,0,.3)">×</button>
+      </div>
+    `).join('');
+  } else {
+    thumbs.innerHTML = '';
+  }
+
+  // Note box only when zero photos
+  if (!rec.photos?.length) {
+    noteBox.style.display = 'block';
+    noteInp.value = rec.note ?? '';
+  } else {
+    noteBox.style.display = 'none';
+  }
+
+  // Wire thumbnail clicks → lightbox
+  thumbs.querySelectorAll('.rcpt-thumb').forEach(img => {
+    img.onclick = () => openLightbox(img.src);
+  });
+  // Wire delete buttons
+  thumbs.querySelectorAll('.rcpt-del').forEach(btn => {
+    btn.onclick = () => deleteReceiptPhoto(+btn.dataset.rid);
+  });
+}
+
+async function uploadReceiptPhoto(file) {
+  if (!file) return;
+  const fd = new FormData();
+  fd.append('item_id', String(rcptCurItem));
+  fd.append('file', file);
+
+  const btn = document.getElementById('rcpt-upload-btn');
+  const orig = btn.innerHTML;
+  btn.innerHTML = '<span style="font-family:var(--ur)">اپلوڈ ہو رہی ہے…</span>';
+  btn.disabled = true;
+
+  try {
+    const r = await fetch(`${API}/api/day/${curDate}/receipts/upload`, {
+      method: 'POST',
+      body: fd,   // no Content-Type header — browser sets multipart boundary
+    });
+    const d = await r.json();
+    if (d.error) throw new Error(d.message || d.error);
+
+    // Update local state: add the photo, drop any note
+    (rcptData[rcptCurItem] ||= { photos: [], note: null });
+    rcptData[rcptCurItem].photos.push({ id: d.id, r2_key: d.r2_key, uploaded_at: d.uploaded_at });
+    rcptData[rcptCurItem].note = null;
+
+    renderReceiptPanel();
+    toast('رسید محفوظ ہو گئی');
+  } catch (e) {
+    toast('اپلوڈ ناکام: ' + e.message, true);
+  } finally {
+    btn.innerHTML = orig;
+    btn.disabled = false;
+  }
+}
+
+async function deleteReceiptPhoto(rid) {
+  if (!confirm('یہ تصویر حذف کریں؟')) return;
+  try {
+    const r = await fetch(`${API}/api/receipts/${rid}`, { method: 'DELETE' });
+    const d = await r.json();
+    if (d.error) throw new Error(d.message || d.error);
+
+    const rec = rcptData[rcptCurItem];
+    if (rec) rec.photos = rec.photos.filter(p => p.id !== rid);
+
+    renderReceiptPanel();
+    toast('تصویر حذف ہو گئی');
+  } catch (e) {
+    toast('حذف ناکام: ' + e.message, true);
+  }
+}
+
+async function saveReceiptNote(note) {
+  const trimmed = (note ?? '').trim();
+  if (!trimmed) return;   // empty note — nothing to save
+  try {
+    const r = await fetch(`${API}/api/day/${curDate}/receipts/note`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ item_id: rcptCurItem, note: trimmed }),
+    });
+    const d = await r.json();
+    if (d.error) throw new Error(d.message || d.error);
+
+    (rcptData[rcptCurItem] ||= { photos: [], note: null }).note = trimmed;
+    toast('نوٹ محفوظ ہو گیا');
+  } catch (e) {
+    toast('نوٹ محفوظ نہیں ہوا: ' + e.message, true);
+  }
+}
+
+function openLightbox(src) {
+  document.getElementById('lightbox-img').src = src;
+  document.getElementById('ov-lightbox').classList.add('open');
+}
+function closeLightbox() {
+  document.getElementById('ov-lightbox').classList.remove('open');
+  document.getElementById('lightbox-img').src = '';
+}
+
+/* Wire receipt modal controls once, on load */
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('rcpt-close').onclick = closeReceiptModal;
+  document.getElementById('ov-rcpt').onclick = e => {
+    if (e.target === e.currentTarget) closeReceiptModal();
+  };
+  document.getElementById('rcpt-back').onclick = () => {
+    document.getElementById('rcpt-panel').style.display  = 'none';
+    document.getElementById('rcpt-picker').style.display = 'block';
+    rcptCurItem = null;
+    renderReceiptPicker();   // refresh badges
+  };
+
+  document.getElementById('rcpt-upload-btn').onclick = () =>
+    document.getElementById('rcpt-file').click();
+  document.getElementById('rcpt-file').onchange = e => {
+    const f = e.target.files?.[0];
+    if (f) uploadReceiptPhoto(f);
+    e.target.value = '';   // allow re-selecting the same file
+  };
+
+  // Note auto-saves on blur
+  document.getElementById('rcpt-note').onblur = e => saveReceiptNote(e.target.value);
+
+  // Lightbox
+  document.getElementById('lightbox-close').onclick = closeLightbox;
+  document.getElementById('ov-lightbox').onclick = e => {
+    if (e.target === e.currentTarget) closeLightbox();
+  };
+});
+
+
 function toast(msg, err=false) {
   const el = document.getElementById('toast');
   el.textContent=msg;
