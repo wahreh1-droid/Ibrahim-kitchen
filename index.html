@@ -1032,7 +1032,7 @@ select.finp.don-unit-sel{
         <div style="position:sticky;bottom:0;background:var(--sur);padding-top:12px;margin-top:8px;border-top:1px solid var(--bdr)">
           <button id="rcpt-bulk-btn" class="btn-pri" disabled
             style="width:100%;justify-content:center;padding:12px;opacity:.5;transition:opacity .15s">
-            <span style="font-family:var(--ur)">📷 منتخب اشیاء کی رسید منسلک کریں</span>
+            <span id="rcpt-bulk-label" style="font-family:var(--ur)">📷 منتخب اشیاء کی رسید منسلک کریں</span>
             <span id="rcpt-sel-count" style="font-family:var(--mono);font-size:.8rem;margin-inline-start:8px"></span>
           </button>
         </div>
@@ -3833,16 +3833,11 @@ function renderReceiptPicker() {
 function updateBulkBar() {
   const btn = document.getElementById('rcpt-bulk-btn');
   const cnt = document.getElementById('rcpt-sel-count');
+  if (!btn) return;
   const n = rcptSel.size;
-  if (n > 0) {
-    btn.disabled = false;
-    btn.style.opacity = '1';
-    cnt.textContent = `(${n})`;
-  } else {
-    btn.disabled = true;
-    btn.style.opacity = '.5';
-    cnt.textContent = '';
-  }
+  btn.disabled = n === 0;
+  btn.style.opacity = n > 0 ? '1' : '.5';
+  if (cnt) cnt.textContent = n > 0 ? `(${n})` : '';
 }
 
 // Bulk upload: one photo → every selected item
@@ -3853,9 +3848,10 @@ async function bulkUpload(file) {
   for (const id of ids) fd.append('item_id', String(id));
   fd.append('file', file);
 
-  const btn = document.getElementById('rcpt-bulk-btn');
-  const orig = btn.innerHTML;
-  btn.innerHTML = '<span style="font-family:var(--ur)">اپلوڈ ہو رہی ہے…</span>';
+  const btn   = document.getElementById('rcpt-bulk-btn');
+  const label = document.getElementById('rcpt-bulk-label');
+  const origLabel = label ? label.textContent : '';
+  if (label) label.textContent = 'اپلوڈ ہو رہی ہے…';   // change label only — keep count span intact
   btn.disabled = true;
 
   try {
@@ -3872,15 +3868,15 @@ async function bulkUpload(file) {
       rcptData[row.item_id].note = null;   // a photo supersedes any note
     }
 
+    // Refresh the grid icons FIRST so a later render error can't skip it
+    refreshReceiptIcons();
     rcptSel = new Set();          // clear selection after attach
-    renderReceiptPicker();        // refresh badges + checkboxes
-    refreshReceiptIcons();        // refresh grid icons
     toast(`رسید ${ids.length} اشیاء سے منسلک ہو گئی`);
   } catch (e) {
     toast('اپلوڈ ناکام: ' + e.message, true);
   } finally {
-    btn.innerHTML = orig;
-    updateBulkBar();
+    if (label) label.textContent = origLabel;   // restore label text
+    renderReceiptPicker();                       // rebuild rows + badges + bar
   }
 }
 
@@ -3962,8 +3958,8 @@ async function uploadReceiptPhoto(file) {
     rcptData[rcptCurItem].photos.push({ id: row?.id, r2_key: d.r2_key, uploaded_at: d.uploaded_at });
     rcptData[rcptCurItem].note = null;
 
-    renderReceiptPanel();
     refreshReceiptIcons();
+    renderReceiptPanel();
     toast('رسید محفوظ ہو گئی');
   } catch (e) {
     toast('اپلوڈ ناکام: ' + e.message, true);
