@@ -884,7 +884,7 @@ select.finp.don-unit-sel{
   <div class="foot">
     <div class="as-note">
       <div class="as-dot"></div>
-      <span id="as-txt">ابراہیم شاہ · AUTOSAVED —</span>
+      <span id="as-txt">جامعہ دارالعلوم عیدگاہ · AUTOSAVED —</span>
     </div>
     <div class="foot-acts">
       <button class="btn-ghost" id="btn-pdf">
@@ -1005,6 +1005,101 @@ select.finp.don-unit-sel{
     <div class="mfoot">
       <button class="btn-pri" id="btn-save-item">محفوظ کریں</button>
       <button class="btn-cancel" id="btn-cancel-item">منسوخ</button>
+    </div>
+  </div>
+</div>
+
+<!-- EDIT ITEM NAME MODAL -->
+<div class="ov" id="ov-edit-item">
+  <div class="modal" style="max-width:400px">
+    <div class="mhdr">
+      <div>
+        <div class="mtitle-ur">آئٹم کا نام درست کریں</div>
+        <div class="mtitle-en">Edit Item Name</div>
+      </div>
+      <button class="mclose" id="edit-item-close">×</button>
+    </div>
+    <div class="mbody">
+      <div class="fg">
+        <label class="flbl">
+          <span>Urdu Name</span>
+          <span style="display:flex;align-items:center;gap:6px">
+            <span class="flbl-ur">اردو نام</span>
+            <button type="button" id="edit-kb-toggle" title="Urdu keyboard"
+              style="background:var(--ink1);border:1px solid var(--bdr);border-radius:4px;padding:2px 6px;font-size:.75rem;color:var(--ink5);cursor:pointer;line-height:1.4;transition:all .15s"
+              onmouseover="this.style.borderColor='var(--g500)';this.style.color='var(--g700)'"
+              onmouseout="this.style.borderColor='var(--bdr)';this.style.color='var(--ink5)'">⌨</button>
+          </span>
+        </label>
+        <input class="finp" id="edit-item-ur" type="text" dir="rtl" placeholder="اردو نام">
+        <div class="ur-kb-wrap" id="edit-ur-kb-wrap">
+          <div class="ur-kb">
+            <div class="ur-kb-row">
+              <button type="button" class="uk euk" data-c="ق">ق</button><button type="button" class="uk euk" data-c="و">و</button><button type="button" class="uk euk" data-c="ع">ع</button><button type="button" class="uk euk" data-c="ر">ر</button><button type="button" class="uk euk" data-c="ت">ت</button><button type="button" class="uk euk" data-c="ے">ے</button><button type="button" class="uk euk" data-c="ئ">ئ</button><button type="button" class="uk euk" data-c="ی">ی</button><button type="button" class="uk euk" data-c="ح">ح</button><button type="button" class="uk euk" data-c="پ">پ</button>
+            </div>
+            <div class="ur-kb-row">
+              <button type="button" class="uk euk" data-c="ا">ا</button><button type="button" class="uk euk" data-c="س">س</button><button type="button" class="uk euk" data-c="د">د</button><button type="button" class="uk euk" data-c="ف">ف</button><button type="button" class="uk euk" data-c="گ">گ</button><button type="button" class="uk euk" data-c="ہ">ہ</button><button type="button" class="uk euk" data-c="ھ">ھ</button><button type="button" class="uk euk" data-c="ج">ج</button><button type="button" class="uk euk" data-c="ک">ک</button><button type="button" class="uk euk" data-c="ل">ل</button>
+            </div>
+            <div class="ur-kb-row">
+              <button type="button" class="uk euk" data-c="ز">ز</button><button type="button" class="uk euk" data-c="ش">ش</button><button type="button" class="uk euk" data-c="غ">غ</button><button type="button" class="uk euk" data-c="ط">ط</button><button type="button" class="uk euk" data-c="ب">ب</button><button type="button" class="uk euk" data-c="ن">ن</button><button type="button" class="uk euk" data-c="م">م</button><button type="button" class="uk euk" data-c="خ">خ</button><button type="button" class="uk euk" data-c="و">و</button><button type="button" class="uk euk" data-c="چ">چ</button>
+            </div>
+            <div class="ur-kb-row">
+              <button type="button" class="uk euk" data-c="ذ">ذ</button><button type="button" class="uk euk" data-c="ض">ض</button><button type="button" class="uk euk" data-c="ث">ث</button><button type="button" class="uk euk" data-c="ص">ص</button><button type="button" class="uk euk" data-c="ظ">ظ</button><button type="button" class="uk euk" data-c="آ">آ</button><button type="button" class="uk euk" data-c="ة">ة</button><button type="button" class="uk euk" data-c="ں">ں</button><button type="button" class="uk euk" data-c="ڈ">ڈ</button><button type="button" class="uk euk" data-c="ڑ">ڑ</button>
+            </div>
+            <div class="ur-kb-row">
+              <button type="button" class="uk euk" style="min-width:60px" data-c=" ">اسپیس</button>
+              <button type="button" class="uk euk" style="min-width:60px" data-c="__BS__">← حذف</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="mfoot">
+      <button class="btn-pri" id="edit-item-save">محفوظ کریں</button>
+      <button class="btn-cancel" id="edit-item-cancel">منسوخ</button>
+    </div>
+  </div>
+</div>
+
+<!-- IMAGE EDITOR MODAL (crop + brightness before upload) -->
+<div class="ov" id="ov-img-editor" style="z-index:1100">
+  <div class="modal" style="max-width:500px;width:96vw">
+    <div class="mhdr">
+      <div>
+        <div class="mtitle-ur">تصویر ایڈٹ کریں</div>
+        <div class="mtitle-en">Edit Image Before Upload</div>
+      </div>
+      <button class="mclose" id="img-editor-close">×</button>
+    </div>
+    <div class="mbody" style="padding:12px">
+      <!-- Canvas area -->
+      <div style="position:relative;width:100%;background:#111;border-radius:6px;overflow:hidden;touch-action:none;user-select:none" id="img-editor-wrap">
+        <canvas id="img-canvas" style="display:block;width:100%;height:auto;max-height:55vh;object-fit:contain"></canvas>
+        <!-- Crop handles overlay -->
+        <div id="crop-overlay" style="position:absolute;inset:0;pointer-events:none">
+          <div id="crop-box" style="position:absolute;border:2px solid #fff;box-shadow:0 0 0 9999px rgba(0,0,0,.45);box-sizing:border-box;cursor:move;pointer-events:all"></div>
+        </div>
+      </div>
+      <!-- Brightness slider -->
+      <div style="margin-top:12px;display:flex;align-items:center;gap:10px">
+        <span style="font-size:.8rem;color:var(--ink5);white-space:nowrap">☀ روشنی</span>
+        <input type="range" id="img-brightness" min="-100" max="100" value="0" style="flex:1">
+        <span id="img-brightness-val" style="font-size:.8rem;color:var(--ink5);min-width:28px;text-align:right">0</span>
+      </div>
+      <!-- Contrast slider -->
+      <div style="margin-top:8px;display:flex;align-items:center;gap:10px">
+        <span style="font-size:.8rem;color:var(--ink5);white-space:nowrap">◑ کنٹراسٹ</span>
+        <input type="range" id="img-contrast" min="-100" max="100" value="0" style="flex:1">
+        <span id="img-contrast-val" style="font-size:.8rem;color:var(--ink5);min-width:28px;text-align:right">0</span>
+      </div>
+      <!-- Reset hint -->
+      <div style="margin-top:8px;text-align:center">
+        <button id="img-reset" class="btn-ghost" style="font-size:.78rem;padding:4px 12px">ری سیٹ · Reset</button>
+      </div>
+    </div>
+    <div class="mfoot">
+      <button class="btn-pri" id="img-editor-confirm">اپلوڈ کریں · Upload</button>
+      <button class="btn-cancel" id="img-editor-cancel">منسوخ</button>
     </div>
   </div>
 </div>
@@ -1658,8 +1753,13 @@ async function loadDay(date) {
     if (!r.ok) throw new Error(`HTTP ${r.status}`);
     const data = await r.json();
     dayData = data;
-    // A full day load reflects the authoritative DB sort_order — adopt it.
-    if (data.day_totals?.length) itemOrder = data.day_totals.map(t=>t.item_id);
+    // Only adopt the DB sort_order on the very first load (itemOrder===null).
+    // Once Ibrahim has reordered items in this session, the in-memory order is
+    // the source of truth — overwriting it from the DB response would revert
+    // his changes due to D1 read-replica lag returning the old order.
+    if (data.day_totals?.length && itemOrder === null) {
+      itemOrder = data.day_totals.map(t=>t.item_id);
+    }
     // Load receipt status so inline row icons can render (non-blocking on error)
     if (data.exists) { try { await loadReceipts(); } catch(_){} }
     renderDate();
@@ -1828,6 +1928,7 @@ function renderRows(data, blkId) {
         <span class="iur">${row.name_ur}</span>
         ${(row.name_en && row.name_en !== row.name_ur) ? `<span class="ien">${row.name_en}</span>` : ''}
         ${rcptIconHTML(row.item_id)}
+        <button class="item-edit-btn" data-iid="${row.item_id}" data-iur="${row.name_ur.replace(/"/g,'&quot;')}" title="نام درست کریں · Edit name" style="background:none;border:none;cursor:pointer;padding:0 2px;opacity:.45;vertical-align:middle;line-height:1;color:var(--ink5)" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.45'"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11.5 2.5a2.121 2.121 0 0 1 3 3L5 15H1v-4L11.5 2.5z"/></svg></button>
       </td>
       <td class="cu">
         <select class="unit-sel" data-uid="${row.item_id}" dir="rtl" title="اکائی · Unit">
@@ -1992,6 +2093,14 @@ function renderRows(data, blkId) {
 
   // Drag-and-drop row reordering (desktop only). Global order → saves on drop.
   wireDragReorder(tbody);
+
+  // Delegated click for item-name edit buttons (rendered per row)
+  tbody.addEventListener('click', e => {
+    const btn = e.target.closest('.item-edit-btn');
+    if (!btn) return;
+    e.stopPropagation();
+    openEditItem(+btn.dataset.iid, btn.dataset.iur);
+  });
 }
 
 /* Desktop-only drag reorder. Only the grip handle initiates a drag, so the
@@ -2035,6 +2144,8 @@ function wireDragReorder(tbody) {
       const below = (e.clientY - rect.top) > rect.height/2;
       if (below) tr.after(dragRow); else tr.before(dragRow);
       tbody.querySelectorAll('tr').forEach(r=>r.classList.remove('drop-above','drop-below'));
+      // Scroll the dropped row into view so Ibrahim can see where it landed
+      dragRow.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
       // Persist the new global order
       const order = [...tbody.querySelectorAll('tr')].map(r=>+r.dataset.itemId).filter(Boolean);
       await saveOrder(order);
@@ -2413,7 +2524,7 @@ function setAS(msg) {
   if (!el) return;
   const now = new Date();
   const t = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
-  el.textContent = `ابراہیم شاہ · ${msg} ${t}`;
+  el.textContent = `جامعہ دارالعلوم عیدگاہ · ${msg} ${t}`;
 }
 
 /* ─── Add item modal ─────────────────────────────────────── */
@@ -2429,6 +2540,99 @@ function closeAdd() {
   document.getElementById('ov-add').classList.remove('open');
   document.getElementById('ur-kb-wrap').classList.remove('open');
 }
+
+/* ─── Edit item name modal ───────────────────────────────── */
+let editItemId = null;
+
+function openEditItem(itemId, currentNameUr) {
+  editItemId = itemId;
+  const inp = document.getElementById('edit-item-ur');
+  inp.value = currentNameUr;
+  document.getElementById('ov-edit-item').classList.add('open');
+  inp.focus({ preventScroll: true });
+}
+
+function closeEditItem() {
+  editItemId = null;
+  document.getElementById('ov-edit-item').classList.remove('open');
+}
+
+async function saveEditItem() {
+  if (!editItemId) return;
+  const inp = document.getElementById('edit-item-ur');
+  const name_ur = inp.value.trim();
+  if (!name_ur) { toast('اردو نام درج کریں', true); return; }
+
+  const btn = document.getElementById('edit-item-save');
+  const orig = btn.textContent;
+  btn.textContent = 'محفوظ ہو رہا ہے…';
+  btn.disabled = true;
+
+  try {
+    const r = await fetch(`${API}/api/items/${editItemId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name_ur, user_id: 'ibrahim' }),
+    });
+    const d = await r.json();
+    if (d.error) throw new Error(d.message || d.error);
+
+    // Update in-memory dayData so re-render shows new name without a full reload
+    if (dayData?.day_totals) {
+      const t = dayData.day_totals.find(x => x.item_id === editItemId);
+      if (t) t.name_ur = name_ur;
+    }
+    for (const bid of Object.keys(dayData?.rows_by_block || {})) {
+      const arr = dayData.rows_by_block[bid];
+      if (Array.isArray(arr)) {
+        const row = arr.find(x => x.item_id === editItemId);
+        if (row) row.name_ur = name_ur;
+      }
+    }
+
+    closeEditItem();
+    if (dayData?.exists) renderKitchen(dayData);
+    setAS('نام درست ہو گیا');
+    toast('آئٹم کا نام محفوظ ہو گیا');
+  } catch (e) {
+    toast('خرابی: ' + e.message, true);
+  } finally {
+    btn.textContent = orig;
+    btn.disabled = false;
+  }
+}
+
+// Wire up edit modal — runs immediately (modal HTML is already in DOM)
+(function initEditItemModal() {
+  document.getElementById('edit-item-close').onclick  = closeEditItem;
+  document.getElementById('edit-item-cancel').onclick = closeEditItem;
+  document.getElementById('edit-item-save').onclick   = saveEditItem;
+  document.getElementById('ov-edit-item').onclick = e => {
+    if (e.target === e.currentTarget) closeEditItem();
+  };
+
+  // Keyboard toggle
+  const kbWrap = document.getElementById('edit-ur-kb-wrap');
+  kbWrap.style.display = 'none';
+  document.getElementById('edit-kb-toggle').onclick = () => {
+    kbWrap.style.display = kbWrap.style.display === 'none' ? 'block' : 'none';
+  };
+
+  // Keyboard key presses — .euk class (edit urdu keyboard)
+  document.querySelectorAll('.euk').forEach(btn => {
+    btn.addEventListener('mousedown', e => {
+      e.preventDefault();
+      const inp = document.getElementById('edit-item-ur');
+      const c = btn.dataset.c;
+      if (c === '__BS__') {
+        inp.value = inp.value.slice(0, -1);
+      } else {
+        inp.value += c;
+      }
+      inp.focus({ preventScroll: true });
+    });
+  });
+})();
 
 async function autoTranslate(urdu) {
   document.getElementById('ni-en').value='';
@@ -2711,7 +2915,7 @@ ${RPT_CSS}
 ${bodyHtml}
 <div class="rpt-footer">
   <span>Generated: ${now}</span>
-  <span class="ur">ابراہیم شاہ · Kitchen Manager</span>
+  <span class="ur">جامعہ دارالعلوم عیدگاہ · Kitchen Manager</span>
 </div>
 </div>
 </body></html>`;
@@ -4087,6 +4291,227 @@ function toast(msg, err=false) {
   clearTimeout(window._tt2);
   window._tt2=setTimeout(()=>{ el.className=''; },3000);
 }
+
+/* ═══════════════════════════════════════════════════════════
+ * IMAGE EDITOR — crop + brightness/contrast before upload
+ * ═══════════════════════════════════════════════════════════ */
+const ImgEditor = (() => {
+  let _img = null;           // HTMLImageElement (source)
+  let _cb  = null;           // callback(blob) called on confirm
+  let _brightness = 0;
+  let _contrast   = 0;
+
+  // Crop state in canvas-pixel coordinates
+  let crop = { x:0, y:0, w:0, h:0 };
+  let drag = null;           // { startX, startY, startCrop }
+
+  const canvas  = () => document.getElementById('img-canvas');
+  const overlay = () => document.getElementById('crop-overlay');
+  const cropBox = () => document.getElementById('crop-box');
+
+  // ── Draw ──────────────────────────────────────────────────
+  function draw() {
+    const c = canvas();
+    if (!_img || !c) return;
+    const ctx = c.getContext('2d');
+    ctx.clearRect(0, 0, c.width, c.height);
+
+    // Apply brightness/contrast via CSS filter on a temp canvas
+    const tmp = document.createElement('canvas');
+    tmp.width  = c.width;
+    tmp.height = c.height;
+    const t = tmp.getContext('2d');
+    t.filter = `brightness(${1 + _brightness/100}) contrast(${1 + _contrast/100})`;
+    t.drawImage(_img, 0, 0, c.width, c.height);
+    ctx.drawImage(tmp, 0, 0);
+
+    updateCropOverlay();
+  }
+
+  // ── Crop overlay position (canvas-relative → wrapper-relative) ──
+  function updateCropOverlay() {
+    const c   = canvas();
+    const box = cropBox();
+    if (!c || !box) return;
+    const rect = c.getBoundingClientRect();
+    const wrap = document.getElementById('img-editor-wrap').getBoundingClientRect();
+    const scaleX = rect.width  / c.width;
+    const scaleY = rect.height / c.height;
+    box.style.left   = (rect.left - wrap.left + crop.x * scaleX) + 'px';
+    box.style.top    = (rect.top  - wrap.top  + crop.y * scaleY) + 'px';
+    box.style.width  = (crop.w * scaleX) + 'px';
+    box.style.height = (crop.h * scaleY) + 'px';
+  }
+
+  // ── Load image into canvas ───────────────────────────────
+  function loadImage(file) {
+    const reader = new FileReader();
+    reader.onload = e => {
+      _img = new Image();
+      _img.onload = () => {
+        const c = canvas();
+        // Cap canvas at 1400px wide for performance
+        const maxW = 1400;
+        const scale = _img.width > maxW ? maxW / _img.width : 1;
+        c.width  = Math.round(_img.width  * scale);
+        c.height = Math.round(_img.height * scale);
+        // Reset crop to full image
+        crop = { x: 0, y: 0, w: c.width, h: c.height };
+        _brightness = 0; _contrast = 0;
+        document.getElementById('img-brightness').value = 0;
+        document.getElementById('img-contrast').value   = 0;
+        document.getElementById('img-brightness-val').textContent = '0';
+        document.getElementById('img-contrast-val').textContent   = '0';
+        draw();
+      };
+      _img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  // ── Crop drag (touch + mouse) ────────────────────────────
+  function pointerDown(e) {
+    e.preventDefault();
+    const pt = e.touches ? e.touches[0] : e;
+    const box = cropBox().getBoundingClientRect();
+    // Only drag if pointer is inside the crop box
+    if (pt.clientX < box.left || pt.clientX > box.right ||
+        pt.clientY < box.top  || pt.clientY > box.bottom) return;
+    drag = { startX: pt.clientX, startY: pt.clientY, startCrop: { ...crop } };
+  }
+
+  function pointerMove(e) {
+    if (!drag) return;
+    e.preventDefault();
+    const pt = e.touches ? e.touches[0] : e;
+    const c  = canvas();
+    const rect = c.getBoundingClientRect();
+    const scaleX = c.width  / rect.width;
+    const scaleY = c.height / rect.height;
+    const dx = (pt.clientX - drag.startX) * scaleX;
+    const dy = (pt.clientY - drag.startY) * scaleY;
+    crop.x = Math.max(0, Math.min(c.width  - drag.startCrop.w, drag.startCrop.x + dx));
+    crop.y = Math.max(0, Math.min(c.height - drag.startCrop.h, drag.startCrop.y + dy));
+    updateCropOverlay();
+  }
+
+  function pointerUp() { drag = null; }
+
+  // ── Export cropped + filtered blob ──────────────────────
+  function exportBlob(cb) {
+    const src = canvas();
+    const out = document.createElement('canvas');
+    out.width  = crop.w;
+    out.height = crop.h;
+    const ctx = out.getContext('2d');
+    ctx.filter = `brightness(${1 + _brightness/100}) contrast(${1 + _contrast/100})`;
+    ctx.drawImage(_img,
+      crop.x / src.width  * _img.width,
+      crop.y / src.height * _img.height,
+      crop.w / src.width  * _img.width,
+      crop.h / src.height * _img.height,
+      0, 0, out.width, out.height
+    );
+    out.toBlob(blob => cb(blob), 'image/jpeg', 0.90);
+  }
+
+  // ── Public API ───────────────────────────────────────────
+  function open(file, callback) {
+    _cb  = callback;
+    loadImage(file);
+    document.getElementById('ov-img-editor').classList.add('open');
+  }
+
+  function close() {
+    _img = null; _cb = null; drag = null;
+    document.getElementById('ov-img-editor').classList.remove('open');
+  }
+
+  function init() {
+    document.getElementById('img-editor-close').onclick  = close;
+    document.getElementById('img-editor-cancel').onclick = close;
+    document.getElementById('ov-img-editor').onclick = e => {
+      if (e.target === e.currentTarget) close();
+    };
+
+    document.getElementById('img-editor-confirm').onclick = () => {
+      exportBlob(blob => {
+        close();
+        if (_cb) { _cb(blob); _cb = null; }
+      });
+    };
+
+    // Sliders
+    document.getElementById('img-brightness').oninput = function() {
+      _brightness = +this.value;
+      document.getElementById('img-brightness-val').textContent = this.value;
+      draw();
+    };
+    document.getElementById('img-contrast').oninput = function() {
+      _contrast = +this.value;
+      document.getElementById('img-contrast-val').textContent = this.value;
+      draw();
+    };
+
+    // Reset
+    document.getElementById('img-reset').onclick = () => {
+      _brightness = 0; _contrast = 0;
+      document.getElementById('img-brightness').value = 0;
+      document.getElementById('img-contrast').value   = 0;
+      document.getElementById('img-brightness-val').textContent = '0';
+      document.getElementById('img-contrast-val').textContent   = '0';
+      if (_img) {
+        const c = canvas();
+        crop = { x:0, y:0, w:c.width, h:c.height };
+      }
+      draw();
+    };
+
+    // Drag events on crop box
+    const wrap = document.getElementById('img-editor-wrap');
+    wrap.addEventListener('mousedown',  pointerDown);
+    wrap.addEventListener('mousemove',  pointerMove);
+    wrap.addEventListener('mouseup',    pointerUp);
+    wrap.addEventListener('touchstart', pointerDown, { passive: false });
+    wrap.addEventListener('touchmove',  pointerMove, { passive: false });
+    wrap.addEventListener('touchend',   pointerUp);
+
+    // Redraw overlay on window resize
+    window.addEventListener('resize', () => { if (_img) updateCropOverlay(); });
+  }
+
+  return { open, close, init };
+})();
+
+ImgEditor.init();
+
+// ── Intercept file inputs to open editor first ──────────────
+// Per-item upload
+(function() {
+  const origChange = document.getElementById('rcpt-file').onchange;
+  document.getElementById('rcpt-file').onchange = e => {
+    const f = e.target.files?.[0];
+    e.target.value = '';
+    if (!f) return;
+    ImgEditor.open(f, blob => {
+      const edited = new File([blob], f.name, { type: 'image/jpeg' });
+      uploadReceiptPhoto(edited);
+    });
+  };
+})();
+
+// Bulk upload
+(function() {
+  document.getElementById('rcpt-bulk-file').onchange = e => {
+    const f = e.target.files?.[0];
+    e.target.value = '';
+    if (!f) return;
+    ImgEditor.open(f, blob => {
+      const edited = new File([blob], f.name, { type: 'image/jpeg' });
+      bulkUpload(edited);
+    });
+  };
+})();
 </script>
 </body>
 </html>
