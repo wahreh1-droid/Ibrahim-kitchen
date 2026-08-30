@@ -2176,7 +2176,7 @@ async function saveOrder(order) {
     });
     const data = await r.json();
     if (data.error) throw new Error(data.message||data.error);
-    if (data.items) itemOrder = data.items.map(it=>it.id); // authoritative order from server
+    if (data.items) { /* order already set from local — don't overwrite from potentially stale server response */ }
     applyItemOrder(dayData, itemOrder);
     setAS('ترتیب محفوظ ہو گئی');
   } catch(e) {
