@@ -1753,11 +1753,11 @@ async function loadDay(date) {
     if (!r.ok) throw new Error(`HTTP ${r.status}`);
     const data = await r.json();
     dayData = data;
-    // Only adopt the DB sort_order on the very first load (itemOrder===null).
-    // Once Ibrahim has reordered items in this session, the in-memory order is
-    // the source of truth — overwriting it from the DB response would revert
-    // his changes due to D1 read-replica lag returning the old order.
-    if (data.day_totals?.length && itemOrder === null) {
+    // The DB sort_order is authoritative. rows_by_block now preserves it
+    // correctly (the Worker uses a Map rather than an integer-keyed object),
+    // so adopting the server order on every load is safe and lets a reorder
+    // made on another device show up here.
+    if (data.day_totals?.length) {
       itemOrder = data.day_totals.map(t=>t.item_id);
     }
     // Load receipt status so inline row icons can render (non-blocking on error)
@@ -2176,7 +2176,7 @@ async function saveOrder(order) {
     });
     const data = await r.json();
     if (data.error) throw new Error(data.message||data.error);
-    if (data.items) { /* order already set from local — don't overwrite from potentially stale server response */ }
+    if (data.items) itemOrder = data.items.map(it=>it.id); // authoritative order from server
     applyItemOrder(dayData, itemOrder);
     setAS('ترتیب محفوظ ہو گئی');
   } catch(e) {
