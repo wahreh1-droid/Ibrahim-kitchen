@@ -4414,8 +4414,12 @@ document.addEventListener('DOMContentLoaded', () => {
   };
   document.getElementById('rcpt-bulk-file').onchange = e => {
     const f = e.target.files?.[0];
-    if (f) bulkUpload(f);
     e.target.value = '';
+    if (!f) return;
+    ImgEditor.open(f, blob => {
+      const edited = new File([blob], f.name, { type: 'image/jpeg' });
+      bulkUpload(edited);
+    });
   };
 
   // Per-item panel: back returns to picker
@@ -4443,8 +4447,12 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('rcpt-file').click();
   document.getElementById('rcpt-file').onchange = e => {
     const f = e.target.files?.[0];
-    if (f) uploadReceiptPhoto(f);
     e.target.value = '';
+    if (!f) return;
+    ImgEditor.open(f, blob => {
+      const edited = new File([blob], f.name, { type: 'image/jpeg' });
+      uploadReceiptPhoto(edited);
+    });
   };
 
   // Note auto-saves on blur
@@ -4698,34 +4706,6 @@ const ImgEditor = (() => {
 })();
 
 ImgEditor.init();
-
-// ── Intercept file inputs to open editor first ──────────────
-// Per-item upload
-(function() {
-  const origChange = document.getElementById('rcpt-file').onchange;
-  document.getElementById('rcpt-file').onchange = e => {
-    const f = e.target.files?.[0];
-    e.target.value = '';
-    if (!f) return;
-    ImgEditor.open(f, blob => {
-      const edited = new File([blob], f.name, { type: 'image/jpeg' });
-      uploadReceiptPhoto(edited);
-    });
-  };
-})();
-
-// Bulk upload
-(function() {
-  document.getElementById('rcpt-bulk-file').onchange = e => {
-    const f = e.target.files?.[0];
-    e.target.value = '';
-    if (!f) return;
-    ImgEditor.open(f, blob => {
-      const edited = new File([blob], f.name, { type: 'image/jpeg' });
-      bulkUpload(edited);
-    });
-  };
-})();
 </script>
 </body>
 </html>
