@@ -4658,8 +4658,9 @@ const ImgEditor = (() => {
 
     document.getElementById('img-editor-confirm').onclick = () => {
       exportBlob(blob => {
+        const cb = _cb;   // save before close() sets _cb = null
         close();
-        if (_cb) { _cb(blob); _cb = null; }
+        if (cb) cb(blob);
       });
     };
 
