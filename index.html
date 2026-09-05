@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>جامعہ دارالعلوم عیدگاہ — باورچی خانہ کا حساب</title>
+<title>مطبخ جامعہ دارالعلوم کبیروالا</title>
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -751,7 +751,7 @@ select.finp.don-unit-sel{
 <!-- MASTHEAD -->
 <header class="mast">
   <div class="mast-right">
-    <div class="inst-ur">جامعہ دارالعلوم عیدگاہ کبیروالا</div>
+    <div class="inst-ur">مطبخ جامعہ دارالعلوم کبیروالا</div>
     <div class="inst-sub">Kitchen Ledger</div>
   </div>
 
@@ -809,8 +809,10 @@ select.finp.don-unit-sel{
       <div class="block-sel" id="tb-block-sel">
         <button class="blk-btn active" data-bid="1">بنین<span class="blk-en">Boys</span></button>
         <button class="blk-btn" data-bid="2">بنات<span class="blk-en">Girls</span></button>
+        <button class="blk-btn" data-bid="4">خاص مواقع<span class="blk-en">Special</span></button>
       </div>
       <button class="add-btn" id="tb-open-add"><span class="plus">+</span> نیا آئٹم</button>
+      <button class="add-btn" id="tb-open-temp" style="border-color:var(--g400);color:var(--g600)"><span class="plus">*</span> عارضی آئٹم</button>
     </div>
     <div class="tabs-stats" id="tabs-stats">
       <div><div class="stat-val" id="ts-items">—</div><div class="stat-lbl stat-lbl-ur">اشیاء</div></div>
@@ -845,8 +847,10 @@ select.finp.don-unit-sel{
       <span class="blk-lbl">Meal Block / وقت کھانا</span>
       <button class="blk-btn active" data-bid="1">بنین<span class="blk-en">Boys</span></button>
       <button class="blk-btn" data-bid="2">بنات<span class="blk-en">Girls</span></button>
+      <button class="blk-btn" data-bid="4">خاص مواقع<span class="blk-en">Special</span></button>
     </div>
     <button class="add-btn" id="open-add"><span class="plus">+</span> نیا آئٹم</button>
+    <button class="add-btn" id="open-temp" style="border-color:var(--g400);color:var(--g600)"><span class="plus">*</span> عارضی آئٹم</button>
   </div>
 
   <div class="tbl-wrap">
@@ -884,7 +888,7 @@ select.finp.don-unit-sel{
   <div class="foot">
     <div class="as-note">
       <div class="as-dot"></div>
-      <span id="as-txt">جامعہ دارالعلوم عیدگاہ · AUTOSAVED —</span>
+      <span id="as-txt">مطبخ جامعہ دارالعلوم کبیروالا · AUTOSAVED —</span>
     </div>
     <div class="foot-acts">
       <button class="btn-ghost" id="btn-pdf">
@@ -1001,10 +1005,54 @@ select.finp.don-unit-sel{
         <input class="finp ltr" id="ni-en" type="text" placeholder="Optional — auto-fills via Qwen when built" dir="ltr">
         <span class="auto-tag" id="auto-tag">AUTO-TRANSLATED VIA QWEN — TAP TO EDIT</span>
       </div>
+      <!-- عارضی toggle -->
+      <div class="fg" style="margin-top:12px">
+        <label class="flbl"><span>Item Type</span><span class="flbl-ur">آئٹم کی قسم</span></label>
+        <div style="display:flex;gap:10px;margin-top:6px">
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:8px 14px;border:1px solid var(--bdr);border-radius:6px;flex:1;justify-content:center" id="lbl-perm">
+            <input type="radio" name="ni-temp" id="ni-perm" value="0" checked style="accent-color:var(--g700)">
+            <span style="font-family:var(--ur);font-size:.95rem">مستقل</span>
+            <span style="font-size:.7rem;opacity:.6">Permanent</span>
+          </label>
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:8px 14px;border:1px solid var(--bdr);border-radius:6px;flex:1;justify-content:center" id="lbl-temp">
+            <input type="radio" name="ni-temp" id="ni-temp" value="1" style="accent-color:var(--g700)">
+            <span style="font-family:var(--ur);font-size:.95rem">عارضی *</span>
+            <span style="font-size:.7rem;opacity:.6">Temporary</span>
+          </label>
+        </div>
+        <div style="margin-top:6px;font-size:.72rem;color:var(--ink4);direction:rtl;text-align:right">
+          عارضی آئٹم صرف اسی دن نظر آتا ہے جس دن اسے شامل کیا جائے
+        </div>
+      </div>
     </div>
     <div class="mfoot">
       <button class="btn-pri" id="btn-save-item">محفوظ کریں</button>
       <button class="btn-cancel" id="btn-cancel-item">منسوخ</button>
+    </div>
+  </div>
+</div>
+
+<!-- TEMP ITEM PICKER MODAL -->
+<div class="ov" id="ov-temp-pick">
+  <div class="modal" style="max-width:400px">
+    <div class="mhdr">
+      <div>
+        <div class="mtitle-ur">عارضی آئٹم شامل کریں</div>
+        <div class="mtitle-en">Add Temporary Item to Today</div>
+      </div>
+      <button class="mclose" id="temp-pick-close">×</button>
+    </div>
+    <div class="mbody">
+      <div style="font-size:.78rem;color:var(--ink4);direction:rtl;text-align:right;margin-bottom:10px">
+        یہ آئٹم صرف آج کے صفحے پر نظر آئے گا
+      </div>
+      <div id="temp-pick-list" style="display:flex;flex-direction:column;gap:6px;max-height:300px;overflow-y:auto"></div>
+      <div id="temp-pick-empty" style="display:none;text-align:center;padding:24px;color:var(--ink4);font-size:.85rem">
+        کوئی عارضی آئٹم موجود نہیں — پہلے نیا آئٹم شامل کریں اور "عارضی" منتخب کریں
+      </div>
+    </div>
+    <div class="mfoot">
+      <button class="btn-cancel" id="temp-pick-cancel">بند کریں</button>
     </div>
   </div>
 </div>
@@ -1077,7 +1125,12 @@ select.finp.don-unit-sel{
         <canvas id="img-canvas" style="display:block;width:100%;height:auto;max-height:55vh;object-fit:contain"></canvas>
         <!-- Crop handles overlay -->
         <div id="crop-overlay" style="position:absolute;inset:0;pointer-events:none">
-          <div id="crop-box" style="position:absolute;border:2px solid #fff;box-shadow:0 0 0 9999px rgba(0,0,0,.45);box-sizing:border-box;cursor:move;pointer-events:all"></div>
+          <div id="crop-box" style="position:absolute;border:2px solid #fff;box-shadow:0 0 0 9999px rgba(0,0,0,.45);box-sizing:border-box;cursor:move;pointer-events:all">
+            <div class="crop-handle" data-corner="nw" style="position:absolute;top:-5px;left:-5px;width:14px;height:14px;background:#fff;border-radius:2px;cursor:nwse-resize;touch-action:none"></div>
+            <div class="crop-handle" data-corner="ne" style="position:absolute;top:-5px;right:-5px;width:14px;height:14px;background:#fff;border-radius:2px;cursor:nesw-resize;touch-action:none"></div>
+            <div class="crop-handle" data-corner="sw" style="position:absolute;bottom:-5px;left:-5px;width:14px;height:14px;background:#fff;border-radius:2px;cursor:nesw-resize;touch-action:none"></div>
+            <div class="crop-handle" data-corner="se" style="position:absolute;bottom:-5px;right:-5px;width:14px;height:14px;background:#fff;border-radius:2px;cursor:nwse-resize;touch-action:none"></div>
+          </div>
         </div>
       </div>
       <!-- Brightness slider -->
@@ -1123,7 +1176,7 @@ select.finp.don-unit-sel{
         </p>
         <div id="rcpt-item-list"></div>
         <!-- Bulk attach bar -->
-        <input type="file" id="rcpt-bulk-file" accept="image/*" capture="environment" style="display:none">
+        <input type="file" id="rcpt-bulk-file" accept="image/*" style="display:none">
         <div style="position:sticky;bottom:0;background:var(--sur);padding-top:12px;margin-top:8px;border-top:1px solid var(--bdr)">
           <button id="rcpt-bulk-btn" class="btn-pri" disabled
             style="width:100%;justify-content:center;padding:12px;opacity:.5;transition:opacity .15s">
@@ -1145,7 +1198,7 @@ select.finp.don-unit-sel{
         <div id="rcpt-thumbs" style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:16px"></div>
 
         <!-- Upload -->
-        <input type="file" id="rcpt-file" accept="image/*" capture="environment" style="display:none">
+        <input type="file" id="rcpt-file" accept="image/*" style="display:none">
         <button id="rcpt-upload-btn" class="btn-pri" style="width:100%;justify-content:center;padding:12px;margin-bottom:10px">
           <span style="font-family:var(--ur)">📷 تصویر منسلک کریں</span>
         </button>
@@ -1392,6 +1445,10 @@ document.addEventListener('DOMContentLoaded', () => {
   renderDate();
   loadDay(curDate);
   wireGlobal();
+  // Fetch and cache the full items catalog (includes is_temporary) for the picker
+  fetch(`${API}/api/items`).then(r=>r.json()).then(d => {
+    if (d.items) window._itemsCatalog = d.items;
+  }).catch(()=>{});
 
   // Tab switching — use addEventListener so it survives any DOM re-renders
   document.querySelectorAll('.tab-btn').forEach(btn => {
@@ -1686,6 +1743,11 @@ function wireGlobal() {
     window._tt = setTimeout(()=>autoTranslate(v), 800);
   });
 
+  // Temp item picker modal
+  document.getElementById('temp-pick-close').onclick  = closeTempPicker;
+  document.getElementById('temp-pick-cancel').onclick = closeTempPicker;
+  document.getElementById('ov-temp-pick').onclick = e => { if (e.target===e.currentTarget) closeTempPicker(); };
+
   // Urdu keyboard toggle
   document.getElementById('kb-toggle').addEventListener('click', e => {
     e.preventDefault();
@@ -1861,6 +1923,10 @@ function renderKitchen(data) {
   if (addT) addT.onclick = openAdd;
   const addD = document.getElementById('tb-open-add');
   if (addD) addD.onclick = openAdd;
+  const tempT = document.getElementById('open-temp');
+  if (tempT) tempT.onclick = openTempPicker;
+  const tempD = document.getElementById('tb-open-temp');
+  if (tempD) tempD.onclick = openTempPicker;
   document.getElementById('btn-save').onclick  = saveBlock;
   document.getElementById('btn-pdf').onclick   = openPdfDialog;
   document.getElementById('btn-receipt').onclick = openReceiptModal;
@@ -1925,7 +1991,7 @@ function renderRows(data, blkId) {
     tr.innerHTML = `
       <td class="cdrag"><span class="drag-handle" title="ترتیب بدلیں · Drag to reorder">⣿</span></td>
       <td class="ci">
-        <span class="iur">${row.name_ur}</span>
+        <span class="iur">${row.is_temporary ? '<span style="color:var(--g600);font-weight:700" title="عارضی آئٹم · Temporary">*</span> ' : ''}${row.name_ur}</span>
         ${(row.name_en && row.name_en !== row.name_ur) ? `<span class="ien">${row.name_en}</span>` : ''}
         ${rcptIconHTML(row.item_id)}
         <button class="item-edit-btn" data-iid="${row.item_id}" data-iur="${row.name_ur.replace(/"/g,'&quot;')}" title="نام درست کریں · Edit name" style="background:none;border:none;cursor:pointer;padding:0 2px;opacity:.45;vertical-align:middle;line-height:1;color:var(--ink5)" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.45'"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11.5 2.5a2.121 2.121 0 0 1 3 3L5 15H1v-4L11.5 2.5z"/></svg></button>
@@ -2524,7 +2590,7 @@ function setAS(msg) {
   if (!el) return;
   const now = new Date();
   const t = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
-  el.textContent = `جامعہ دارالعلوم عیدگاہ · ${msg} ${t}`;
+  el.textContent = `مطبخ جامعہ دارالعلوم کبیروالا · ${msg} ${t}`;
 }
 
 /* ─── Add item modal ─────────────────────────────────────── */
@@ -2533,12 +2599,68 @@ function openAdd() {
   document.getElementById('ni-en').value='';
   document.getElementById('ni-en').placeholder='Auto-translating via Qwen…';
   document.getElementById('auto-tag').style.display='none';
+  document.getElementById('ni-perm').checked = true; // reset to permanent
   document.getElementById('ov-add').classList.add('open');
   setTimeout(()=>document.getElementById('ni-ur').focus(),120);
 }
 function closeAdd() {
   document.getElementById('ov-add').classList.remove('open');
   document.getElementById('ur-kb-wrap').classList.remove('open');
+}
+
+/* ─── Temporary item picker ──────────────────────────────── */
+function openTempPicker() {
+  const list  = document.getElementById('temp-pick-list');
+  const empty = document.getElementById('temp-pick-empty');
+  list.innerHTML = '';
+
+  // dayData is the current loaded day payload — items is the global catalog
+  const tempItems = (window._itemsCatalog || []).filter(i => i.is_temporary);
+
+  // Exclude items already on today's grid (already have an opening_balance row)
+  const alreadyOn = new Set(
+    (dayData?.day_totals || []).map(t => t.item_id)
+  );
+
+  const available = tempItems.filter(i => !alreadyOn.has(i.id));
+
+  if (!available.length) {
+    list.style.display = 'none';
+    empty.style.display = '';
+  } else {
+    list.style.display = '';
+    empty.style.display = 'none';
+    available.forEach(item => {
+      const btn = document.createElement('button');
+      btn.className = 'btn-ghost';
+      btn.style.cssText = 'width:100%;text-align:right;direction:rtl;padding:10px 14px;font-family:var(--ur);font-size:1rem;border:1px solid var(--bdr);border-radius:6px';
+      btn.textContent = `* ${item.name_ur}`;
+      btn.onclick = () => addTempItemToToday(item.id);
+      list.appendChild(btn);
+    });
+  }
+
+  document.getElementById('ov-temp-pick').classList.add('open');
+}
+
+function closeTempPicker() {
+  document.getElementById('ov-temp-pick').classList.remove('open');
+}
+
+async function addTempItemToToday(itemId) {
+  closeTempPicker();
+  try {
+    const r = await fetch(`${API}/api/day/${curDate}/add-temp-item`, {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ item_id: itemId, user_id: 'ibrahim' })
+    });
+    const data = await r.json();
+    if (data.error) throw new Error(data.message || data.error);
+    await loadDay(curDate);
+    toast('عارضی آئٹم آج کے لیے شامل ہو گیا ✓');
+  } catch(e) {
+    toast('خرابی: ' + e.message, true);
+  }
 }
 
 /* ─── Edit item name modal ───────────────────────────────── */
@@ -2647,17 +2769,19 @@ async function saveItem() {
   const ur = document.getElementById('ni-ur').value.trim();
   const en = document.getElementById('ni-en').value.trim()||ur;
   if (!ur) { document.getElementById('ni-ur').focus(); return; }
+  const isTemp = document.getElementById('ni-temp').checked ? 1 : 0;
   const btn = document.getElementById('btn-save-item');
   btn.disabled=true; btn.textContent='محفوظ ہو رہا ہے…';
   try {
     const r = await fetch(`${API}/api/items`,{
       method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({name_ur:ur, name_en:en, name_roman:en, unit:'kg', user_id:'ibrahim'})
+      body: JSON.stringify({name_ur:ur, name_en:en, name_roman:en, unit:'kg', user_id:'ibrahim', is_temporary:isTemp})
     });
     const data = await r.json();
     if (data.error) throw new Error(data.message||data.error);
+    if (data.items) window._itemsCatalog = data.items; // keep picker in sync
     closeAdd();
-    toast('نیا آئٹم شامل ہو گیا ✓');
+    toast(isTemp ? 'عارضی آئٹم شامل ہو گیا ✓' : 'نیا آئٹم شامل ہو گیا ✓');
     await loadDay(curDate);
   } catch(e) {
     toast('خرابی: '+e.message, true);
@@ -2907,7 +3031,7 @@ function rptShell(title, dateLabel, bodyHtml, docTitle) {
 ${RPT_CSS}
 </head><body>
 <div class="rpt-mast">
-  <div class="rpt-inst">جامعہ دارالعلوم عیدگاہ — کبیر والا</div>
+  <div class="rpt-inst">مطبخ جامعہ دارالعلوم کبیروالا</div>
   <div class="rpt-sub">Kitchen Ledger · ${title}</div>
   <div class="rpt-date">${dateLabel}</div>
 </div>
@@ -2915,7 +3039,7 @@ ${RPT_CSS}
 ${bodyHtml}
 <div class="rpt-footer">
   <span>Generated: ${now}</span>
-  <span class="ur">جامعہ دارالعلوم عیدگاہ · Kitchen Manager</span>
+  <span class="ur">مطبخ جامعہ دارالعلوم کبیروالا · Kitchen Manager</span>
 </div>
 </div>
 </body></html>`;
@@ -3863,7 +3987,7 @@ function srt(col){
     'Donations Report · عطیات رپورٹ',
     dateLabel,
     statsBar + tableHtml,
-    'عطیات رپورٹ — جامعہ دارالعلوم عیدگاہ'
+    'عطیات رپورٹ — مطبخ جامعہ دارالعلوم کبیروالا'
   );
 }
 
@@ -4369,15 +4493,24 @@ const ImgEditor = (() => {
     reader.readAsDataURL(file);
   }
 
-  // ── Crop drag (touch + mouse) ────────────────────────────
+  // ── Crop drag + resize (touch + mouse) ──────────────────
+  // drag.corner = null → move; 'nw'|'ne'|'sw'|'se' → resize that corner
+  const MIN_CROP = 40; // minimum crop dimension in canvas pixels
+
   function pointerDown(e) {
     e.preventDefault();
     const pt = e.touches ? e.touches[0] : e;
+    // Check if a resize handle was hit first
+    const handle = e.target.closest('.crop-handle');
+    if (handle) {
+      drag = { startX: pt.clientX, startY: pt.clientY, startCrop: { ...crop }, corner: handle.dataset.corner };
+      return;
+    }
     const box = cropBox().getBoundingClientRect();
-    // Only drag if pointer is inside the crop box
+    // Otherwise drag the whole box if inside it
     if (pt.clientX < box.left || pt.clientX > box.right ||
         pt.clientY < box.top  || pt.clientY > box.bottom) return;
-    drag = { startX: pt.clientX, startY: pt.clientY, startCrop: { ...crop } };
+    drag = { startX: pt.clientX, startY: pt.clientY, startCrop: { ...crop }, corner: null };
   }
 
   function pointerMove(e) {
@@ -4390,8 +4523,33 @@ const ImgEditor = (() => {
     const scaleY = c.height / rect.height;
     const dx = (pt.clientX - drag.startX) * scaleX;
     const dy = (pt.clientY - drag.startY) * scaleY;
-    crop.x = Math.max(0, Math.min(c.width  - drag.startCrop.w, drag.startCrop.x + dx));
-    crop.y = Math.max(0, Math.min(c.height - drag.startCrop.h, drag.startCrop.y + dy));
+    const sc = drag.startCrop;
+
+    if (!drag.corner) {
+      // Move: keep w/h fixed, clamp x/y to canvas
+      crop.x = Math.max(0, Math.min(c.width  - sc.w, sc.x + dx));
+      crop.y = Math.max(0, Math.min(c.height - sc.h, sc.y + dy));
+    } else {
+      // Resize: adjust the corner that was grabbed
+      let { x, y, w, h } = sc;
+      if (drag.corner === 'nw') {
+        const nx = Math.max(0, Math.min(sc.x + sc.w - MIN_CROP, sc.x + dx));
+        const ny = Math.max(0, Math.min(sc.y + sc.h - MIN_CROP, sc.y + dy));
+        w = sc.x + sc.w - nx; h = sc.y + sc.h - ny; x = nx; y = ny;
+      } else if (drag.corner === 'ne') {
+        const nw = Math.max(MIN_CROP, Math.min(c.width - sc.x, sc.w + dx));
+        const ny = Math.max(0, Math.min(sc.y + sc.h - MIN_CROP, sc.y + dy));
+        w = nw; h = sc.y + sc.h - ny; y = ny;
+      } else if (drag.corner === 'sw') {
+        const nx = Math.max(0, Math.min(sc.x + sc.w - MIN_CROP, sc.x + dx));
+        const nh = Math.max(MIN_CROP, Math.min(c.height - sc.y, sc.h + dy));
+        w = sc.x + sc.w - nx; h = nh; x = nx;
+      } else { // se
+        w = Math.max(MIN_CROP, Math.min(c.width  - sc.x, sc.w + dx));
+        h = Math.max(MIN_CROP, Math.min(c.height - sc.y, sc.h + dy));
+      }
+      crop = { x, y, w, h };
+    }
     updateCropOverlay();
   }
 
