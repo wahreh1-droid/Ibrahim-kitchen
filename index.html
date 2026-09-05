@@ -812,7 +812,6 @@ select.finp.don-unit-sel{
         <button class="blk-btn" data-bid="4">خاص مواقع<span class="blk-en">Special</span></button>
       </div>
       <button class="add-btn" id="tb-open-add"><span class="plus">+</span> نیا آئٹم</button>
-      <button class="add-btn" id="tb-open-temp" style="border-color:var(--g400);color:var(--g600)"><span class="plus">*</span> عارضی آئٹم</button>
     </div>
     <div class="tabs-stats" id="tabs-stats">
       <div><div class="stat-val" id="ts-items">—</div><div class="stat-lbl stat-lbl-ur">اشیاء</div></div>
@@ -850,7 +849,6 @@ select.finp.don-unit-sel{
       <button class="blk-btn" data-bid="4">خاص مواقع<span class="blk-en">Special</span></button>
     </div>
     <button class="add-btn" id="open-add"><span class="plus">+</span> نیا آئٹم</button>
-    <button class="add-btn" id="open-temp" style="border-color:var(--g400);color:var(--g600)"><span class="plus">*</span> عارضی آئٹم</button>
   </div>
 
   <div class="tbl-wrap">
@@ -1923,10 +1921,6 @@ function renderKitchen(data) {
   if (addT) addT.onclick = openAdd;
   const addD = document.getElementById('tb-open-add');
   if (addD) addD.onclick = openAdd;
-  const tempT = document.getElementById('open-temp');
-  if (tempT) tempT.onclick = openTempPicker;
-  const tempD = document.getElementById('tb-open-temp');
-  if (tempD) tempD.onclick = openTempPicker;
   document.getElementById('btn-save').onclick  = saveBlock;
   document.getElementById('btn-pdf').onclick   = openPdfDialog;
   document.getElementById('btn-receipt').onclick = openReceiptModal;
@@ -1991,7 +1985,7 @@ function renderRows(data, blkId) {
     tr.innerHTML = `
       <td class="cdrag"><span class="drag-handle" title="ترتیب بدلیں · Drag to reorder">⣿</span></td>
       <td class="ci">
-        <span class="iur">${row.is_temporary ? '<span style="color:var(--g600);font-weight:700" title="عارضی آئٹم · Temporary">*</span> ' : ''}${row.name_ur}</span>
+        <span class="iur">${row.name_ur}${row.is_temporary ? ' <span style="color:var(--g600);font-weight:700;font-size:.8rem" title="عارضی آئٹم · Temporary">*</span>' : ''}</span>
         ${(row.name_en && row.name_en !== row.name_ur) ? `<span class="ien">${row.name_en}</span>` : ''}
         ${rcptIconHTML(row.item_id)}
         <button class="item-edit-btn" data-iid="${row.item_id}" data-iur="${row.name_ur.replace(/"/g,'&quot;')}" title="نام درست کریں · Edit name" style="background:none;border:none;cursor:pointer;padding:0 2px;opacity:.45;vertical-align:middle;line-height:1;color:var(--ink5)" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.45'"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11.5 2.5a2.121 2.121 0 0 1 3 3L5 15H1v-4L11.5 2.5z"/></svg></button>
