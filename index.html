@@ -1124,10 +1124,10 @@ select.finp.don-unit-sel{
         <!-- Crop handles overlay -->
         <div id="crop-overlay" style="position:absolute;inset:0;pointer-events:none">
           <div id="crop-box" style="position:absolute;border:2px solid #fff;box-shadow:0 0 0 9999px rgba(0,0,0,.45);box-sizing:border-box;cursor:move;pointer-events:all">
-            <div class="crop-handle" data-corner="nw" style="position:absolute;top:-5px;left:-5px;width:14px;height:14px;background:#fff;border-radius:2px;cursor:nwse-resize;touch-action:none"></div>
-            <div class="crop-handle" data-corner="ne" style="position:absolute;top:-5px;right:-5px;width:14px;height:14px;background:#fff;border-radius:2px;cursor:nesw-resize;touch-action:none"></div>
-            <div class="crop-handle" data-corner="sw" style="position:absolute;bottom:-5px;left:-5px;width:14px;height:14px;background:#fff;border-radius:2px;cursor:nesw-resize;touch-action:none"></div>
-            <div class="crop-handle" data-corner="se" style="position:absolute;bottom:-5px;right:-5px;width:14px;height:14px;background:#fff;border-radius:2px;cursor:nwse-resize;touch-action:none"></div>
+            <div class="crop-handle" data-corner="nw" style="position:absolute;top:0;left:0;width:18px;height:18px;background:rgba(255,255,255,.9);border:2px solid #ccc;border-radius:3px;cursor:nwse-resize;touch-action:none;box-shadow:0 1px 4px rgba(0,0,0,.5)"></div>
+            <div class="crop-handle" data-corner="ne" style="position:absolute;top:0;right:0;width:18px;height:18px;background:rgba(255,255,255,.9);border:2px solid #ccc;border-radius:3px;cursor:nesw-resize;touch-action:none;box-shadow:0 1px 4px rgba(0,0,0,.5)"></div>
+            <div class="crop-handle" data-corner="sw" style="position:absolute;bottom:0;left:0;width:18px;height:18px;background:rgba(255,255,255,.9);border:2px solid #ccc;border-radius:3px;cursor:nesw-resize;touch-action:none;box-shadow:0 1px 4px rgba(0,0,0,.5)"></div>
+            <div class="crop-handle" data-corner="se" style="position:absolute;bottom:0;right:0;width:18px;height:18px;background:rgba(255,255,255,.9);border:2px solid #ccc;border-radius:3px;cursor:nwse-resize;touch-action:none;box-shadow:0 1px 4px rgba(0,0,0,.5)"></div>
           </div>
         </div>
       </div>
@@ -1989,6 +1989,7 @@ function renderRows(data, blkId) {
         ${(row.name_en && row.name_en !== row.name_ur) ? `<span class="ien">${row.name_en}</span>` : ''}
         ${rcptIconHTML(row.item_id)}
         <button class="item-edit-btn" data-iid="${row.item_id}" data-iur="${row.name_ur.replace(/"/g,'&quot;')}" title="نام درست کریں · Edit name" style="background:none;border:none;cursor:pointer;padding:0 2px;opacity:.45;vertical-align:middle;line-height:1;color:var(--ink5)" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.45'"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11.5 2.5a2.121 2.121 0 0 1 3 3L5 15H1v-4L11.5 2.5z"/></svg></button>
+        <button class="item-del-btn" data-did="${row.item_id}" data-dur="${row.name_ur.replace(/"/g,'&quot;')}" title="آئٹم حذف کریں · Delete item" style="background:none;border:none;cursor:pointer;padding:0 2px;opacity:.35;vertical-align:middle;line-height:1;color:#c0392b" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.35'"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 4 14 12 14 13 6"/><path d="M2 4h12M6 4V2h4v2"/></svg></button>
       </td>
       <td class="cu">
         <select class="unit-sel" data-uid="${row.item_id}" dir="rtl" title="اکائی · Unit">
@@ -2161,6 +2162,14 @@ function renderRows(data, blkId) {
     e.stopPropagation();
     openEditItem(+btn.dataset.iid, btn.dataset.iur);
   });
+
+  // Delegated click for item delete buttons
+  tbody.addEventListener('click', e => {
+    const btn = e.target.closest('.item-del-btn');
+    if (!btn) return;
+    e.stopPropagation();
+    deleteItemFromGrid(+btn.dataset.did, btn.dataset.dur);
+  });
 }
 
 /* Desktop-only drag reorder. Only the grip handle initiates a drag, so the
@@ -2182,12 +2191,14 @@ function wireDragReorder(tbody) {
       dragRow = tr; tr.classList.add('dragging');
       e.dataTransfer.effectAllowed = 'move';
       try { e.dataTransfer.setData('text/plain', tr.dataset.itemId); } catch(_){}
+      startAutoScroll();
     });
     tr.addEventListener('dragend', () => {
       tr.classList.remove('dragging');
       tr.removeAttribute('draggable');
       tbody.querySelectorAll('tr').forEach(r=>r.classList.remove('drop-above','drop-below'));
       dragRow = null;
+      stopAutoScroll();
     });
     tr.addEventListener('dragover', e => {
       e.preventDefault();
@@ -2211,6 +2222,32 @@ function wireDragReorder(tbody) {
       await saveOrder(order);
     });
   });
+}
+
+/* Auto-scroll the window while dragging near the top or bottom of the viewport.
+   Fires on dragover at the document level so it works regardless of which row
+   the pointer is over. Clears itself on dragend. */
+let _scrollRaf = null;
+let _scrollDragY = 0;
+
+function startAutoScroll() {
+  document.addEventListener('dragover', _trackDragY);
+  _rafScroll();
+}
+function stopAutoScroll() {
+  document.removeEventListener('dragover', _trackDragY);
+  if (_scrollRaf) { cancelAnimationFrame(_scrollRaf); _scrollRaf = null; }
+}
+function _trackDragY(e) { _scrollDragY = e.clientY; }
+function _rafScroll() {
+  const ZONE = 80;   // px from edge that triggers scroll
+  const SPEED = 12;  // px per frame
+  const vh = window.innerHeight;
+  let delta = 0;
+  if (_scrollDragY < ZONE)       delta = -SPEED * (1 - _scrollDragY / ZONE);
+  else if (_scrollDragY > vh - ZONE) delta =  SPEED * (1 - (vh - _scrollDragY) / ZONE);
+  if (delta) window.scrollBy(0, delta);
+  _scrollRaf = requestAnimationFrame(_rafScroll);
 }
 
 /* Apply a known item order (array of item_ids) to a day-data object in place.
@@ -2673,6 +2710,20 @@ function closeEditItem() {
   document.getElementById('ov-edit-item').classList.remove('open');
 }
 
+/* ─── Delete item from grid ─────────────────────────────── */
+async function deleteItemFromGrid(itemId, nameUr) {
+  if (!confirm(`"${nameUr}" کو حذف کریں؟\nDelete "${nameUr}"? This cannot be undone.`)) return;
+  try {
+    const r = await fetch(`${API}/api/items/${itemId}`, { method: 'DELETE' });
+    const d = await r.json();
+    if (d.error) throw new Error(d.message || d.error);
+    toast(`"${nameUr}" حذف ہو گیا ✓`);
+    await loadDay(curDate);
+  } catch(e) {
+    toast('خرابی: ' + e.message, true);
+  }
+}
+
 async function saveEditItem() {
   if (!editItemId) return;
   const inp = document.getElementById('edit-item-ur');
@@ -2769,14 +2820,25 @@ async function saveItem() {
   try {
     const r = await fetch(`${API}/api/items`,{
       method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({name_ur:ur, name_en:en, name_roman:en, unit:'kg', user_id:'ibrahim', is_temporary:isTemp})
+      body: JSON.stringify({
+        name_ur:ur, name_en:en, name_roman:en, unit:'kg',
+        user_id:'ibrahim', is_temporary:isTemp,
+        current_date: curDate   // needed for temp item ob insertion
+      })
     });
     const data = await r.json();
     if (data.error) throw new Error(data.message||data.error);
-    if (data.items) window._itemsCatalog = data.items; // keep picker in sync
+    if (data.items) window._itemsCatalog = data.items;
     closeAdd();
-    toast(isTemp ? 'عارضی آئٹم شامل ہو گیا ✓' : 'نیا آئٹم شامل ہو گیا ✓');
-    await loadDay(curDate);
+    toast(isTemp ? 'عارضی آئٹم آج کے لیے شامل ہو گیا ✓' : 'نیا آئٹم شامل ہو گیا ✓');
+    // For temp items the server returns the full day payload directly;
+    // for permanent items we reload the day after saving.
+    if (isTemp && data.exists !== undefined) {
+      dayData = data;
+      renderKitchen(data);
+    } else {
+      await loadDay(curDate);
+    }
   } catch(e) {
     toast('خرابی: '+e.message, true);
   } finally {
