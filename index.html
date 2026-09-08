@@ -154,6 +154,21 @@ a{text-decoration:none}
 .blk-btn:hover{border-color:var(--g500);color:var(--g700)}
 .blk-btn.active{background:var(--g700);border-color:var(--g700);color:#fff}
 .blk-btn.active .blk-en{opacity:.7}
+/* Occasion title (خاص مواقع only) — sits inline with the block buttons */
+.occasion-bar{display:flex;align-items:center;gap:8px;direction:rtl;min-width:0}
+.occ-link{font-family:var(--ur);font-size:.9rem;color:var(--g700);background:var(--g50);
+  border:1px dashed var(--g500);border-radius:var(--r);padding:5px 12px;cursor:pointer;
+  white-space:nowrap;transition:all .15s}
+.occ-link:hover{background:var(--g100);border-style:solid}
+.occ-set{display:flex;align-items:center;gap:6px;min-width:0}
+.occ-text{font-family:var(--ur);font-size:1rem;font-weight:700;color:var(--ink9);
+  background:var(--g50);border:1px solid var(--g100);border-radius:var(--r);
+  padding:5px 12px;max-width:340px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.occ-edit,.occ-clear{width:26px;height:26px;border-radius:50%;border:1px solid var(--bdr);
+  background:var(--sur);color:var(--ink5);font-size:.85rem;line-height:1;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;flex:0 0 auto;transition:all .15s}
+.occ-edit:hover{border-color:var(--g500);color:var(--g700)}
+.occ-clear:hover{border-color:var(--red);color:var(--red)}
 .add-btn{
   font-family:var(--ur);font-size:.9rem;
   padding:7px 16px;border-radius:var(--r);
@@ -358,9 +373,14 @@ tfoot td{
 .ov{
   position:fixed;inset:0;background:rgba(0,0,0,.45);
   z-index:200;display:flex;align-items:center;justify-content:center;
-  opacity:0;pointer-events:none;transition:opacity .2s;
+  opacity:0;pointer-events:none;visibility:hidden;transition:opacity .2s,visibility .2s;
 }
-.ov.open{opacity:1;pointer-events:all}
+/* A closed overlay stays position:fixed/inset:0 over the whole screen. opacity:0
+   does NOT stop pointer events, and a child that sets its own pointer-events:all
+   (e.g. the image-editor crop box) would keep intercepting clicks and show its
+   move cursor even while the overlay is invisible. visibility:hidden is inherited
+   and disables the whole subtree, so a closed overlay can never trap clicks. */
+.ov.open{opacity:1;pointer-events:all;visibility:visible}
 .modal{
   background:var(--sur);border-radius:var(--rl);
   width:480px;max-width:calc(100vw - 32px);
@@ -811,6 +831,14 @@ select.finp.don-unit-sel{
         <button class="blk-btn" data-bid="2">بنات<span class="blk-en">Girls</span></button>
         <button class="blk-btn" data-bid="4">خاص مواقع<span class="blk-en">Special</span></button>
       </div>
+      <div class="occasion-bar" style="display:none">
+        <button type="button" class="occ-link">+ عنوان شامل کریں</button>
+        <span class="occ-set" style="display:none">
+          <span class="occ-text"></span>
+          <button type="button" class="occ-edit" title="ترمیم · Edit">✎</button>
+          <button type="button" class="occ-clear" title="ہٹا دیں · Clear">×</button>
+        </span>
+      </div>
       <button class="add-btn" id="tb-open-add"><span class="plus">+</span> نیا آئٹم</button>
     </div>
     <div class="tabs-stats" id="tabs-stats">
@@ -847,6 +875,14 @@ select.finp.don-unit-sel{
       <button class="blk-btn active" data-bid="1">بنین<span class="blk-en">Boys</span></button>
       <button class="blk-btn" data-bid="2">بنات<span class="blk-en">Girls</span></button>
       <button class="blk-btn" data-bid="4">خاص مواقع<span class="blk-en">Special</span></button>
+    </div>
+    <div class="occasion-bar" style="display:none">
+      <button type="button" class="occ-link">+ عنوان شامل کریں</button>
+      <span class="occ-set" style="display:none">
+        <span class="occ-text"></span>
+        <button type="button" class="occ-edit" title="ترمیم · Edit">✎</button>
+        <button type="button" class="occ-clear" title="ہٹا دیں · Clear">×</button>
+      </span>
     </div>
     <button class="add-btn" id="open-add"><span class="plus">+</span> نیا آئٹم</button>
   </div>
@@ -1026,6 +1062,36 @@ select.finp.don-unit-sel{
     <div class="mfoot">
       <button class="btn-pri" id="btn-save-item">محفوظ کریں</button>
       <button class="btn-cancel" id="btn-cancel-item">منسوخ</button>
+    </div>
+  </div>
+</div>
+
+<!-- OCCASION TITLE MODAL (خاص مواقع only) -->
+<div class="ov" id="ov-occasion">
+  <div class="modal" style="max-width:440px">
+    <div class="mhdr">
+      <div>
+        <div class="mtitle-ur">تقریب کا عنوان</div>
+        <div class="mtitle-en">Occasion Title</div>
+      </div>
+      <button class="mclose" id="occasion-close">×</button>
+    </div>
+    <div class="mbody">
+      <div class="fg">
+        <label class="flbl">
+          <span>Occasion title</span>
+          <span style="display:flex;align-items:center;gap:6px">
+            <span class="flbl-ur">عنوان</span>
+            <button type="button" id="occasion-kb-toggle" class="don-kb-btn" title="Urdu keyboard">⌨</button>
+          </span>
+        </label>
+        <input class="finp" id="occasion-input" type="text" placeholder="مثلاً: ختم بخاری شریف کی تقریب" dir="rtl">
+        <div class="ur-kb-wrap" id="occasion-kb-wrap"></div>
+      </div>
+    </div>
+    <div class="mfoot">
+      <button class="btn-pri" id="occasion-save">محفوظ کریں</button>
+      <button class="btn-cancel" id="occasion-cancel">منسوخ</button>
     </div>
   </div>
 </div>
@@ -1911,6 +1977,7 @@ function renderKitchen(data) {
       // Use the live dayData (fresh after any save), not the captured closure,
       // so consumption saved since the last full render is not lost on switch.
       renderRows(dayData || data, bid);
+      renderOccasionBar();
     };
   });
   // Ensure both sets reflect the active block on initial render
@@ -1927,6 +1994,7 @@ function renderKitchen(data) {
 
   renderRows(data, activeBlk);
   statsUpdate(data);
+  renderOccasionBar();
 }
 
 /* ─── Table rows ─────────────────────────────────────────── */
@@ -3704,6 +3772,131 @@ function closeDonModal() {
   document.querySelectorAll('.don-kb-btn').forEach(b => b.classList.remove('active'));
 }
 
+/* ═══ OCCASION TITLE (خاص مواقع only) ═══════════════════════
+ * Per-day title for the Special Occasions block. Saved to that day's
+ * header only; Boys/Girls blocks are unaffected. Shown inline with the
+ * block buttons; opens an Urdu-keyboard modal to enter/edit. */
+function renderOccasionBar() {
+  const isSpecial = activeBlk === 4;
+  const title = (dayData?.header?.occasion_title || '').trim();
+  document.querySelectorAll('.occasion-bar').forEach(bar => {
+    if (!isSpecial || !dayData?.exists) { bar.style.display = 'none'; return; }
+    bar.style.display = 'flex';
+    const link = bar.querySelector('.occ-link');
+    const set  = bar.querySelector('.occ-set');
+    const txt  = bar.querySelector('.occ-text');
+    if (title) {
+      link.style.display = 'none';
+      set.style.display  = 'flex';
+      txt.textContent    = title;
+      txt.title          = title;
+    } else {
+      link.style.display = 'inline-block';
+      set.style.display  = 'none';
+    }
+    // Idempotent (re)wiring — buttons live in cloned template + static tabs bar
+    link.onclick = openOccasionModal;
+    bar.querySelector('.occ-edit').onclick  = openOccasionModal;
+    bar.querySelector('.occ-clear').onclick = clearOccasionTitle;
+  });
+}
+
+function openOccasionModal() {
+  if (!dayData?.exists) { toast('پہلے دن شروع کریں', true); return; }
+  const inp = document.getElementById('occasion-input');
+  inp.value = dayData?.header?.occasion_title || '';
+  document.getElementById('occasion-kb-wrap').classList.remove('open');
+  document.getElementById('occasion-kb-toggle').classList.remove('active');
+  document.getElementById('ov-occasion').classList.add('open');
+  setTimeout(() => inp.focus(), 50);
+}
+
+function closeOccasionModal() {
+  document.getElementById('ov-occasion').classList.remove('open');
+  document.getElementById('occasion-kb-wrap').classList.remove('open');
+  document.getElementById('occasion-kb-toggle').classList.remove('active');
+}
+
+async function saveOccasionTitle() {
+  const title = document.getElementById('occasion-input').value.trim();
+  try {
+    const r = await fetch(`${API}/api/day/${curDate}/occasion`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ occasion_title: title || null, user_id: 'ibrahim' }),
+    });
+    const d = await r.json();
+    if (d.error) throw new Error(d.message || d.error);
+    if (dayData?.header) dayData.header.occasion_title = title || null;
+    closeOccasionModal();
+    renderOccasionBar();
+    toast(title ? 'عنوان محفوظ ہو گیا' : 'عنوان ہٹا دیا گیا');
+  } catch (e) {
+    toast('عنوان محفوظ نہیں ہوا: ' + e.message, true);
+  }
+}
+
+async function clearOccasionTitle() {
+  if (!confirm('تقریب کا عنوان ہٹا دیں؟')) return;
+  try {
+    const r = await fetch(`${API}/api/day/${curDate}/occasion`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ occasion_title: null, user_id: 'ibrahim' }),
+    });
+    const d = await r.json();
+    if (d.error) throw new Error(d.message || d.error);
+    if (dayData?.header) dayData.header.occasion_title = null;
+    renderOccasionBar();
+    toast('عنوان ہٹا دیا گیا');
+  } catch (e) {
+    toast('عنوان نہیں ہٹا: ' + e.message, true);
+  }
+}
+
+/* Occasion modal + its Urdu keyboard — wired once (markup precedes this script) */
+(function wireOccasion() {
+  const modal = document.getElementById('ov-occasion');
+  if (!modal) return;
+  document.getElementById('occasion-close').onclick  = closeOccasionModal;
+  document.getElementById('occasion-cancel').onclick = closeOccasionModal;
+  document.getElementById('occasion-save').onclick   = saveOccasionTitle;
+  modal.onclick = e => { if (e.target === e.currentTarget) closeOccasionModal(); };
+  document.getElementById('occasion-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter') { e.preventDefault(); saveOccasionTitle(); }
+  });
+
+  const kbBtn  = document.getElementById('occasion-kb-toggle');
+  const kbWrap = document.getElementById('occasion-kb-wrap');
+  kbBtn.addEventListener('click', e => {
+    e.preventDefault();
+    if (kbWrap.classList.contains('open')) {
+      kbWrap.classList.remove('open'); kbBtn.classList.remove('active');
+    } else {
+      if (!kbWrap.innerHTML.trim()) kbWrap.innerHTML = UR_KB_HTML;
+      kbWrap.classList.add('open'); kbBtn.classList.add('active');
+      document.getElementById('occasion-input').focus({ preventScroll: true });
+    }
+  });
+  kbWrap.addEventListener('click', e => {
+    const key = e.target.closest('.uk');
+    if (!key) return;
+    e.preventDefault();
+    const inp = document.getElementById('occasion-input');
+    if (key.dataset.bs) {
+      const s = inp.selectionStart, en = inp.selectionEnd;
+      if (s === en && s > 0) { inp.value = inp.value.slice(0,s-1)+inp.value.slice(en); inp.setSelectionRange(s-1,s-1); }
+      else if (s !== en)     { inp.value = inp.value.slice(0,s)+inp.value.slice(en);   inp.setSelectionRange(s,s); }
+    } else {
+      const ch = key.dataset.c; if (ch == null) return;
+      const s = inp.selectionStart, en = inp.selectionEnd;
+      inp.value = inp.value.slice(0,s) + ch + inp.value.slice(en);
+      inp.setSelectionRange(s + ch.length, s + ch.length);
+    }
+    inp.focus({ preventScroll: true });
+  });
+})();
+
 function addDonItemRow(prefill = null) {
   const idx = donItemRows.length;
   const isCash = prefill && (prefill.cash_amount != null && prefill.cash_amount !== '');
@@ -4641,11 +4834,18 @@ const ImgEditor = (() => {
   function open(file, callback) {
     _cb  = callback;
     loadImage(file);
+    const box = cropBox();
+    if (box) box.style.pointerEvents = 'all';   // interactive while editing
     document.getElementById('ov-img-editor').classList.add('open');
   }
 
   function close() {
     _img = null; _cb = null; drag = null;
+    // Belt-and-suspenders: the crop box carries pointer-events:all + cursor:move.
+    // Disable it on close so it can never intercept clicks or show the move
+    // cursor once the (invisible) overlay is dismissed.
+    const box = cropBox();
+    if (box) box.style.pointerEvents = 'none';
     document.getElementById('ov-img-editor').classList.remove('open');
   }
 
@@ -4657,11 +4857,17 @@ const ImgEditor = (() => {
     };
 
     document.getElementById('img-editor-confirm').onclick = () => {
-      exportBlob(blob => {
-        const cb = _cb;   // save before close() sets _cb = null
+      const cb = _cb;   // capture before any close() nulls it
+      try {
+        exportBlob(blob => {
+          close();
+          if (cb) cb(blob);
+        });
+      } catch (e) {
+        // If export throws, still close so the overlay can't get stuck open.
         close();
-        if (cb) cb(blob);
-      });
+        toast('تصویر تیار نہیں ہو سکی', true);
+      }
     };
 
     // Sliders

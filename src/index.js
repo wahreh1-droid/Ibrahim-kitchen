@@ -44,6 +44,19 @@ export default {
         return json(await reorderItems(env, body));
       }
 
+      // PATCH /api/items/:id — update Urdu name (spelling correction)
+      const itemPatchMatch = path.match(/^\/api\/items\/(\d+)$/);
+      if (itemPatchMatch && request.method === "PATCH") {
+        const body = await request.json().catch(() => null);
+        if (!body) return json({ error: "bad_request", message: "Missing body" }, 400);
+        return json(await patchItem(env, +itemPatchMatch[1], body));
+      }
+
+      // DELETE /api/items/:id — soft-delete an item (set is_active = 0)
+      if (itemPatchMatch && request.method === "DELETE") {
+        return json(await deleteItem(env, +itemPatchMatch[1]));
+      }
+
       // POST /api/items/:id/unit — set an item's (global) unit
       const itemUnitMatch = path.match(/^\/api\/items\/(\d+)\/unit$/);
       if (itemUnitMatch && request.method === "POST") {
@@ -93,6 +106,22 @@ export default {
         const body = await request.json().catch(() => null);
         if (!body) return json({ error: "bad_request", message: "Missing body" }, 400);
         return json(await saveReceived(env, receivedMatch[1], body));
+      }
+
+      // POST /api/day/:date/occasion — per-day title for the Special Occasions block
+      const occasionMatch = path.match(/^\/api\/day\/(\d{4}-\d{2}-\d{2})\/occasion$/);
+      if (occasionMatch && request.method === "POST") {
+        const body = await request.json().catch(() => null);
+        if (!body) return json({ error: "bad_request", message: "Missing body" }, 400);
+        return json(await saveOccasion(env, occasionMatch[1], body));
+      }
+
+      // POST /api/day/:date/add-temp-item — attach a temporary item to one day
+      const addTempMatch = path.match(/^\/api\/day\/(\d{4}-\d{2}-\d{2})\/add-temp-item$/);
+      if (addTempMatch && request.method === "POST") {
+        const body = await request.json().catch(() => null);
+        if (!body) return json({ error: "bad_request", message: "Missing body" }, 400);
+        return json(await addTempItemToDay(env, addTempMatch[1], body));
       }
 
       const dayMatch = path.match(/^\/api\/day\/(\d{4}-\d{2}-\d{2})$/);
@@ -233,9 +262,9 @@ export default {
  * ------------------------------------------------------------------------- */
 async function getItems(env) {
   const { results } = await env.DB.prepare(
-    `SELECT id, name_ur, name_en, name_roman, unit, sort_order
+    `SELECT id, name_ur, name_en, name_roman, unit, sort_order, is_temporary
        FROM items
-      WHERE is_active = 1
+      WHERE is_active = 1 AND is_temporary = 0
       ORDER BY sort_order, name_ur`
   ).all();
 
@@ -256,7 +285,7 @@ async function getDay(env, date) {
   const header = await env.DB.prepare(
     `SELECT id, entry_date, hijri_date, day_of_week_ur, day_of_week_en,
             students_boys, students_girls, students_fed,
-            notes, locked, is_stale
+            notes, locked, is_stale, occasion_title
        FROM daily_headers
       WHERE entry_date = ?1`
   ).bind(date).first();
@@ -314,6 +343,7 @@ async function getDay(env, date) {
               mb.name_en                          AS block_name_en,
               i.id                                AS item_id,
               i.name_ur, i.name_en, i.unit,
+              i.is_temporary,
               m.meal_type,
               COALESCE(lr.used_qty,       0)      AS used_qty,
               COALESCE(lr.used_value_pkr, 0)      AS used_value_pkr
@@ -323,12 +353,16 @@ async function getDay(env, date) {
          JOIN (SELECT 'breakfast' AS meal_type UNION ALL
                SELECT 'lunch'                 UNION ALL
                SELECT 'dinner')              m
+         LEFT JOIN opening_balances ob
+           ON  ob.header_id = ?1
+           AND ob.item_id   = bi.item_id
          LEFT JOIN ledger_rows lr
            ON  lr.header_id = ?1
            AND lr.block_id  = bi.block_id
            AND lr.item_id   = bi.item_id
            AND lr.meal_type = m.meal_type
         WHERE bi.is_active = 1
+          AND (i.is_temporary = 0 OR ob.item_id IS NOT NULL)
         ORDER BY mb.sort_order, i.sort_order, i.name_ur, m.meal_type`
     ).bind(header.id),
 
@@ -340,33 +374,46 @@ async function getDay(env, date) {
     ).bind(header.id),
   ]);
 
-  // Group grid rows by block_id, then by item_id with meal_type entries
-  // Structure: rowsByBlock[blockId][itemId] = { item meta, breakfast, lunch, dinner }
-  const rowsByBlock = {};
+  // Group grid rows by block_id, then by item_id with meal_type entries.
+  //
+  // A Map is used deliberately instead of a plain object. JavaScript objects
+  // iterate integer-like keys in ascending NUMERIC order regardless of
+  // insertion order, so `Object.values()` on an object keyed by item_id would
+  // silently discard the `ORDER BY i.sort_order` from the SQL above and return
+  // items sorted by item_id instead. That made Ibrahim's drag-reorder appear
+  // to revert: the DB held the correct sort_order, but every render rebuilt
+  // the rows in item_id order. Map preserves insertion order for all key
+  // types, so the SQL ordering survives to the frontend.
+  const rowsByBlock = new Map();
   for (const row of gridRes.results) {
-    const blk = (rowsByBlock[row.block_id] ||= {});
-    if (!blk[row.item_id]) {
-      blk[row.item_id] = {
-        item_id: row.item_id,
-        name_ur: row.name_ur,
-        name_en: row.name_en,
-        unit:    row.unit,
+    if (!rowsByBlock.has(row.block_id)) rowsByBlock.set(row.block_id, new Map());
+    const blk = rowsByBlock.get(row.block_id);
+
+    if (!blk.has(row.item_id)) {
+      blk.set(row.item_id, {
+        item_id:      row.item_id,
+        name_ur:      row.name_ur,
+        name_en:      row.name_en,
+        unit:         row.unit,
+        is_temporary: row.is_temporary,
         breakfast: { used_qty: 0, used_value_pkr: 0 },
         lunch:     { used_qty: 0, used_value_pkr: 0 },
         dinner:    { used_qty: 0, used_value_pkr: 0 },
-      };
+      });
     }
-    blk[row.block_id]?.[row.item_id]; // already set above
-    const entry = rowsByBlock[row.block_id][row.item_id];
+
+    const entry = blk.get(row.item_id);
     entry[row.meal_type] = {
       used_qty:       row.used_qty,
       used_value_pkr: row.used_value_pkr,
     };
   }
-  // Convert to array per block for frontend compatibility
+
+  // Convert to array per block for frontend compatibility.
+  // Map iteration order == insertion order == SQL sort_order order.
   const rowsByBlockArr = {};
-  for (const [blockId, itemMap] of Object.entries(rowsByBlock)) {
-    rowsByBlockArr[blockId] = Object.values(itemMap);
+  for (const [blockId, itemMap] of rowsByBlock) {
+    rowsByBlockArr[blockId] = [...itemMap.values()];
   }
 
   return {
@@ -438,7 +485,7 @@ async function createDay(env, date, body) {
      SELECT ?1, i.id, COALESCE(pc.closing_qty, 0), 0, COALESCE(pc.prev_cost, 0)
      FROM items i
      LEFT JOIN prev_closing pc ON pc.item_id = i.id
-     WHERE i.is_active = 1`
+     WHERE i.is_active = 1 AND i.is_temporary = 0`
   ).bind(headerId, date).run();
 
   return getDay(env, date);
@@ -484,6 +531,8 @@ async function propagateOpenings(env, fromDate) {
   ).bind(fromDate).all();
 
   // Closing of a given header, per item — mirrors getDay()'s remaining_qty.
+  // cost_per_unit is also carried forward so that a price entered on day N
+  // is preserved on day N+1 (and beyond) until explicitly changed.
   const closingSql =
     `SELECT ob.item_id,
             ob.qty
@@ -492,8 +541,10 @@ async function propagateOpenings(env, fromDate) {
               - COALESCE((SELECT SUM(lr.used_qty)
                             FROM ledger_rows lr
                            WHERE lr.header_id = ob.header_id
-                             AND lr.item_id   = ob.item_id), 0) AS closing_qty
+                             AND lr.item_id   = ob.item_id), 0) AS closing_qty,
+            ob.cost_per_unit
        FROM opening_balances ob
+       JOIN items i ON i.id = ob.item_id AND i.is_temporary = 0
        LEFT JOIN daily_received dr
          ON dr.header_id = ob.header_id AND dr.item_id = ob.item_id
       WHERE ob.header_id = ?1`;
@@ -508,8 +559,8 @@ async function propagateOpenings(env, fromDate) {
 
     const stmts = closings.results.map(row =>
       env.DB.prepare(
-        `UPDATE opening_balances SET qty = ?1 WHERE header_id = ?2 AND item_id = ?3`
-      ).bind(row.closing_qty ?? 0, day.id, row.item_id)
+        `UPDATE opening_balances SET qty = ?1, cost_per_unit = ?2 WHERE header_id = ?3 AND item_id = ?4`
+      ).bind(row.closing_qty ?? 0, row.cost_per_unit ?? 0, day.id, row.item_id)
     );
     stmts.push(
       env.DB.prepare(`UPDATE daily_headers SET is_stale = 0 WHERE id = ?1`).bind(day.id)
@@ -846,6 +897,77 @@ async function saveStudents(env, date, body) {
 
 
 /* ---------------------------------------------------------------------------
+ * POST /api/day/:date/occasion — per-day title for the Special Occasions block.
+ * Body: { occasion_title: string|null, user_id }
+ * An empty/null title clears it. Only touches this one day's header; the Boys
+ * and Girls blocks are unaffected and the title never propagates forward.
+ * ------------------------------------------------------------------------- */
+async function saveOccasion(env, date, body) {
+  const { occasion_title, user_id } = body;
+  if (!user_id) return { error: "bad_request", message: "user_id required" };
+
+  const header = await env.DB.prepare(
+    `SELECT id, locked FROM daily_headers WHERE entry_date = ?1`
+  ).bind(date).first();
+  if (!header) return { error: "not_found", message: "Day does not exist. Create it first." };
+  if (header.locked) return { error: "locked", message: "This day is locked and cannot be edited." };
+
+  const title = (typeof occasion_title === "string" && occasion_title.trim())
+    ? occasion_title.trim()
+    : null;
+  const now = new Date().toISOString().replace("T", " ").slice(0, 19);
+
+  await env.DB.prepare(
+    `UPDATE daily_headers SET occasion_title = ?2 WHERE id = ?1`
+  ).bind(header.id, title).run();
+
+  try {
+    await env.DB.prepare(
+      `INSERT INTO audit_log(table_name,row_id,field_name,old_value,new_value,changed_by,changed_at,reason_type,reason)
+       VALUES('daily_headers',?1,'occasion_title',NULL,?2,?3,?4,'entry',NULL)`
+    ).bind(header.id, title, user_id, now).run();
+  } catch (e) { /* audit failure must not block the save */ }
+
+  return getDay(env, date);
+}
+
+
+/* ---------------------------------------------------------------------------
+ * POST /api/day/:date/add-temp-item — attach a temporary item to a specific day
+ *
+ * Temporary items are not propagated forward by propagateOpenings(). The only
+ * way one appears on a day's grid is if an opening_balances row exists for it
+ * on that day. This endpoint creates that row (qty = 0) so the item shows up.
+ *
+ * Body: { item_id: number, user_id?: string }
+ * ------------------------------------------------------------------------- */
+async function addTempItemToDay(env, date, body) {
+  const { item_id, user_id = 'ibrahim' } = body;
+  if (!item_id) return { error: "bad_request", message: "item_id required" };
+
+  const header = await env.DB.prepare(
+    `SELECT id, locked FROM daily_headers WHERE entry_date = ?1`
+  ).bind(date).first();
+  if (!header) return { error: "not_found", message: "Day does not exist. Create it first." };
+  if (header.locked) return { error: "locked", message: "This day is locked." };
+
+  // Confirm the item is actually temporary
+  const item = await env.DB.prepare(
+    `SELECT id, is_temporary FROM items WHERE id = ?1 AND is_active = 1`
+  ).bind(item_id).first();
+  if (!item) return { error: "not_found", message: "Item not found." };
+  if (!item.is_temporary) return { error: "bad_request", message: "Item is not temporary. It already appears on all days." };
+
+  await env.DB.prepare(
+    `INSERT OR IGNORE INTO opening_balances (header_id, item_id, qty, value_pkr, cost_per_unit)
+     VALUES (?1, ?2, 0, 0, 0)`
+  ).bind(header.id, item_id).run();
+
+  return getDay(env, date);
+}
+
+
+/* ---------------------------------------------------------------------------
  * POST /api/items/reorder — set the global display order of items.
  * Body: { order: [itemId, itemId, ...], user_id }
  * Assigns sort_order in clean increments of 10 so future single-row moves have
@@ -869,6 +991,56 @@ async function reorderItems(env, body) {
   ).all();
 
   return { ok: true, items };
+}
+
+/* ---------------------------------------------------------------------------
+ * PATCH /api/items/:id — update an item's Urdu name (spelling correction).
+ * English/Roman names are intentionally NOT updated here — they are
+ * auto-generated by Qwen and should be re-generated separately if needed.
+ * Body: { name_ur, user_id }
+ * ------------------------------------------------------------------------- */
+async function patchItem(env, itemId, body) {
+  const { name_ur } = body;
+  if (!name_ur?.trim()) return { error: "bad_request", message: "name_ur is required" };
+
+  const exists = await env.DB.prepare(
+    `SELECT id FROM items WHERE id = ?1 AND is_active = 1`
+  ).bind(itemId).first();
+  if (!exists) return { error: "not_found", message: "Item not found" };
+
+  await env.DB.prepare(
+    `UPDATE items SET name_ur = ?1 WHERE id = ?2`
+  ).bind(name_ur.trim(), itemId).run();
+
+  const { results: items } = await env.DB.prepare(
+    `SELECT id, name_ur, name_en, name_roman, unit, sort_order
+       FROM items WHERE is_active = 1 ORDER BY sort_order, name_ur`
+  ).all();
+
+  return { ok: true, item_id: itemId, items };
+}
+
+/* ---------------------------------------------------------------------------
+ * DELETE /api/items/:id — soft-delete an item (is_active = 0).
+ * Preserves all ledger history. The item disappears from the grid on all days
+ * but its past consumption/received data remains intact for reports.
+ * ------------------------------------------------------------------------- */
+async function deleteItem(env, itemId) {
+  const exists = await env.DB.prepare(
+    `SELECT id FROM items WHERE id = ?1`
+  ).bind(itemId).first();
+  if (!exists) return { error: "not_found", message: "Item not found" };
+
+  await env.DB.prepare(
+    `UPDATE items SET is_active = 0 WHERE id = ?1`
+  ).bind(itemId).run();
+
+  // Also deactivate its block assignments so it never reappears
+  await env.DB.prepare(
+    `UPDATE block_items SET is_active = 0 WHERE item_id = ?1`
+  ).bind(itemId).run();
+
+  return { ok: true, deleted_id: itemId };
 }
 
 /* ---------------------------------------------------------------------------
@@ -934,18 +1106,21 @@ async function addHijriAnchor(env, body) {
  * POST /api/items — add a new item and assign it to all blocks
  * ------------------------------------------------------------------------- */
 async function addItem(env, body) {
-  const { name_ur, name_en, name_roman, unit, user_id } = body;
+  const { name_ur, name_en, name_roman, unit, user_id, is_temporary = 0, current_date } = body;
   if (!name_ur) return { error: "bad_request", message: "name_ur is required" };
 
+  const isTemp = is_temporary ? 1 : 0;
+
   const ins = await env.DB.prepare(
-    `INSERT INTO items (name_ur, name_en, name_roman, unit, is_active, created_by)
-     VALUES (?1, ?2, ?3, ?4, 1, ?5)
+    `INSERT INTO items (name_ur, name_en, name_roman, unit, is_active, is_temporary, created_by)
+     VALUES (?1, ?2, ?3, ?4, 1, ?5, ?6)
      RETURNING id`
   ).bind(
     name_ur,
     name_en   || name_ur,
     name_roman || name_en || name_ur,
     unit || 'kg',
+    isTemp,
     user_id || 'ibrahim'
   ).first();
 
@@ -963,7 +1138,28 @@ async function addItem(env, body) {
   );
   if (assigns.length) await env.DB.batch(assigns);
 
-  // Insert zero opening balance for all existing day headers
+  if (isTemp) {
+    // Temporary items: insert opening_balance only for today's header so the
+    // item appears in today's grid. It is never propagated forward (is_temporary = 1
+    // is excluded by propagateOpenings and createDay). No catalog backfill.
+    if (current_date) {
+      const header = await env.DB.prepare(
+        `SELECT id FROM daily_headers WHERE entry_date = ?1`
+      ).bind(current_date).first();
+      if (header) {
+        await env.DB.prepare(
+          `INSERT OR IGNORE INTO opening_balances (header_id, item_id, qty, value_pkr, cost_per_unit)
+           VALUES (?1, ?2, 0, 0, 0)`
+        ).bind(header.id, itemId).run();
+      }
+    }
+    // Return the full day payload so the frontend can re-render immediately
+    return current_date
+      ? getDay(env, current_date)
+      : { ok: true, item_id: itemId };
+  }
+
+  // Permanent items: backfill a zero opening balance for all existing days
   const headers = await env.DB.prepare(
     `SELECT id FROM daily_headers`
   ).all();
@@ -978,8 +1174,8 @@ async function addItem(env, body) {
   }
 
   const { results: items } = await env.DB.prepare(
-    `SELECT id, name_ur, name_en, name_roman, unit, sort_order
-       FROM items WHERE is_active = 1 ORDER BY sort_order, name_ur`
+    `SELECT id, name_ur, name_en, name_roman, unit, sort_order, is_temporary
+       FROM items WHERE is_active = 1 AND is_temporary = 0 ORDER BY sort_order, name_ur`
   ).all();
 
   return { ok: true, item_id: itemId, items };
@@ -1708,19 +1904,21 @@ async function reportDonations(env, from, to) {
       ORDER BY d.donation_date DESC, d.id DESC`
   ).bind(...binds).all();
 
-  const donationMap = {};
+  // Map, not a plain object: integer-like object keys iterate in ascending
+  // numeric order, which would override the SQL's donation_date DESC ordering.
+  const donationMap = new Map();
   for (const row of rows) {
-    if (!donationMap[row.id]) {
-      donationMap[row.id] = {
+    if (!donationMap.has(row.id)) {
+      donationMap.set(row.id, {
         id:            row.id,
         donor_name:    row.donor_name,
         donation_date: row.donation_date,
         notes:         row.notes,
         items:         [],
-      };
+      });
     }
     if (row.item_name || row.cash_amount) {
-      donationMap[row.id].items.push({
+      donationMap.get(row.id).items.push({
         item_name:       row.item_name,
         quantity:        row.quantity,
         unit:            row.unit,
@@ -1730,7 +1928,7 @@ async function reportDonations(env, from, to) {
     }
   }
 
-  const donationList = Object.values(donationMap);
+  const donationList = [...donationMap.values()];
 
   const total_cash = donationList.reduce((sum, d) =>
     sum + d.items.reduce((s, i) => s + (i.cash_amount ?? 0), 0), 0);
@@ -1998,7 +2196,7 @@ function json(body, status = 200) {
 // Cloudflare Access will gate it, but CORS should not be a hole behind that.
 function withCors(res) {
   res.headers.set("Access-Control-Allow-Origin", "*");
-  res.headers.set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+  res.headers.set("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS");
   res.headers.set("Access-Control-Allow-Headers", "Content-Type");
   return res;
 }
