@@ -764,9 +764,69 @@ select.finp.don-unit-sel{
   .btn-ghost{font-size:.8rem;padding:7px 12px}
   .btn-pri{font-size:.85rem;padding:8px 16px}
 }
+
+/* ═══ LOCK SCREEN ═══════════════════════════════════════════ */
+#lock-screen{position:fixed;inset:0;z-index:5000;background:var(--g700);
+  display:flex;align-items:center;justify-content:center;padding:20px}
+#lock-screen.unlocked{display:none}
+.lock-card{width:100%;max-width:360px;background:var(--sur);border-radius:18px;
+  box-shadow:0 20px 60px rgba(0,0,0,.45);padding:30px 26px 26px;text-align:center;direction:rtl}
+.lock-logo{font-family:var(--ur);font-size:1.3rem;font-weight:700;color:var(--g700);margin-bottom:3px}
+.lock-sub{font-family:var(--en);font-size:.56rem;letter-spacing:.14em;text-transform:uppercase;color:var(--ink5);margin-bottom:22px}
+.lock-title{font-family:var(--ur);font-size:1.02rem;color:var(--ink9);margin-bottom:18px}
+.pin-dots{display:flex;gap:12px;justify-content:center;margin-bottom:12px;direction:ltr}
+.pin-dot{width:14px;height:14px;border-radius:50%;border:2px solid var(--g500);background:transparent;transition:all .12s}
+.pin-dot.filled{background:var(--g600);border-color:var(--g600)}
+.pin-err{min-height:22px;font-family:var(--ur);font-size:.84rem;color:var(--red);margin-bottom:6px}
+.keypad{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:4px}
+.key{padding:15px 0;font-size:1.4rem;font-family:var(--mono);background:var(--ink1);
+  border:1px solid var(--bdr);border-radius:12px;cursor:pointer;color:var(--ink9);
+  user-select:none;transition:transform .08s,background .12s,border-color .12s}
+.key:hover{background:var(--g50);border-color:var(--g500)}
+.key:active{transform:scale(.95)}
+.key-blank{visibility:hidden;cursor:default}
+.key-fn{font-family:var(--ur);font-size:1rem;color:var(--ink5)}
+/* Floating manual-lock button (visible only once unlocked) */
+#lock-now-btn{position:fixed;bottom:16px;inset-inline-start:16px;z-index:400;
+  width:44px;height:44px;border-radius:50%;background:var(--g700);color:#fff;border:none;
+  font-size:1.15rem;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.28);
+  align-items:center;justify-content:center;display:none;transition:transform .1s}
+#lock-now-btn.show{display:flex}
+#lock-now-btn:hover{transform:scale(1.06)}
 </style>
 </head>
 <body>
+
+<!-- LOCK SCREEN (visible by default; JS hides it once authenticated) -->
+<div id="lock-screen">
+  <div class="lock-card">
+    <div class="lock-logo">مطبخ جامعہ دارالعلوم کبیروالا</div>
+    <div class="lock-sub">Kitchen Ledger</div>
+    <div class="lock-title" id="lock-title">پن درج کریں</div>
+    <div class="pin-dots" id="pin-dots">
+      <span class="pin-dot"></span><span class="pin-dot"></span><span class="pin-dot"></span>
+      <span class="pin-dot"></span><span class="pin-dot"></span><span class="pin-dot"></span>
+    </div>
+    <div class="pin-err" id="pin-err"></div>
+    <div class="keypad" id="keypad">
+      <button class="key" data-k="1">1</button>
+      <button class="key" data-k="2">2</button>
+      <button class="key" data-k="3">3</button>
+      <button class="key" data-k="4">4</button>
+      <button class="key" data-k="5">5</button>
+      <button class="key" data-k="6">6</button>
+      <button class="key" data-k="7">7</button>
+      <button class="key" data-k="8">8</button>
+      <button class="key" data-k="9">9</button>
+      <button class="key key-blank" tabindex="-1"></button>
+      <button class="key" data-k="0">0</button>
+      <button class="key key-fn" data-k="back">⌫</button>
+    </div>
+  </div>
+</div>
+
+<!-- Manual lock button (floating, appears only after unlock) -->
+<button id="lock-now-btn" title="قفل · Lock now" aria-label="Lock">🔒</button>
 
 <!-- MASTHEAD -->
 <header class="mast">
@@ -1479,6 +1539,35 @@ select.finp.don-unit-sel{
 <script>
 const API = 'https://ibrahim-kitchen-api.wahreh1.workers.dev';
 
+/* ═══ AUTH: bearer token + fetch wrapper ════════════════════
+ * Every request to the API carries the session token; a 401 (expired or
+ * invalid) drops back to the lock screen. Auth routes are exempt from the
+ * auto-lock so a wrong-PIN 401 shows an error instead of re-locking. */
+let authToken   = null;
+let authExp     = 0;
+let _appStarted = false;
+let _idleTimer  = null;
+let _lastRefresh = 0;
+const IDLE_MS   = 10 * 60 * 1000;   // 10-minute idle auto-lock (matches server token TTL)
+
+const _origFetch = window.fetch.bind(window);
+window.fetch = async (input, init) => {
+  const url = typeof input === 'string' ? input : (input && input.url) || '';
+  if (!url.startsWith(API)) return _origFetch(input, init);
+  const opts = init ? { ...init } : {};
+  const h = new Headers(opts.headers || {});
+  if (authToken) h.set('Authorization', 'Bearer ' + authToken);
+  opts.headers = h;
+  const res = await _origFetch(input, opts);
+  if (res.status === 401 && !url.includes('/api/auth/')) lockNow();
+  return res;
+};
+
+// Receipt <img> loads can't send a header — carry the token in the query string.
+function rcptImgUrl(id) {
+  return `${API}/api/receipts/${id}/image` + (authToken ? `?token=${encodeURIComponent(authToken)}` : '');
+}
+
 const UNIT_UR = { kg: 'کلو گرام', g: 'گرام', L: 'لیٹر', pcs: 'عدد', dozen: 'درجن' };
 // Options for the in-grid unit dropdown (code → bilingual label)
 const UNIT_OPTS = [
@@ -1505,14 +1594,21 @@ let itemOrder = null;    // last-known global item order (array of item_ids) —
 
 /* ─── Boot ───────────────────────────────────────────────── */
 document.addEventListener('DOMContentLoaded', () => {
-  loadHijriAnchors().then(() => renderDate());
-  renderDate();
-  loadDay(curDate);
   wireGlobal();
-  // Fetch and cache the full items catalog (includes is_temporary) for the picker
-  fetch(`${API}/api/items`).then(r=>r.json()).then(d => {
-    if (d.items) window._itemsCatalog = d.items;
-  }).catch(()=>{});
+
+  // Lock screen — keypad, hardware keyboard, activity tracking, manual lock
+  document.getElementById('keypad').addEventListener('click', e => {
+    const b = e.target.closest('.key');
+    if (b && b.dataset.k) handleKey(b.dataset.k);
+  });
+  document.addEventListener('keydown', e => {
+    if (document.getElementById('lock-screen').classList.contains('unlocked')) return;
+    if (/^\d$/.test(e.key)) handleKey(e.key);
+    else if (e.key === 'Backspace') handleKey('back');
+  });
+  ['click','keydown','touchstart','mousemove'].forEach(ev =>
+    document.addEventListener(ev, () => { if (authToken) resetIdle(); }, { passive: true }));
+  document.getElementById('lock-now-btn').onclick = lockNow;
 
   // Tab switching — use addEventListener so it survives any DOM re-renders
   document.querySelectorAll('.tab-btn').forEach(btn => {
@@ -1539,7 +1635,156 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
   });
+
+  initAuth();
 });
+
+/* ═══ AUTH: lock screen, PIN entry, session, idle ══════════ */
+let _pin = '';
+let _lockMode = 'login';   // 'login' | 'setup'
+
+function setLockUI() {
+  document.getElementById('lock-title').textContent =
+    _lockMode === 'setup' ? '6 ہندسوں کا نیا پن بنائیں' : 'پن درج کریں';
+  renderPinDots();
+}
+function renderPinDots() {
+  document.querySelectorAll('#pin-dots .pin-dot')
+    .forEach((d, i) => d.classList.toggle('filled', i < _pin.length));
+}
+function pinError(msg) { document.getElementById('pin-err').textContent = msg || ''; }
+
+function handleKey(k) {
+  pinError('');
+  if (k === 'back') { _pin = _pin.slice(0, -1); renderPinDots(); return; }
+  if (!/^\d$/.test(k) || _pin.length >= 6) return;
+  _pin += k;
+  renderPinDots();
+  if (_pin.length === 6) submitPin();
+}
+
+async function submitPin() {
+  const pin = _pin;
+  _pin = '';
+  const route = _lockMode === 'setup' ? '/api/auth/bootstrap' : '/api/auth/login';
+  try {
+    const r = await _origFetch(`${API}${route}`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ pin }),
+    });
+    const d = await r.json().catch(() => ({}));
+    if (r.ok && d.ok && d.token) { setSession(d.token); unlockAndStart(); return; }
+    renderPinDots();
+    if (r.status === 429 || d.error === 'locked') {
+      const mins = Math.ceil((d.retry_after_ms || 0) / 60000) || 15;
+      pinError(`بہت زیادہ کوششیں — ${mins} منٹ بعد کوشش کریں`);
+    } else if (d.attempts_left != null) {
+      pinError(`غلط پن — ${d.attempts_left} کوششیں باقی`);
+    } else {
+      pinError(d.error === 'bad_request' ? 'پن 6 ہندسوں کا ہونا چاہیے' : 'غلط پن');
+    }
+  } catch (e) {
+    renderPinDots();
+    pinError('کنکشن میں مسئلہ');
+  }
+}
+
+function setSession(token) {
+  authToken = token;
+  try {
+    let b = token.split('.')[0].replace(/-/g, '+').replace(/_/g, '/');
+    while (b.length % 4) b += '=';
+    authExp = JSON.parse(atob(b)).exp || (Date.now() + IDLE_MS);
+  } catch { authExp = Date.now() + IDLE_MS; }
+  try { localStorage.setItem('ik_auth', JSON.stringify({ token, exp: authExp })); } catch (_) {}
+}
+function clearSession() {
+  authToken = null; authExp = 0;
+  try { localStorage.removeItem('ik_auth'); } catch (_) {}
+}
+
+function showLock() {
+  _pin = '';
+  document.getElementById('lock-screen').classList.remove('unlocked');
+  document.getElementById('lock-now-btn').classList.remove('show');
+  if (_idleTimer) { clearTimeout(_idleTimer); _idleTimer = null; }
+  setLockUI();
+  pinError('');
+}
+
+function unlockAndStart() {
+  document.getElementById('lock-screen').classList.add('unlocked');
+  document.getElementById('lock-now-btn').classList.add('show');
+  resetIdle();
+  if (!_appStarted) { _appStarted = true; startApp(); }
+}
+
+// The API-hitting boot work, deferred until authenticated.
+function startApp() {
+  loadHijriAnchors().then(() => renderDate());
+  renderDate();
+  loadDay(curDate);
+  fetch(`${API}/api/items`).then(r => r.json()).then(d => {
+    if (d.items) window._itemsCatalog = d.items;
+  }).catch(() => {});
+}
+
+function lockNow() {
+  clearSession();
+  _lockMode = 'login';
+  showLock();
+}
+
+function resetIdle() {
+  if (!authToken) return;
+  if (_idleTimer) clearTimeout(_idleTimer);
+  _idleTimer = setTimeout(lockNow, IDLE_MS);
+  // Slide the server session, at most once a minute.
+  const now = Date.now();
+  if (now - _lastRefresh > 60000) {
+    _lastRefresh = now;
+    _origFetch(`${API}/api/auth/refresh`, { method: 'POST', headers: { 'Authorization': 'Bearer ' + authToken } })
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (d && d.token) setSession(d.token); })
+      .catch(() => {});
+  }
+}
+
+async function initAuth() {
+  // Restore a stored, unexpired token.
+  try {
+    const raw = localStorage.getItem('ik_auth');
+    if (raw) {
+      const s = JSON.parse(raw);
+      if (s.token && s.exp && s.exp > Date.now() + 2000) { authToken = s.token; authExp = s.exp; }
+    }
+  } catch (_) {}
+
+  // Has a PIN been set yet?
+  let needsSetup = false;
+  try {
+    const r = await _origFetch(`${API}/api/auth/status`);
+    needsSetup = !!(await r.json().catch(() => ({}))).needs_setup;
+  } catch (_) {}
+
+  if (needsSetup) { _lockMode = 'setup'; showLock(); return; }
+
+  if (authToken) {
+    // Confirm the token is still valid server-side (and slide it).
+    try {
+      const r = await _origFetch(`${API}/api/auth/refresh`, {
+        method: 'POST', headers: { 'Authorization': 'Bearer ' + authToken },
+      });
+      if (r.ok) {
+        const d = await r.json();
+        if (d.token) { setSession(d.token); unlockAndStart(); return; }
+      }
+    } catch (_) {}
+    clearSession();
+  }
+  _lockMode = 'login';
+  showLock();
+}
 
 /* ─── Date helpers ───────────────────────────────────────── */
 function calcStuTotal() {
@@ -4311,7 +4556,7 @@ function openThumbsPopup(itemId) {
 
   const grid = document.getElementById('thumbs-grid');
   grid.innerHTML = rec.photos.map(p => `
-    <img src="${API}/api/receipts/${p.id}/image" class="thumbs-pop-img"
+    <img src="${rcptImgUrl(p.id)}" class="thumbs-pop-img"
       style="width:100px;height:100px;object-fit:cover;border-radius:var(--r);
              border:1px solid var(--bdr);cursor:pointer;background:var(--ink1)">
   `).join('');
@@ -4479,7 +4724,7 @@ function renderReceiptPanel() {
   if (rec.photos?.length) {
     thumbs.innerHTML = rec.photos.map(p => `
       <div style="position:relative;width:84px;height:84px">
-        <img src="${API}/api/receipts/${p.id}/image" data-rid="${p.id}"
+        <img src="${rcptImgUrl(p.id)}" data-rid="${p.id}"
           class="rcpt-thumb"
           style="width:84px;height:84px;object-fit:cover;border-radius:var(--r);
                  border:1px solid var(--bdr);cursor:pointer;background:var(--ink1)">

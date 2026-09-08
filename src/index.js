@@ -23,6 +23,38 @@ export default {
     }
 
     try {
+      // ══ AUTHENTICATION (public routes) ═══════════════════════════════════
+      // 6-digit PIN, PBKDF2 hashing, HMAC-signed bearer token. See the auth
+      // block near the bottom of this file.
+      if (path === "/api/auth/status" && request.method === "GET") {
+        return json(await authStatus(env));
+      }
+      if (path === "/api/auth/bootstrap" && request.method === "POST") {
+        const body = await request.json().catch(() => ({}));
+        const r = await authBootstrap(env, body);
+        return json(r, r.ok ? 200 : (r.error === "forbidden" ? 403 : 400));
+      }
+      if (path === "/api/auth/login" && request.method === "POST") {
+        const body = await request.json().catch(() => ({}));
+        const r = await authLogin(env, body);
+        return json(r, r.ok ? 200 : (r.error === "locked" ? 429 : 401));
+      }
+
+      // ══ GATE ═════════════════════════════════════════════════════════════
+      // Every other /api/* route requires a valid bearer token. This single
+      // check protects all data routes below without changing any of them.
+      // (The receipt image proxy is an <img> load that can't send a header, so
+      // requireAuth also accepts the token via ?token= for that case.)
+      if (path.startsWith("/api/")) {
+        const ok = await requireAuth(request, env, url);
+        if (!ok) return json({ error: "unauthorized", message: "Authentication required" }, 401);
+      }
+
+      // Sliding refresh — requires a still-valid token (guaranteed by the gate).
+      if (path === "/api/auth/refresh" && request.method === "POST") {
+        return json(await authRefresh(env));
+      }
+
       if (path === "/api/health" && request.method === "GET") {
         return json({ ok: true, time: new Date().toISOString() });
       }
@@ -2197,6 +2229,138 @@ function json(body, status = 200) {
 function withCors(res) {
   res.headers.set("Access-Control-Allow-Origin", "*");
   res.headers.set("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS");
-  res.headers.set("Access-Control-Allow-Headers", "Content-Type");
+  res.headers.set("Access-Control-Allow-Headers", "Content-Type, Authorization");
   return res;
+}
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * AUTHENTICATION — 6-digit PIN, PBKDF2-SHA256 hashing, HMAC-signed tokens.
+ *
+ * Mirrors the MSP tracker's crypto. Because this Worker and the frontend
+ * (Cloudflare Pages) are on different origins, the session is delivered as a
+ * Bearer token the client stores, not as an HttpOnly cookie.
+ *
+ * Requires the secret SESSION_SECRET:  npx wrangler secret put SESSION_SECRET
+ * and the `users` + `auth_throttle` tables (migration 013).
+ * ═══════════════════════════════════════════════════════════════════════════ */
+const _enc = new TextEncoder();
+const TOKEN_TTL_MS     = 10 * 60 * 1000;   // 10-minute sliding session
+const THROTTLE_MAX     = 5;                // wrong tries before a lockout
+const THROTTLE_LOCK_MS = 15 * 60 * 1000;   // lockout duration after MAX misses
+
+function _toHex(buf) {
+  return Array.prototype.map.call(new Uint8Array(buf), b => b.toString(16).padStart(2, "0")).join("");
+}
+function _fromHex(hex) {
+  const a = new Uint8Array(hex.length / 2);
+  for (let i = 0; i < a.length; i++) a[i] = parseInt(hex.substr(i * 2, 2), 16);
+  return a;
+}
+function _randomHex(n) {
+  const a = new Uint8Array(n);
+  crypto.getRandomValues(a);
+  return _toHex(a);
+}
+// PBKDF2-SHA256, 100k iterations — the PIN is never stored or logged in plain text.
+async function _hashPin(pin, saltHex) {
+  const salt = _fromHex(saltHex);
+  const km = await crypto.subtle.importKey("raw", _enc.encode(pin), "PBKDF2", false, ["deriveBits"]);
+  const bits = await crypto.subtle.deriveBits(
+    { name: "PBKDF2", salt, iterations: 100000, hash: "SHA-256" }, km, 256
+  );
+  return _toHex(bits);
+}
+async function _hmac(secret, msg) {
+  const key = await crypto.subtle.importKey("raw", _enc.encode(secret), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
+  const sig = await crypto.subtle.sign("HMAC", key, _enc.encode(msg));
+  return _toHex(sig);
+}
+function _b64url(s) { return btoa(s).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, ""); }
+function _fromB64url(s) { s = s.replace(/-/g, "+").replace(/_/g, "/"); while (s.length % 4) s += "="; return atob(s); }
+
+async function makeToken(secret) {
+  const body = _b64url(JSON.stringify({ exp: Date.now() + TOKEN_TTL_MS }));
+  const sig  = await _hmac(secret, body);
+  return body + "." + sig;
+}
+async function verifyToken(secret, token) {
+  if (!secret || !token || token.indexOf(".") === -1) return null;
+  const [body, sig] = token.split(".");
+  const expected = await _hmac(secret, body);
+  if (expected !== sig) return null;                 // tampered / wrong secret
+  try {
+    const p = JSON.parse(_fromB64url(body));
+    if (!p.exp || Date.now() > p.exp) return null;   // expired
+    return p;
+  } catch { return null; }
+}
+function _bearer(request, url) {
+  const h = request.headers.get("Authorization") || "";
+  if (h.startsWith("Bearer ")) return h.slice(7).trim();
+  return url.searchParams.get("token");              // <img> proxy fallback
+}
+async function requireAuth(request, env, url) {
+  return !!(await verifyToken(env.SESSION_SECRET, _bearer(request, url)));
+}
+
+async function authStatus(env) {
+  const row = await env.DB.prepare(`SELECT COUNT(*) AS n FROM users`).first();
+  return { needs_setup: (row?.n || 0) === 0 };
+}
+
+// First-run only: sets the PIN while the users table is empty.
+async function authBootstrap(env, body) {
+  if (!env.SESSION_SECRET) return { error: "server_misconfig", message: "SESSION_SECRET not set" };
+  const row = await env.DB.prepare(`SELECT COUNT(*) AS n FROM users`).first();
+  if ((row?.n || 0) > 0) return { error: "forbidden", message: "Already set up" };
+  const pin = String(body?.pin || "");
+  if (!/^\d{6}$/.test(pin)) return { error: "bad_request", message: "PIN must be exactly 6 digits" };
+  const salt = _randomHex(16);
+  const hash = await _hashPin(pin, salt);
+  await env.DB.prepare(
+    `INSERT INTO users (username, password_hash, salt, role) VALUES ('ibrahim', ?1, ?2, 'admin')`
+  ).bind(hash, salt).run();
+  return { ok: true, token: await makeToken(env.SESSION_SECRET) };
+}
+
+async function authLogin(env, body) {
+  if (!env.SESSION_SECRET) return { error: "server_misconfig", message: "SESSION_SECRET not set" };
+  const now = Date.now();
+
+  // Throttle: block while locked out.
+  const th = await env.DB.prepare(`SELECT fail_count, locked_until FROM auth_throttle WHERE id = 1`).first();
+  if (th && th.locked_until && th.locked_until > now) {
+    return { error: "locked", message: "Too many attempts", retry_after_ms: th.locked_until - now };
+  }
+
+  const pin  = String(body?.pin || "");
+  const user = await env.DB.prepare(`SELECT * FROM users WHERE username = 'ibrahim'`).first();
+  if (!user) return { error: "not_setup", message: "Not set up yet" };
+
+  const hash = await _hashPin(pin, user.salt);
+  if (hash !== user.password_hash) {
+    const fc = ((th?.fail_count) || 0) + 1;
+    const locked = fc >= THROTTLE_MAX ? now + THROTTLE_LOCK_MS : null;
+    await env.DB.prepare(
+      `INSERT INTO auth_throttle (id, fail_count, locked_until) VALUES (1, ?1, ?2)
+       ON CONFLICT(id) DO UPDATE SET fail_count = ?1, locked_until = ?2`
+    ).bind(fc, locked).run();
+    return locked
+      ? { error: "locked", message: "Too many attempts", retry_after_ms: THROTTLE_LOCK_MS }
+      : { error: "invalid", message: "Invalid PIN", attempts_left: Math.max(0, THROTTLE_MAX - fc) };
+  }
+
+  // Success — clear the throttle.
+  await env.DB.prepare(
+    `INSERT INTO auth_throttle (id, fail_count, locked_until) VALUES (1, 0, NULL)
+     ON CONFLICT(id) DO UPDATE SET fail_count = 0, locked_until = NULL`
+  ).run();
+  return { ok: true, token: await makeToken(env.SESSION_SECRET) };
+}
+
+// Slides the session forward. The gate already verified the caller's token.
+async function authRefresh(env) {
+  if (!env.SESSION_SECRET) return { error: "server_misconfig", message: "SESSION_SECRET not set" };
+  return { ok: true, token: await makeToken(env.SESSION_SECRET) };
 }
