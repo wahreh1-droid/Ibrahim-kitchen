@@ -1,0 +1,816 @@
+<!DOCTYPE html>
+<html lang="ur" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>مطبخ جامعہ دارالعلوم کبیروالا · کچن لیجر سسٹم</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Nastaliq+Urdu:wght@400;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --g900: #1a3d25;
+  --g700: #245230;
+  --g600: #2d6b3c;
+  --g500: #3a8a4e;
+  --g300: #7ec89a;
+  --g100: #d4eddc;
+  --g50:  #f0f9f3;
+  --ink:  #111820;
+  --ink5: #5a6472;
+  --ink3: #9ca3af;
+  --sur:  #ffffff;
+  --bg:   #f8faf8;
+  --bdr:  #e2ece5;
+  --ur:   'Noto Nastaliq Urdu', serif;
+  --mono: 'DM Mono', monospace;
+  --r:    8px;
+  --rl:   14px;
+}
+
+html { scroll-behavior: smooth; }
+body {
+  font-family: var(--ur);
+  background: var(--bg);
+  color: var(--ink);
+  line-height: 2;
+  font-size: 16px;
+  direction: rtl;
+}
+
+/* ── HERO ── */
+.hero {
+  background: var(--g900);
+  color: #fff;
+  padding: 88px 28px 80px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+.hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 70% 60% at 50% 110%, rgba(58,138,78,.28) 0%, transparent 70%),
+    radial-gradient(ellipse 40% 40% at 20% -10%, rgba(58,138,78,.12) 0%, transparent 60%);
+  pointer-events: none;
+}
+.hero-title {
+  font-size: clamp(2rem, 6vw, 3.6rem);
+  font-weight: 700;
+  color: #fff;
+  line-height: 1.6;
+  margin-bottom: 10px;
+  position: relative;
+}
+.hero-sub {
+  font-size: clamp(1.1rem, 2.5vw, 1.5rem);
+  font-weight: 600;
+  color: var(--g300);
+  margin-bottom: 28px;
+  position: relative;
+  line-height: 1.8;
+}
+.hero-desc {
+  max-width: 580px;
+  margin: 0 auto 42px;
+  font-size: 1.05rem;
+  color: rgba(255,255,255,.75);
+  font-weight: 400;
+  line-height: 2;
+  position: relative;
+}
+.hero-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255,255,255,.08);
+  border: 1px solid rgba(255,255,255,.16);
+  border-radius: 999px;
+  padding: 6px 20px;
+  font-size: .85rem;
+  color: var(--g300);
+  font-family: var(--mono);
+  letter-spacing: .04em;
+  direction: ltr;
+  position: relative;
+}
+.hero-tag span { width: 6px; height: 6px; border-radius: 50%; background: var(--g300); display: inline-block; }
+
+/* ── STATS STRIP ── */
+.stats-strip {
+  background: var(--g700);
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+.stat {
+  padding: 22px 36px;
+  text-align: center;
+  border-left: 1px solid rgba(255,255,255,.1);
+}
+.stat:last-child { border-left: none; }
+.stat-n {
+  font-size: 1.9rem;
+  font-weight: 700;
+  color: #fff;
+  line-height: 1;
+  margin-bottom: 6px;
+  font-family: var(--mono);
+  direction: ltr;
+}
+.stat-l {
+  font-size: .9rem;
+  color: var(--g300);
+  line-height: 1.8;
+}
+
+/* ── LAYOUT ── */
+.container { max-width: 960px; margin: 0 auto; padding: 0 28px; }
+.section { padding: 72px 0; }
+.section + .section { border-top: 1px solid var(--bdr); }
+
+/* ── SECTION HEADER ── */
+.sec-label {
+  font-size: .82rem;
+  color: var(--g500);
+  margin-bottom: 10px;
+  opacity: .85;
+}
+.sec-title {
+  font-size: clamp(1.6rem, 3.5vw, 2.2rem);
+  font-weight: 700;
+  color: var(--g900);
+  line-height: 1.6;
+  margin-bottom: 14px;
+}
+.sec-lead {
+  font-size: 1.05rem;
+  color: var(--ink5);
+  max-width: 680px;
+  line-height: 2;
+  margin-bottom: 40px;
+}
+
+/* ── FEATURE GRID ── */
+.feat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
+  gap: 20px;
+}
+.feat-card {
+  background: var(--sur);
+  border: 1px solid var(--bdr);
+  border-radius: var(--rl);
+  padding: 26px 24px 22px;
+  transition: box-shadow .18s, border-color .18s;
+}
+.feat-card:hover { box-shadow: 0 6px 24px rgba(36,82,48,.09); border-color: var(--g300); }
+.feat-icon {
+  width: 42px; height: 42px;
+  background: var(--g50);
+  border-radius: var(--r);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.3rem;
+  margin-bottom: 14px;
+}
+.feat-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--g900);
+  margin-bottom: 8px;
+  line-height: 1.7;
+}
+.feat-body {
+  font-size: .92rem;
+  color: var(--ink5);
+  line-height: 1.9;
+}
+
+/* ── BULLET LIST ── */
+.feat-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.feat-list li {
+  display: flex;
+  gap: 12px;
+  font-size: .95rem;
+  color: var(--ink5);
+  line-height: 1.9;
+  flex-direction: row-reverse;
+  text-align: right;
+}
+.feat-list li::before {
+  content: '';
+  flex: 0 0 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--g500);
+  margin-top: 12px;
+}
+
+/* ── LARGE FEATURE ROWS ── */
+.feat-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 48px;
+  align-items: start;
+}
+@media (max-width: 680px) {
+  .feat-row { grid-template-columns: 1fr; }
+}
+.feat-row-label {
+  font-size: .78rem;
+  color: var(--g500);
+  margin-bottom: 8px;
+}
+.feat-row-title {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--g900);
+  margin-bottom: 14px;
+  line-height: 1.7;
+}
+.feat-row-body {
+  font-size: .95rem;
+  color: var(--ink5);
+  line-height: 2;
+  margin-bottom: 18px;
+}
+
+/* ── VISUAL PANEL ── */
+.ui-panel {
+  background: var(--sur);
+  border: 1px solid var(--bdr);
+  border-radius: var(--rl);
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(36,82,48,.08);
+}
+.ui-bar {
+  background: var(--g700);
+  padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-direction: row-reverse;
+}
+.ui-dot { width: 8px; height: 8px; border-radius: 50%; }
+.ui-body { padding: 18px 16px; }
+
+/* ── PIN PREVIEW ── */
+.pin-preview {
+  background: var(--g700);
+  border-radius: var(--rl);
+  padding: 28px 24px 22px;
+  color: #fff;
+  text-align: center;
+}
+.pin-title-ur {
+  font-size: 1.2rem;
+  color: var(--g300);
+  margin-bottom: 16px;
+  display: block;
+  line-height: 1.8;
+}
+.pin-dots-row {
+  display: flex; gap: 10px; justify-content: center; margin-bottom: 18px; direction: ltr;
+}
+.pdot { width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--g300); }
+.pdot.f { background: var(--g300); }
+.pin-keypad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; direction: ltr; }
+.pkey {
+  background: rgba(255,255,255,.1); border-radius: 8px;
+  padding: 11px 0; font-size: 1.1rem; font-family: var(--mono); color: #fff;
+}
+.pkey.blank { visibility: hidden; }
+.pkey.fn { font-size: .85rem; color: var(--g300); font-family: var(--ur); }
+
+/* ── KEYBOARD PREVIEW ── */
+.kb-preview {
+  background: var(--g900);
+  border-radius: var(--rl);
+  padding: 18px 16px;
+}
+.kb-row {
+  display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 5px; justify-content: center;
+}
+.kk {
+  background: rgba(255,255,255,.12); color: #fff;
+  font-size: 1rem; border-radius: 5px; padding: 5px 9px;
+  line-height: 1.7; min-width: 30px; text-align: center;
+}
+.kk.wide { padding: 5px 18px; font-size: .72rem; font-family: var(--mono); }
+
+/* ── SCHEMA TABLE ── */
+.schema-wrap { overflow-x: auto; }
+.schema-table { width: 100%; border-collapse: collapse; font-size: .9rem; }
+.schema-table th {
+  background: var(--g700); color: #fff; padding: 10px 14px;
+  text-align: right; font-weight: 600; font-size: .85rem;
+}
+.schema-table td {
+  padding: 10px 14px; border-bottom: 1px solid var(--bdr);
+  color: var(--ink5); vertical-align: top; line-height: 1.9; text-align: right;
+}
+.schema-table tr:last-child td { border-bottom: none; }
+.schema-table tr:nth-child(even) td { background: var(--g50); }
+.schema-table td:first-child {
+  font-family: var(--mono); font-size: .82rem; color: var(--g700);
+  font-weight: 500; white-space: nowrap; direction: ltr; text-align: left;
+}
+
+/* ── SCHEMA TABS ── */
+.schema-tabs { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 20px; flex-direction: row-reverse; }
+.stab {
+  padding: 5px 16px; border-radius: 999px; font-size: .9rem;
+  border: 1px solid var(--bdr); background: var(--sur); color: var(--ink5);
+  cursor: pointer; transition: all .15s;
+}
+.stab.active { background: var(--g700); color: #fff; border-color: var(--g700); }
+
+/* ── TECH PILLS ── */
+.pill-row { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 20px; flex-direction: row-reverse; }
+.pill {
+  display: flex; align-items: center; gap: 8px;
+  border: 1px solid var(--bdr); border-radius: var(--r);
+  padding: 8px 14px; background: var(--sur);
+  font-size: .9rem; color: var(--ink5); flex-direction: row-reverse;
+}
+.pill-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--g500); flex-shrink: 0; }
+
+/* ── FOOTER ── */
+footer {
+  background: var(--g900); color: rgba(255,255,255,.5);
+  padding: 40px 28px; text-align: center; font-size: .95rem; line-height: 2;
+}
+footer .title { color: #fff; font-size: 1.3rem; font-weight: 700; display: block; margin-bottom: 6px; }
+
+/* ── RESPONSIVE ── */
+@media (max-width: 600px) {
+  .stat { padding: 18px 20px; }
+  .stat-n { font-size: 1.5rem; }
+  .section { padding: 52px 0; }
+}
+</style>
+</head>
+<body>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-title">مطبخ جامعہ دارالعلوم کبیروالا</div>
+  <div class="hero-sub">کچن لیجر سسٹم</div>
+  <p class="hero-desc">جامعہ کے باورچی خانے کے لیے مکمل ڈیجیٹل نظام — روزانہ کی خریداری، عطیات، رسیدیں اور رپورٹیں — سب کچھ اردو میں۔</p>
+  <div class="hero-tag"><span></span> kitchen.digsyn.ai</div>
+</section>
+
+<!-- STATS STRIP -->
+<div class="stats-strip">
+  <div class="stat"><div class="stat-n">3</div><div class="stat-l">کھانے کے دورانیے</div></div>
+  <div class="stat"><div class="stat-n">30+</div><div class="stat-l">API راستے</div></div>
+  <div class="stat"><div class="stat-n">14</div><div class="stat-l">ڈیٹابیس ٹیبل</div></div>
+  <div class="stat"><div class="stat-n">13</div><div class="stat-l">مائیگریشنز</div></div>
+  <div class="stat"><div class="stat-n">46</div><div class="stat-l">اردو کی بورڈ کے بٹن</div></div>
+</div>
+
+<!-- DAILY KITCHEN -->
+<section class="section">
+  <div class="container">
+    <div class="sec-label">مرکزی خصوصیت</div>
+    <h2 class="sec-title">روزانہ باورچی خانہ</h2>
+    <p class="sec-lead">سسٹم کا مرکز۔ روزانہ لیجر کھول کر تاریخ منتخب کی جاتی ہے اور تین کھانے کے دورانیوں میں خریداری، صدقہ اور خرچ درج ہوتا ہے — موجود اور باقی اسٹاک خود بخود حساب ہوتا ہے۔</p>
+
+    <div class="feat-row" style="margin-bottom:48px">
+      <div>
+        <div class="feat-row-label">روزانہ اسٹاک</div>
+        <div class="feat-row-title">مکمل روزانہ اسٹاک کا حساب</div>
+        <p class="feat-row-body">ہر قطار ایک خوراک کی چیز ہے۔ کالم میں شامل ہیں: قیمت فی اکائی، موجود اسٹاک، خریدا (مقدار + مالیت PKR)، صدقہ، تین وقت کا خرچ (ناشتہ، دوپہر، رات) اور باقی اسٹاک — جو موجود + خریدا + صدقہ − خرچ سے لائیو حساب ہوتا ہے۔</p>
+        <ul class="feat-list">
+          <li>کالم رنگ کوڈ: خریدا سبز، صدقہ سبزی مائل، خرچ زرد</li>
+          <li>کم اسٹاک پر LOW بیج نمودار ہوتا ہے</li>
+          <li>تمام خانے خود بخود محفوظ ہوتے ہیں — الگ بٹن کی ضرورت نہیں</li>
+          <li>موجود اسٹاک پچھلے دن کے باقی اسٹاک سے خودکار بھرتا ہے</li>
+        </ul>
+      </div>
+      <div class="ui-panel">
+        <div class="ui-bar">
+          <div class="ui-dot" style="background:#f87171"></div>
+          <div class="ui-dot" style="background:#fbbf24"></div>
+          <div class="ui-dot" style="background:#34d399"></div>
+          <span style="font-size:.85rem;color:rgba(255,255,255,.6);margin-left:auto">روزانہ باورچی خانہ</span>
+        </div>
+        <div class="ui-body">
+          <div style="display:grid;grid-template-columns:1fr repeat(5,auto);gap:2px;font-size:.75rem;margin-bottom:6px;direction:rtl">
+            <div style="color:var(--g700);font-weight:700;padding:4px 6px">اشیاء</div>
+            <div style="color:var(--ink3);padding:4px 6px;text-align:center">موجود</div>
+            <div style="color:#15803d;padding:4px 6px;text-align:center">خریدا</div>
+            <div style="color:var(--ink3);padding:4px 6px;text-align:center">صدقہ</div>
+            <div style="color:#92400e;padding:4px 6px;text-align:center">خرچ</div>
+            <div style="color:var(--g700);padding:4px 6px;text-align:center">باقی</div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:4px;direction:rtl">
+            <div style="display:grid;grid-template-columns:1fr repeat(5,auto);gap:2px;background:var(--g50);border-radius:6px;padding:6px">
+              <div style="font-size:.95rem;color:var(--ink)">آٹا</div>
+              <div style="font-family:var(--mono);font-size:.78rem;color:var(--ink5);text-align:center;padding:2px 4px">172</div>
+              <div style="font-family:var(--mono);font-size:.78rem;color:#15803d;background:#dcfce7;border-radius:4px;text-align:center;padding:2px 6px">50</div>
+              <div style="font-family:var(--mono);font-size:.78rem;color:var(--ink3);text-align:center;padding:2px 4px">—</div>
+              <div style="font-family:var(--mono);font-size:.78rem;color:#92400e;background:#fef3c7;border-radius:4px;text-align:center;padding:2px 6px">30</div>
+              <div style="font-family:var(--mono);font-size:.78rem;color:var(--g700);font-weight:600;text-align:center;padding:2px 4px">192</div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr repeat(5,auto);gap:2px;background:var(--sur);border:1px solid var(--bdr);border-radius:6px;padding:6px">
+              <div style="font-size:.95rem;color:var(--ink)">دال مونگ</div>
+              <div style="font-family:var(--mono);font-size:.78rem;color:var(--ink5);text-align:center;padding:2px 4px">647</div>
+              <div style="font-family:var(--mono);font-size:.78rem;color:var(--ink3);text-align:center;padding:2px 6px">—</div>
+              <div style="font-family:var(--mono);font-size:.78rem;color:var(--ink3);text-align:center;padding:2px 4px">—</div>
+              <div style="font-family:var(--mono);font-size:.78rem;color:#92400e;background:#fef3c7;border-radius:4px;text-align:center;padding:2px 6px">120</div>
+              <div style="font-family:var(--mono);font-size:.78rem;color:var(--g700);font-weight:600;text-align:center;padding:2px 4px">527</div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr repeat(5,auto);gap:2px;background:var(--sur);border:1px solid var(--bdr);border-radius:6px;padding:6px">
+              <div style="display:flex;align-items:center;gap:6px;flex-direction:row-reverse"><span style="font-size:.95rem;color:var(--ink)">چنے</span><span style="background:#fef3c7;color:#92400e;font-size:.62rem;padding:1px 5px;border-radius:4px;font-family:var(--mono)">LOW</span></div>
+              <div style="font-family:var(--mono);font-size:.78rem;color:var(--ink5);text-align:center;padding:2px 4px">4</div>
+              <div style="font-family:var(--mono);font-size:.78rem;color:var(--ink3);text-align:center;padding:2px 6px">—</div>
+              <div style="font-family:var(--mono);font-size:.78rem;color:var(--ink3);text-align:center;padding:2px 4px">—</div>
+              <div style="font-family:var(--mono);font-size:.78rem;color:var(--ink3);text-align:center;padding:2px 6px">—</div>
+              <div style="font-family:var(--mono);font-size:.78rem;color:#b91c1c;font-weight:600;text-align:center;padding:2px 4px">4</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="feat-grid">
+      <div class="feat-card">
+        <div class="feat-icon">📅</div>
+        <div class="feat-title">ہجری اور عیسوی تاریخ</div>
+        <p class="feat-body">دونوں تقویم بیک وقت ظاہر ہوتے ہیں۔ پاکستان کی چاند رؤیت کے مطابق ہجری تاریخ درست کی جا سکتی ہے — سسٹم اس کو لنگر کے طور پر محفوظ کرتا ہے اور آگے شمار جاری رکھتا ہے۔</p>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">🔄</div>
+        <div class="feat-title">اسٹاک کا آگے منتقل ہونا</div>
+        <p class="feat-body">باقی اسٹاک خودکار اگلے دن کا موجود اسٹاک بن جاتا ہے۔ پرانے دن میں ترمیم کا اثر تمام آنے والے دنوں پر پڑتا ہے — دوبارہ درج کرنے کی ضرورت نہیں۔</p>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">⠿</div>
+        <div class="feat-title">گھسیٹ کر ترتیب بدلیں</div>
+        <p class="feat-body">ڈیسک ٹاپ پر گھسیٹنے کے ذریعے اشیاء کی ترتیب فوری طور پر محفوظ ہوتی ہے اور تمام بلاکس، تمام دنوں اور تمام رپورٹوں پر لاگو ہوتی ہے۔</p>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">👦👧</div>
+        <div class="feat-title">تین کھانے کے دورانیے</div>
+        <p class="feat-body">بنین، بنات اور خاص مواقع — تینوں کا الگ گرڈ ہے۔ خاص مواقع کے بلاک میں اس دن کا عنوان (مثلاً ختم بخاری شریف) بھی درج کیا جا سکتا ہے۔</p>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">⭐</div>
+        <div class="feat-title">عارضی اشیاء</div>
+        <p class="feat-body">عارضی نشان والی اشیاء صرف اس دن نظر آتی ہیں جس دن شامل کی جائیں — آگے منتقل نہیں ہوتیں۔ ایک موقع کی خریداری کے لیے بہترین۔</p>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">💰</div>
+        <div class="feat-title">قیمت فی اکائی</div>
+        <p class="feat-body">ہر چیز کی روزانہ قیمت ہوتی ہے۔ PKR مالیت خودکار حساب ہوتی ہے۔ نئے دن پر قیمت آگے منتقل ہوتی ہے۔</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- DONATIONS -->
+<section class="section">
+  <div class="container">
+    <div class="sec-label">عطیات و قربانی</div>
+    <h2 class="sec-title">عطیات کا اندراج</h2>
+    <p class="sec-lead">ایک مخصوص ٹیب جس میں جامعہ کے باورچی خانے کو ملنے والے تمام عطیات — خوراک، نقد اور قربانی — عطیہ دینے والے کے نام اور تاریخ کے ساتھ درج کیے جاتے ہیں۔</p>
+
+    <div class="feat-row">
+      <div class="ui-panel">
+        <div class="ui-bar">
+          <div class="ui-dot" style="background:#f87171"></div>
+          <div class="ui-dot" style="background:#fbbf24"></div>
+          <div class="ui-dot" style="background:#34d399"></div>
+          <span style="font-size:.85rem;color:rgba(255,255,255,.6);margin-left:auto">قربانی و عطیات</span>
+        </div>
+        <div class="ui-body" style="display:flex;flex-direction:column;gap:10px;direction:rtl">
+          <div style="background:var(--g50);border:1px solid var(--g100);border-radius:8px;padding:12px 14px">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">
+              <div>
+                <div style="font-size:1rem;color:var(--g900);font-weight:700">احمد صاحب</div>
+                <div style="font-size:.75rem;color:var(--ink3);font-family:var(--mono);direction:ltr;text-align:left">08 Sep 2026</div>
+              </div>
+              <div style="font-size:.8rem;color:var(--g600);font-family:var(--mono);font-weight:600">PKR 5,000</div>
+            </div>
+            <div style="font-size:.88rem;color:var(--ink5)">آٹا 100 کلو · چاول 50 کلو</div>
+          </div>
+          <div style="background:var(--sur);border:1px solid var(--bdr);border-radius:8px;padding:12px 14px">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">
+              <div>
+                <div style="font-size:1rem;color:var(--g900);font-weight:700">نامعلوم</div>
+                <div style="font-size:.75rem;color:var(--ink3);font-family:var(--mono);direction:ltr;text-align:left">07 Sep 2026</div>
+              </div>
+              <div style="font-size:.8rem;color:var(--g600);font-family:var(--mono);font-weight:600">نقد — PKR 2,500</div>
+            </div>
+            <div style="font-size:.88rem;color:var(--ink5)">نقد عطیہ</div>
+          </div>
+          <div style="background:var(--g700);border-radius:8px;padding:10px 14px;display:flex;justify-content:space-between">
+            <div style="font-size:.8rem;color:rgba(255,255,255,.7)">۲ عطیات</div>
+            <div style="font-size:.8rem;color:var(--g300);font-family:var(--mono);font-weight:600">PKR 7,500 کل</div>
+          </div>
+        </div>
+      </div>
+      <div>
+        <ul class="feat-list">
+          <li>عطیہ دینے والے کا نام، تاریخ اور نوٹ (اختیاری) کے ساتھ عطیہ شامل کریں</li>
+          <li>ایک عطیے میں ایک سے زیادہ اشیاء — خوراک اور نقد ایک ساتھ</li>
+          <li>خوراک کا اندراج: چیز کا نام، مقدار، اکائی اور تخمینی مالیت PKR</li>
+          <li>نقد عطیہ: صرف رقم کا خانہ، کوئی اور معلومات ضروری نہیں</li>
+          <li>مکمل ترمیم — کوئی بھی کارڈ دوبارہ کھول کر تمام تفصیلات بدلی جا سکتی ہیں</li>
+          <li>حذف کرنے پر تصدیق مانگی جاتی ہے؛ عطیہ حذف ہونے پر تمام اشیاء بھی حذف ہوتی ہیں</li>
+          <li>خلاصہ بار: کل عطیات، کل نقد اور کل تخمینی مالیت</li>
+          <li>تاریخ کے حساب سے عطیات کی رپورٹ</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- RECEIPTS -->
+<section class="section">
+  <div class="container">
+    <div class="sec-label">رسید کا نظام</div>
+    <h2 class="sec-title">رسید کی تصویر</h2>
+    <p class="sec-lead">کسی بھی دن کسی بھی چیز کی خریداری کی رسید کی تصویر منسلک کریں۔ تصاویر محفوظ طریقے سے ذخیرہ ہوتی ہیں اور صرف مصدقہ ایپ کے ذریعے قابلِ رسائی ہیں۔</p>
+
+    <div class="feat-row">
+      <div>
+        <ul class="feat-list" style="margin-bottom:24px">
+          <li>کثیر انتخاب — ایک تصویر بیک وقت کئی اشیاء سے منسلک کریں</li>
+          <li>یا "کھولیں" بٹن سے ہر چیز کی رسیدیں الگ سے دیکھیں اور شامل کریں</li>
+          <li>ہر تصویر اپلوڈ سے پہلے بلٹ ان تصویر ایڈیٹر سے گزرتی ہے</li>
+          <li>ایڈیٹر: کرپ کریں (چار کونوں سے)، روشنی اور کنٹراسٹ کی سلائیڈر</li>
+          <li>لائٹ باکس — کوئی بھی تھمب نیل ٹچ کر کے پوری تصویر دیکھیں</li>
+          <li>انفرادی تصاویر حذف کریں؛ اسٹوریج خودکار صاف ہو جاتی ہے</li>
+          <li>اگر رسید نہ ہو تو وجہ لکھیں — نقد خریداری وغیرہ</li>
+          <li>رسید والی اشیاء کے سامنے 📎 نشان گرڈ میں نظر آتا ہے</li>
+        </ul>
+      </div>
+      <div>
+        <div class="ui-panel">
+          <div class="ui-bar">
+            <span style="font-size:.85rem;color:rgba(255,255,255,.6);margin-left:auto">رسید منسلک کریں</span>
+          </div>
+          <div class="ui-body" style="direction:rtl">
+            <div style="display:flex;flex-direction:column;gap:7px">
+              <div style="display:flex;align-items:center;gap:10px;padding:8px 10px;background:var(--g50);border:1px solid var(--g100);border-radius:6px;flex-direction:row-reverse">
+                <div style="width:16px;height:16px;border-radius:3px;background:var(--g600);flex-shrink:0"></div>
+                <span style="font-size:.95rem;flex:1">آٹا</span>
+                <span style="font-size:.75rem;color:var(--g600)">📎 ۲</span>
+                <span style="font-size:.78rem;color:var(--ink5);border:1px solid var(--bdr);border-radius:4px;padding:2px 10px">کھولیں</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:10px;padding:8px 10px;background:var(--sur);border:1px solid var(--bdr);border-radius:6px;flex-direction:row-reverse">
+                <div style="width:16px;height:16px;border-radius:3px;border:1.5px solid var(--bdr);flex-shrink:0"></div>
+                <span style="font-size:.95rem;flex:1">دال چنا</span>
+                <span style="font-size:.75rem;color:var(--ink3)">—</span>
+                <span style="font-size:.78rem;color:var(--ink5);border:1px solid var(--bdr);border-radius:4px;padding:2px 10px">کھولیں</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:10px;padding:8px 10px;background:var(--sur);border:1px solid var(--bdr);border-radius:6px;flex-direction:row-reverse">
+                <div style="width:16px;height:16px;border-radius:3px;background:var(--g600);flex-shrink:0"></div>
+                <span style="font-size:.95rem;flex:1">چاول</span>
+                <span style="font-size:.75rem;color:#d97706">📝</span>
+                <span style="font-size:.78rem;color:var(--ink5);border:1px solid var(--bdr);border-radius:4px;padding:2px 10px">کھولیں</span>
+              </div>
+            </div>
+            <div style="margin-top:10px;background:var(--g600);border-radius:6px;padding:9px;text-align:center">
+              <span style="font-size:.88rem;color:#fff">📷 منتخب اشیاء کی رسید منسلک کریں</span>
+              <span style="font-family:var(--mono);font-size:.72rem;color:rgba(255,255,255,.7);margin-right:6px">(2)</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- KEYBOARD -->
+<section class="section">
+  <div class="container">
+    <div class="sec-label">اردو اندراج</div>
+    <h2 class="sec-title">اردو کی بورڈ</h2>
+    <p class="sec-lead">کسی بھی اردو خانے میں براہِ راست ۴۶ بٹنوں والا اردو کی بورڈ نمودار ہوتا ہے — کوئی ایپ انسٹال یا زبان تبدیل کرنے کی ضرورت نہیں۔ موبائل، ٹیبلٹ اور ڈیسک ٹاپ سب پر کام کرتا ہے۔</p>
+
+    <div class="feat-row">
+      <div>
+        <ul class="feat-list">
+          <li>دستیاب ہے: نیا آئٹم، نام درست کریں، تقریب کا عنوان، اور تمام عطیات کے خانے</li>
+          <li>ہر خانے کا اپنا آزاد ⌨ بٹن — ایک ساتھ کئی کی بورڈ کھل سکتے ہیں</li>
+          <li>کرسر کی جگہ پر حرف شامل ہوتا ہے</li>
+          <li>⌫ DEL ایک حرف یا منتخب متن مٹاتا ہے</li>
+          <li>ٹیبلٹ پر پوری طرح قابلِ استعمال — بڑے بٹن، آسان ٹچ</li>
+          <li>جسمانی کی بورڈ بھی بیک وقت کام کرتا ہے</li>
+        </ul>
+      </div>
+      <div class="kb-preview">
+        <div class="kb-row">
+          <span class="kk">ق</span><span class="kk">و</span><span class="kk">ع</span><span class="kk">ر</span><span class="kk">ت</span><span class="kk">ے</span><span class="kk">ئ</span><span class="kk">ی</span><span class="kk">ح</span><span class="kk">پ</span>
+        </div>
+        <div class="kb-row">
+          <span class="kk">ا</span><span class="kk">س</span><span class="kk">د</span><span class="kk">ف</span><span class="kk">گ</span><span class="kk">ہ</span><span class="kk">ھ</span><span class="kk">ج</span><span class="kk">ک</span><span class="kk">ل</span>
+        </div>
+        <div class="kb-row">
+          <span class="kk">ز</span><span class="kk">ش</span><span class="kk">غ</span><span class="kk">ط</span><span class="kk">ب</span><span class="kk">ن</span><span class="kk">م</span>
+        </div>
+        <div class="kb-row">
+          <span class="kk">خ</span><span class="kk">ذ</span><span class="kk">ض</span><span class="kk">ظ</span><span class="kk">ث</span><span class="kk">ص</span><span class="kk">ڈ</span><span class="kk">ڑ</span><span class="kk">ٹ</span><span class="kk">چ</span><span class="kk">ژ</span><span class="kk">ں</span>
+        </div>
+        <div class="kb-row">
+          <span class="kk">آ</span><span class="kk">اً</span><span class="kk">ۃ</span><span class="kk">ؤ</span><span class="kk">ء</span><span class="kk wide">اسپیس</span><span class="kk wide">⌫ DEL</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SECURITY -->
+<section class="section">
+  <div class="container">
+    <div class="sec-label">حفاظت</div>
+    <h2 class="sec-title">قفل اور تصدیق</h2>
+    <p class="sec-lead">ایپ اور اس کی API دونوں مکمل طور پر محفوظ ہیں۔ ۶ ہندسوں کا پن اسکرین بند کرتا ہے؛ سرور سائیڈ دستخط شدہ ٹوکن ہر ڈیٹا کی درخواست کی حفاظت کرتا ہے۔</p>
+
+    <div class="feat-row">
+      <div class="pin-preview">
+        <span class="pin-title-ur">پن درج کریں</span>
+        <div class="pin-dots-row">
+          <div class="pdot f"></div><div class="pdot f"></div><div class="pdot f"></div>
+          <div class="pdot"></div><div class="pdot"></div><div class="pdot"></div>
+        </div>
+        <div class="pin-keypad">
+          <div class="pkey">1</div><div class="pkey">2</div><div class="pkey">3</div>
+          <div class="pkey">4</div><div class="pkey">5</div><div class="pkey">6</div>
+          <div class="pkey">7</div><div class="pkey">8</div><div class="pkey">9</div>
+          <div class="pkey blank"></div><div class="pkey">0</div><div class="pkey fn">⌫</div>
+        </div>
+      </div>
+      <div>
+        <ul class="feat-list">
+          <li>۶ ہندسوں کا پن — پہلی بار سیٹ اپ کے وقت ترتیب دیا جاتا ہے۔ پن PBKDF2-SHA256 ہیش (1 لاکھ مرحلے) کے ساتھ محفوظ ہوتا ہے — کہیں بھی پن ذخیرہ نہیں ہوتا۔</li>
+          <li>ہر API درخواست کو سرور کا دستخط شدہ ٹوکن چاہیے۔ بغیر ٹوکن کے ڈیٹا تک رسائی ممکن نہیں۔</li>
+          <li>۱۰ منٹ کی بے عملی پر خودکار قفل — کوئی بھی سرگرمی ٹائمر دوبارہ شروع کر دیتی ہے۔</li>
+          <li>دستی قفل: 🔒 بٹن سے جب چاہیں فوری قفل لگایا جا سکتا ہے۔</li>
+          <li>صفحہ تازہ ہونے پر ۱۰ منٹ کے اندر قفل نہیں کھلتا — ٹوکن محفوظ رہتا ہے۔</li>
+          <li>۵ غلط کوششوں پر ۱۵ منٹ کا قفل — ہر غلطی کے بعد باقی کوششیں دکھائی جاتی ہیں۔</li>
+          <li>پہلی بار کا سیٹ اپ: اسکرین "6 ہندسوں کا نیا پن بنائیں" کہتی ہے۔</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- REPORTS -->
+<section class="section">
+  <div class="container">
+    <div class="sec-label">رپورٹ اور برآمد</div>
+    <h2 class="sec-title">رپورٹ اور PDF</h2>
+    <p class="sec-lead">کسی بھی وقت کے لیے اسٹاک کا خلاصہ تیار کریں — روزانہ، ہفتہ وار، ماہانہ، سالانہ یا مخصوص تاریخ کی حد — اور PDF کے طور پر برآمد کریں۔</p>
+    <div class="feat-grid">
+      <div class="feat-card">
+        <div class="feat-icon">📄</div>
+        <div class="feat-title">روزانہ رپورٹ</div>
+        <p class="feat-body">ایک دن کا مکمل اسٹاک: موجود، خریدا، صدقہ، خرچ، باقی اور PKR مالیت فی چیز۔</p>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">📅</div>
+        <div class="feat-title">ہفتہ وار اور ماہانہ</div>
+        <p class="feat-body">سات دنوں اور پورے مہینے کا خلاصہ، فی چیز مجموعہ، طلبہ کی تعداد اور لاگت کی تفصیل۔</p>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">📆</div>
+        <div class="feat-title">سالانہ اور مخصوص تاریخ</div>
+        <p class="feat-body">پورے سال کا خلاصہ یا کوئی بھی تاریخ سے تاریخ کی حد۔ تمام رپورٹوں میں بلاک اور چیز کی سطح پر تفصیل۔</p>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">🎁</div>
+        <div class="feat-title">عطیات کی رپورٹ</div>
+        <p class="feat-body">تمام عطیات کی تاریخ کے حساب سے رپورٹ: عطیہ دینے والوں کے نام، اشیاء، نقد اور مجموعی مالیت۔</p>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">🖨️</div>
+        <div class="feat-title">PDF برآمد</div>
+        <p class="feat-body">فٹر میں PDF بٹن سے آج، اس ہفتے، اس مہینے، اس سال یا مخصوص تاریخ کی رپورٹ ایک ٹچ میں۔</p>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">📊</div>
+        <div class="feat-title">لائیو اعداد و شمار</div>
+        <p class="feat-body">اشیاء کی تعداد، آج کی خریداری، آج کا خرچ اور کل طلبہ — ہر محفوظ کرنے کے بعد فوری اپ ڈیٹ۔</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SCHEMA -->
+<section class="section">
+  <div class="container">
+    <div class="sec-label">ڈیٹابیس</div>
+    <h2 class="sec-title">ڈیٹابیس کا خاکہ</h2>
+    <p class="sec-lead">Cloudflare D1 (SQLite) پر بنایا گیا — ۱۴ ٹیبل، ۴ ویوز، ۱۳ مائیگریشنز۔ ہر کالم جامعہ کے باورچی خانے کی مخصوص ضروریات کے مطابق ڈیزائن کیا گیا۔</p>
+
+    <div class="schema-tabs" id="schema-tabs">
+      <button class="stab active" data-t="core">بنیادی ٹیبل</button>
+      <button class="stab" data-t="donations">عطیات</button>
+      <button class="stab" data-t="auth">تصدیق</button>
+      <button class="stab" data-t="support">معاون ٹیبل</button>
+    </div>
+
+    <div class="schema-wrap" id="schema-core">
+      <table class="schema-table">
+        <thead><tr><th>ٹیبل</th><th>مقصد</th><th>اہم کالم</th></tr></thead>
+        <tbody>
+          <tr><td>daily_headers</td><td>ہر دن کی ایک قطار — تمام روزانہ ڈیٹا کا مرکز</td><td>entry_date، hijri_date، students_boys/girls، locked، occasion_title</td></tr>
+          <tr><td>items</td><td>تمام اشیاء کی فہرست — تمام دنوں اور بلاکس پر مشترک</td><td>name_ur، unit، is_active، is_temporary، sort_order</td></tr>
+          <tr><td>meal_blocks</td><td>تین بلاک: بنین (1)، بنات (2)، خاص مواقع (4)</td><td>name_ur، name_en، sort_order</td></tr>
+          <tr><td>block_items</td><td>کون سی چیز کس بلاک میں — کثیر سے کثیر تعلق</td><td>block_id، item_id، UNIQUE(block_id, item_id)</td></tr>
+          <tr><td>opening_balances</td><td>ہر (دن، چیز) کا موجود اسٹاک اور قیمت</td><td>qty، value_pkr، cost_per_unit</td></tr>
+          <tr><td>daily_received</td><td>روزانہ خریدا اور صدقہ</td><td>recv_qty، recv_value_pkr، sadaqa_qty</td></tr>
+          <tr><td>ledger_rows</td><td>ہر (دن، بلاک، چیز، وقت) کا خرچ</td><td>meal_type (breakfast/lunch/dinner)، used_qty، used_value_pkr</td></tr>
+          <tr><td>item_receipts</td><td>رسید کی تصاویر اور نوٹ</td><td>r2_key، no_receipt_note، uploaded_at</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="schema-wrap" id="schema-donations" style="display:none">
+      <table class="schema-table">
+        <thead><tr><th>ٹیبل</th><th>مقصد</th><th>اہم کالم</th></tr></thead>
+        <tbody>
+          <tr><td>donations</td><td>ہر عطیے کی والدین قطار</td><td>donor_name، donation_date، notes</td></tr>
+          <tr><td>donation_items</td><td>عطیے کی اشیاء — خوراک یا نقد۔ والدین کے ساتھ حذف ہو جاتی ہیں۔</td><td>item_name، quantity، unit، cash_amount، estimated_value</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="schema-wrap" id="schema-auth" style="display:none">
+      <table class="schema-table">
+        <thead><tr><th>ٹیبل</th><th>مقصد</th><th>اہم کالم</th></tr></thead>
+        <tbody>
+          <tr><td>users</td><td>ہیش شدہ پن اور نمک</td><td>username، password_hash (PBKDF2)، salt</td></tr>
+          <tr><td>auth_throttle</td><td>غلط کوششوں کا ایک قطار کا کاؤنٹر</td><td>fail_count، locked_until</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="schema-wrap" id="schema-support" style="display:none">
+      <table class="schema-table">
+        <thead><tr><th>ٹیبل / ویو</th><th>مقصد</th><th>اہم کالم</th></tr></thead>
+        <tbody>
+          <tr><td>hijri_anchors</td><td>ہجری تقویم کے لنگر — چاند رؤیت کی تصحیح</td><td>gregorian_date، hijri_day، hijri_month، hijri_year</td></tr>
+          <tr><td>audit_log</td><td>تمام ترامیم کا ناقابلِ تبدیل ریکارڈ</td><td>table_name، old_value، new_value، changed_by</td></tr>
+          <tr><td>v_daily_block_totals</td><td>ویو: فی (دن، بلاک، وقت، چیز) مجموعہ</td><td>SUM(used_qty، used_value_pkr)</td></tr>
+          <tr><td>v_daily_item_totals</td><td>ویو: ہر چیز کی مکمل روزانہ پوزیشن</td><td>موجود، خریدا، صدقہ، خرچ، باقی</td></tr>
+          <tr><td>v_monthly_item_totals</td><td>ویو: ماہانہ مجموعہ فی چیز</td><td>recv_qty، sadaqa_qty، used_qty</td></tr>
+          <tr><td>v_yearly_item_totals</td><td>ویو: سالانہ مجموعہ فی چیز</td><td>recv_qty، sadaqa_qty، used_qty</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- TECH STACK -->
+<section class="section">
+  <div class="container">
+    <div class="sec-label">انفراسٹرکچر</div>
+    <h2 class="sec-title">ٹیکنالوجی</h2>
+    <p class="sec-lead">مکمل طور پر سرور لیس — کوئی VM، کوئی کنٹینر نہیں۔ Cloudflare کے عالمی نیٹ ورک پر ملی سیکنڈ میں جواب دیتا ہے اور استعمال نہ ہونے پر صفر لاگت۔</p>
+    <div class="pill-row">
+      <div class="pill"><div class="pill-dot"></div>Cloudflare Workers · بیک اینڈ API</div>
+      <div class="pill"><div class="pill-dot"></div>Cloudflare D1 · SQLite ڈیٹابیس</div>
+      <div class="pill"><div class="pill-dot"></div>Cloudflare R2 · رسید کی تصاویر</div>
+      <div class="pill"><div class="pill-dot"></div>Cloudflare Pages · فرنٹ اینڈ ہوسٹنگ</div>
+      <div class="pill"><div class="pill-dot"></div>GitHub · ورژن کنٹرول اور خودکار ڈیپلوئے</div>
+      <div class="pill"><div class="pill-dot"></div>Noto Nastaliq Urdu · اردو خطاطی</div>
+      <div class="pill"><div class="pill-dot"></div>Web Crypto API · PBKDF2 اور HMAC تصدیق</div>
+      <div class="pill"><div class="pill-dot"></div>Vanilla JS + HTML · بغیر فریم ورک فرنٹ اینڈ</div>
+      <div class="pill"><div class="pill-dot"></div>Qwen API · اردو اور انگریزی خودکار ترجمہ</div>
+      <div class="pill"><div class="pill-dot"></div>Claude by Anthropic · AI سے ڈیزائن اور ترقی</div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <span class="title">مطبخ جامعہ دارالعلوم کبیروالا</span>
+  کچن لیجر سسٹم · ورژن ۱.۰ · ستمبر ۲۰۲۶<br>
+  kitchen.digsyn.ai
+</footer>
+
+<script>
+document.getElementById('schema-tabs').addEventListener('click', e => {
+  const btn = e.target.closest('.stab');
+  if (!btn) return;
+  document.querySelectorAll('.stab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  ['core','donations','auth','support'].forEach(t => {
+    document.getElementById('schema-' + t).style.display = t === btn.dataset.t ? '' : 'none';
+  });
+});
+</script>
+</body>
+</html>
