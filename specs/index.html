@@ -428,7 +428,7 @@ footer .ur { font-family: var(--ur); color: rgba(255,255,255,.7); font-size: 1.1
 <section class="hero">
   <div class="hero-ur">مطبخ جامعہ دارالعلوم کبیروالا</div>
   <div class="hero-en">Kitchen Ledger System</div>
-  <p class="hero-desc">A purpose-built daily kitchen management system for the madrassa, tracking food inventory, donations, and receipts — in Urdu, for Ibrahim.</p>
+  <p class="hero-desc">A purpose-built daily kitchen management system for the madrassa, tracking food inventory, donations, and receipts — fully in Urdu.</p>
   <div class="hero-tag"><span></span> Live · kitchen.digsyn.ai</div>
 </section>
 
@@ -446,7 +446,7 @@ footer .ur { font-family: var(--ur); color: rgba(255,255,255,.7); font-size: 1.1
   <div class="container">
     <div class="sec-label">Core Feature</div>
     <h2 class="sec-title">Daily Kitchen Dashboard <span class="ur">روزانہ باورچی خانہ</span></h2>
-    <p class="sec-lead">The heart of the system. Every day Ibrahim opens the ledger, selects a date, and records what was purchased, received as donation, and consumed across three meal blocks — with opening and closing stock computed automatically.</p>
+    <p class="sec-lead">The heart of the system. Every day the ledger is opened, a date is selected, and purchases, donations received, and consumption across three meal blocks are recorded — with opening and closing stock computed automatically.</p>
 
     <div class="feat-row" style="margin-bottom:48px">
       <div>
@@ -511,7 +511,7 @@ footer .ur { font-family: var(--ur); color: rgba(255,255,255,.7); font-size: 1.1
       <div class="feat-card">
         <div class="feat-icon">📅</div>
         <div class="feat-title">Gregorian + Hijri Dates <span class="ur-sm">ہجری و عیسوی تاریخ</span></div>
-        <p class="feat-body">Both calendars shown simultaneously. Ibrahim corrects the Hijri date to follow Pakistan's moon-sighting — the engine pins the correction as an anchor and counts forward from it.</p>
+        <p class="feat-body">Both calendars shown simultaneously. The Hijri date can be corrected to follow Pakistan's moon-sighting — the engine pins the correction as an anchor and counts forward from it.</p>
       </div>
       <div class="feat-card">
         <div class="feat-icon">🔄</div>
@@ -521,7 +521,7 @@ footer .ur { font-family: var(--ur); color: rgba(255,255,255,.7); font-size: 1.1
       <div class="feat-card">
         <div class="feat-icon">⠿</div>
         <div class="feat-title">Drag-to-Reorder Items <span class="ur-sm">ترتیب بدلیں</span></div>
-        <p class="feat-body">Desktop drag handles let Ibrahim arrange items in any order. The order saves instantly and applies across all blocks, all days, and all reports.</p>
+        <p class="feat-body">Desktop drag handles let the kitchen manager arrange items in any order. The order saves instantly and applies across all blocks, all days, and all reports.</p>
       </div>
       <div class="feat-card">
         <div class="feat-icon">👦👧</div>
@@ -618,7 +618,7 @@ footer .ur { font-family: var(--ur); color: rgba(255,255,255,.7); font-size: 1.1
           <li>Editor: crop with draggable handles, brightness slider, contrast slider, reset</li>
           <li>Lightbox view — tap any thumbnail to see the full-size photo</li>
           <li>Delete individual photos; storage cleaned up automatically</li>
-          <li>No-receipt note: when no photo exists, Ibrahim can type a reason (e.g. cash purchase, no receipt available)</li>
+          <li>No-receipt note: when no photo exists, a reason can be typed (e.g. cash purchase, no receipt available)</li>
           <li>Paperclip icon (📎) appears inline on grid rows that have photos attached</li>
         </ul>
       </div>
@@ -722,10 +722,10 @@ footer .ur { font-family: var(--ur); color: rgba(255,255,255,.7); font-size: 1.1
       </div>
       <div>
         <ul class="feat-list">
-          <li>6-digit PIN — set by Ibrahim on first run, stored as a PBKDF2-SHA256 hash (100k iterations) with a random salt. The PIN itself is never stored anywhere.</li>
+          <li>6-digit PIN — set on first run, stored as a PBKDF2-SHA256 hash (100k iterations) with a random salt. The PIN itself is never stored anywhere.</li>
           <li>Every API request requires a server-signed session token. Hitting the backend URL directly without a valid token returns 401 — the data is not publicly readable.</li>
           <li>10-minute sliding idle lock: any activity resets the timer. 10 minutes of inactivity re-locks the screen automatically.</li>
-          <li>Manual lock: a floating 🔒 button locks immediately when Ibrahim is done.</li>
+          <li>Manual lock: a floating 🔒 button locks immediately when the session is complete.</li>
           <li>Session survives accidental page reloads within the 10-minute window.</li>
           <li>Brute-force throttle: 5 wrong attempts trigger a 15-minute lockout. Remaining attempts shown after each wrong PIN.</li>
           <li>First-run setup mode: screen prompts "6 ہندسوں کا نیا پن بنائیں" until the PIN is registered.</li>
@@ -820,7 +820,7 @@ footer .ur { font-family: var(--ur); color: rgba(255,255,255,.7); font-size: 1.1
       <table class="schema-table">
         <thead><tr><th>Table</th><th>Purpose</th><th>Key Columns</th></tr></thead>
         <tbody>
-          <tr><td>users</td><td>One row holding Ibrahim's hashed PIN + salt</td><td>username, password_hash (PBKDF2), salt (random 16-byte hex)</td></tr>
+          <tr><td>users</td><td>One row holding the hashed PIN + salt</td><td>username, password_hash (PBKDF2), salt (random 16-byte hex)</td></tr>
           <tr><td>auth_throttle</td><td>Single-row brute-force counter</td><td>fail_count, locked_until (Unix ms; NULL = not locked)</td></tr>
         </tbody>
       </table>
@@ -867,7 +867,7 @@ footer .ur { font-family: var(--ur); color: rgba(255,255,255,.7); font-size: 1.1
 <footer>
   <span class="ur">مطبخ جامعہ دارالعلوم کبیروالا</span>
   Kitchen Ledger System · Version 1.0 · September 2026<br>
-  Built for Ibrahim · kitchen.digsyn.ai
+  kitchen.digsyn.ai
 </footer>
 
 <script>
