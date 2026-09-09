@@ -53,7 +53,8 @@ a{text-decoration:none}
   position:sticky;top:0;z-index:100;
   box-shadow:0 2px 12px rgba(0,0,0,.2);
 }
-.mast-right{text-align:right;flex-shrink:0}
+.mast-right{text-align:right;flex-shrink:0;display:flex;align-items:center;gap:12px}
+.mast-logo{height:56px;width:auto;background:#fff;border-radius:10px;padding:5px;box-shadow:0 2px 8px rgba(0,0,0,.18);flex-shrink:0}
 .inst-ur{font-family:var(--ur);font-size:1.8rem;font-weight:700;line-height:1.3}
 .inst-sub{font-family:var(--en);font-size:.64rem;letter-spacing:.14em;text-transform:uppercase;opacity:.6;margin-top:2px}
 
@@ -432,6 +433,7 @@ select.finp.don-unit-sel{
   transition:border-color .15s;
 }
 .unit-sel:focus{outline:none;border-color:var(--g500);box-shadow:0 0 0 3px rgba(58,138,78,.1)}
+.unit-fixed{display:inline-block;font-family:var(--ur);font-size:.82rem;color:var(--ink7);text-align:center;padding:5px 6px}
 .uopt{
   flex:1;padding:8px 6px;border:1.5px solid var(--bdr);border-radius:var(--r);
   font-family:var(--ur);font-size:.85rem;text-align:center;color:var(--ink7);transition:all .15s;
@@ -774,6 +776,7 @@ select.finp.don-unit-sel{
 #lock-screen.unlocked{display:none}
 .lock-card{width:100%;max-width:360px;background:var(--sur);border-radius:18px;
   box-shadow:0 20px 60px rgba(0,0,0,.45);padding:30px 26px 26px;text-align:center;direction:rtl}
+.lock-logo-img{display:block;width:118px;height:auto;margin:0 auto 12px}
 .lock-logo{font-family:var(--ur);font-size:1.3rem;font-weight:700;color:var(--g700);margin-bottom:3px}
 .lock-sub{font-family:var(--en);font-size:.56rem;letter-spacing:.14em;text-transform:uppercase;color:var(--ink5);margin-bottom:22px}
 .lock-title{font-family:var(--ur);font-size:1.02rem;color:var(--ink9);margin-bottom:18px}
@@ -803,6 +806,7 @@ select.finp.don-unit-sel{
 <!-- LOCK SCREEN (visible by default; JS hides it once authenticated) -->
 <div id="lock-screen">
   <div class="lock-card">
+    <img class="lock-logo-img" src="logo-400.png?v=1" alt="جامعہ دارالعلوم کبیروالا">
     <div class="lock-logo">مطبخ جامعہ دارالعلوم کبیروالا</div>
     <div class="lock-sub">Kitchen Ledger</div>
     <div class="lock-title" id="lock-title">پن درج کریں</div>
@@ -834,8 +838,11 @@ select.finp.don-unit-sel{
 <!-- MASTHEAD -->
 <header class="mast">
   <div class="mast-right">
-    <div class="inst-ur">مطبخ جامعہ دارالعلوم کبیروالا</div>
-    <div class="inst-sub">Kitchen Ledger</div>
+    <img class="mast-logo" src="logo-256.png?v=1" alt="جامعہ دارالعلوم کبیروالا">
+    <div>
+      <div class="inst-ur">مطبخ جامعہ دارالعلوم کبیروالا</div>
+      <div class="inst-sub">Kitchen Ledger</div>
+    </div>
   </div>
 
   <div class="mast-center">
@@ -1102,6 +1109,13 @@ select.finp.don-unit-sel{
         <input class="finp ltr" id="ni-en" type="text" placeholder="Optional — auto-fills via Qwen when built" dir="ltr">
         <span class="auto-tag" id="auto-tag">AUTO-TRANSLATED VIA QWEN — TAP TO EDIT</span>
       </div>
+      <div class="fg">
+        <label class="flbl"><span>Unit</span><span class="flbl-ur">اکائی</span></label>
+        <select class="finp" id="ni-unit" dir="rtl"></select>
+        <div style="margin-top:6px;font-size:.72rem;color:var(--ink4);direction:rtl;text-align:right">
+          اکائی صرف ابھی مقرر ہوتی ہے، بعد میں تبدیل نہیں ہو سکتی
+        </div>
+      </div>
       <!-- عارضی toggle -->
       <div class="fg" style="margin-top:12px">
         <label class="flbl"><span>Item Type</span><span class="flbl-ur">آئٹم کی قسم</span></label>
@@ -1271,6 +1285,11 @@ select.finp.don-unit-sel{
         <span style="font-size:.8rem;color:var(--ink5);white-space:nowrap">◑ کنٹراسٹ</span>
         <input type="range" id="img-contrast" min="-100" max="100" value="0" style="flex:1">
         <span id="img-contrast-val" style="font-size:.8rem;color:var(--ink5);min-width:28px;text-align:right">0</span>
+      </div>
+      <!-- Rotate -->
+      <div style="margin-top:10px;display:flex;align-items:center;justify-content:center;gap:10px">
+        <button id="img-rotate-l" class="btn-ghost" style="font-size:.9rem;padding:5px 14px" title="بائیں گھمائیں · Rotate left">↶ 90°</button>
+        <button id="img-rotate-r" class="btn-ghost" style="font-size:.9rem;padding:5px 14px" title="دائیں گھمائیں · Rotate right">↷ 90°</button>
       </div>
       <!-- Reset hint -->
       <div style="margin-top:8px;text-align:center">
@@ -1571,8 +1590,9 @@ function rcptImgUrl(id) {
   return `${API}/api/receipts/${id}/image` + (authToken ? `?token=${encodeURIComponent(authToken)}` : '');
 }
 
-const UNIT_UR = { kg: 'کلو گرام', g: 'گرام', L: 'لیٹر', pcs: 'عدد', dozen: 'درجن' };
-// Options for the in-grid unit dropdown (code → bilingual label)
+const UNIT_UR = { kg: 'کلو گرام', g: 'گرام', L: 'لیٹر', pcs: 'عدد', dozen: 'درجن', mun: 'من' };
+// Options for the unit picker (code → label). Used by the add-item modal.
+// Unit is chosen once at creation and then locked (no in-grid changing).
 const UNIT_OPTS = [
   ['',      '— منتخب کریں —'],
   ['kg',    'کلو'],
@@ -1580,6 +1600,7 @@ const UNIT_OPTS = [
   ['L',     'لیٹر'],
   ['pcs',   'عدد'],
   ['dozen', 'درجن'],
+  ['mun',   'من'],
 ];
 
 /* ─── State ─────────────────────────────────────────────── */
@@ -2046,6 +2067,13 @@ function wireGlobal() {
   // Add item modal
   document.getElementById('close-add').onclick  = closeAdd;
   document.getElementById('btn-cancel-item').onclick = closeAdd;
+  // Populate the add-item unit picker from the single UNIT_OPTS source (skip the
+  // empty placeholder — a unit is always chosen, defaulting to kg).
+  const uSel = document.getElementById('ni-unit');
+  if (uSel) {
+    uSel.innerHTML = UNIT_OPTS.filter(([v]) => v)
+      .map(([v,l]) => `<option value="${v}"${v==='kg'?' selected':''}>${l}</option>`).join('');
+  }
   document.getElementById('ov-add').onclick = e => { if (e.target===e.currentTarget) closeAdd(); };
   document.getElementById('btn-save-item').onclick = saveItem;
   document.getElementById('ni-ur').addEventListener('input', () => {
@@ -2308,9 +2336,7 @@ function renderRows(data, blkId) {
         <button class="item-del-btn" data-did="${row.item_id}" data-dur="${row.name_ur.replace(/"/g,'&quot;')}" title="آئٹم حذف کریں · Delete item" style="background:none;border:none;cursor:pointer;padding:0 2px;opacity:.35;vertical-align:middle;line-height:1;color:#c0392b" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.35'"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 4 14 12 14 13 6"/><path d="M2 4h12M6 4V2h4v2"/></svg></button>
       </td>
       <td class="cu">
-        <select class="unit-sel" data-uid="${row.item_id}" dir="rtl" title="اکائی · Unit">
-          ${UNIT_OPTS.map(([v,l]) => `<option value="${v}"${(row.unit===v)?' selected':''}>${l}</option>`).join('')}
-        </select>
+        <span class="unit-fixed" title="اکائی · Unit (آئٹم بناتے وقت مقرر · set at creation)">${UNIT_UR[row.unit]||row.unit||'—'}</span>
       </td>
       <td class="cn sep-l col-cost">
         <input class="qi${(dirtyCost[row.item_id]!==undefined)?' chg':''}"
@@ -2330,7 +2356,9 @@ function renderRows(data, blkId) {
                type="number" min="0" value="${rq||''}" placeholder="—">
       </td>
       <td class="cn sep-r col-recv2">
-        <span class="vcomp" data-vfor="recv|${row.item_id}">${compVal(rq, row.item_id)||'—'}</span>
+        <input class="qi" data-vfor="recv|${row.item_id}" data-vid="${row.item_id}"
+               type="number" min="0" step="0.01" value="${compVal(rq, row.item_id)}" placeholder="—"
+               title="کل قیمت ادا شدہ · Total price paid — enter to derive cost/unit when blank">
       </td>
       <td class="cn sep-l sep-r col-sadq">
         <input class="qi${(drk.sadaqa_qty!==undefined)?' chg':''}"
@@ -2376,7 +2404,14 @@ function renderRows(data, blkId) {
   // Helper: recompute a single value cell (qty x cost) live
   const recompCell = (vfor, qty, itemId) => {
     const el = tbody.querySelector(`[data-vfor="${vfor}|${itemId}"]`);
-    if (el) el.textContent = compVal(qty, itemId) || '—';
+    if (!el) return;
+    const v = compVal(qty, itemId);
+    if (el.tagName === 'INPUT') {
+      // Don't clobber the field the user is actively typing in.
+      if (document.activeElement !== el) el.value = v;
+    } else {
+      el.textContent = v || '—';
+    }
   };
   // Helper: recompute ALL value cells for one item (used when its cost changes)
   const recompItem = (itemId) => {
@@ -2425,6 +2460,33 @@ function renderRows(data, blkId) {
     });
   });
 
+  // Received VALUE (total price paid) — editable. Last-edited-wins: typing a total
+  // here derives cost/unit = price ÷ qty (whole if it divides evenly, else 2dp),
+  // fills the cost field, and lets the existing cost machinery flow. Cost stays the
+  // stored source of truth, so received value + meal values remain qty × cost.
+  tbody.querySelectorAll('input[data-vid]').forEach(inp => {
+    inp.addEventListener('input', () => {
+      const itemId = +inp.dataset.vid;
+      const val = parseFloat(inp.value) || 0;
+      const drk = dirtyRcv[itemId] ?? {};
+      const savedRcv = rcvMap[itemId] ?? {};
+      const q = drk.recv_qty ?? savedRcv.recv_qty ?? 0;
+      if (val > 0 && q > 0) {
+        const cost = roundCost(val / q);
+        dirtyCost[itemId] = cost;
+        const costInp = tbody.querySelector(`input[data-cid="${itemId}"]`);
+        if (costInp) { costInp.value = cost; costInp.classList.add('chg'); }
+        recompItem(itemId);   // refresh meal value cells; guard keeps this input intact
+      }
+      schedAS();
+    });
+    inp.addEventListener('blur', async () => {
+      const itemId = +inp.dataset.vid;
+      if (dirtyCost[itemId] === undefined || !dayData?.exists) return;
+      await saveCost(itemId);  // persists derived cost + rewrites dependent values
+    });
+  });
+
   // Cost-per-unit inputs — day-wide (per-day price), save on blur, recompute values live
   tbody.querySelectorAll('input[data-cid]').forEach(inp => {
     inp.addEventListener('input', () => {
@@ -2459,14 +2521,8 @@ function renderRows(data, blkId) {
   });
 
   // Unit dropdown — global per item, saves immediately on change
-  tbody.querySelectorAll('select[data-uid]').forEach(sel => {
-    sel.addEventListener('change', async () => {
-      const itemId = +sel.dataset.uid;
-      const unit = sel.value;
-      if (!unit) return; // placeholder chosen — nothing to save
-      await saveUnit(itemId, unit);
-    });
-  });
+  // Unit is fixed at item-creation time and shown read-only in the grid, so
+  // there is no per-row unit control to wire here any more.
 
   // Drag-and-drop row reordering (desktop only). Global order → saves on drop.
   wireDragReorder(tbody);
@@ -2757,6 +2813,13 @@ async function saveCost(itemId) {
   }
 }
 
+/* Round a derived cost/unit: whole number when it divides evenly, else 2dp.
+   Number() drops trailing zeros, so 100/4 → 25 and 100/3 → 33.33. */
+function roundCost(x) {
+  if (!isFinite(x) || x <= 0) return 0;
+  return +(x.toFixed(2));
+}
+
 /* Current per-day cost for an item (dirty overrides saved). */
 function costForItem(itemId) {
   if (dirtyCost[itemId] !== undefined) return dirtyCost[itemId];
@@ -2828,6 +2891,42 @@ async function saveReceived(itemId) {
   }
 }
 
+/* Batched received save — all dirty received rows in ONE request, so the backend
+   runs its forward-propagation a single time for the whole batch instead of once
+   per item. Used by saveBlock (autosave / manual save). */
+async function saveReceivedBatch() {
+  if (!dayData?.exists) return;
+  const rows = [];
+  for (const idStr of Object.keys(dirtyRcv)) {
+    const itemId = +idStr;
+    const totRow = (dayData.day_totals??[]).find(t=>t.item_id===itemId);
+    if (!totRow) continue; // newly added mid-day, no opening row yet
+    const d = dirtyRcv[itemId];
+    rows.push({
+      item_id: itemId,
+      recv_qty: d.recv_qty ?? 0,
+      recv_value_pkr: +(((d.recv_qty??0)) * costForItem(itemId)).toFixed(2),
+      sadaqa_qty: d.sadaqa_qty ?? 0,
+    });
+  }
+  if (!rows.length) return;
+  try {
+    const r = await fetch(`${API}/api/day/${curDate}/received`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ rows, user_id:'ibrahim' })
+    });
+    const data = await r.json();
+    if (data.error) throw new Error(data.message||data.error);
+    if (data.daily_received) dayData.daily_received = data.daily_received;
+    if (data.day_totals)     dayData.day_totals     = data.day_totals;
+    for (const row of rows) delete dirtyRcv[row.item_id];
+    statsUpdate(dayData);
+    setAS('وصول محفوظ کیا گیا');
+  } catch(e) {
+    toast('وصول خرابی: '+e.message, true);
+  }
+}
+
 /* ─── Save block ─────────────────────────────────────────── */
 async function saveBlock() {
   if (!dayData?.exists) return;
@@ -2856,7 +2955,7 @@ async function saveBlock() {
     const costKeys = Object.keys(dirtyCost);
     await Promise.all([
       ...opKeys.map(id => saveOpening(+id, dirtyOp[id])),
-      ...rcvKeys.map(id => saveReceived(+id)),
+      saveReceivedBatch(),
       ...costKeys.map(id => saveCost(+id)),
     ]);
 
@@ -2947,6 +3046,7 @@ function openAdd() {
   document.getElementById('ni-en').placeholder='Auto-translating via Qwen…';
   document.getElementById('auto-tag').style.display='none';
   document.getElementById('ni-perm').checked = true; // reset to permanent
+  document.getElementById('ni-unit').value = 'kg';   // sensible default; user can change
   document.getElementById('ov-add').classList.add('open');
   setTimeout(()=>document.getElementById('ni-ur').focus(),120);
 }
@@ -3137,7 +3237,8 @@ async function saveItem() {
     const r = await fetch(`${API}/api/items`,{
       method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({
-        name_ur:ur, name_en:en, name_roman:en, unit:'kg',
+        name_ur:ur, name_en:en, name_roman:en,
+        unit: (document.getElementById('ni-unit').value || 'kg'),
         user_id:'ibrahim', is_temporary:isTemp,
         current_date: curDate   // needed for temp item ob insertion
       })
@@ -5060,6 +5161,31 @@ const ImgEditor = (() => {
 
   function pointerUp() { drag = null; }
 
+  // ── Rotate in 90° steps (baked into the source) ─────────
+  // dir = -1 rotates left (CCW), +1 rotates right (CW). We render the current
+  // source rotated onto an offscreen canvas and make THAT the new source, so the
+  // rest of the pipeline (draw, crop, export) sees an upright image and needs no
+  // changes. Canvas→canvas draw means no re-encode / no cumulative quality loss.
+  // Crop resets to the full frame since the old rectangle no longer applies.
+  function rotate(dir) {
+    if (!_img) return;
+    const off = document.createElement('canvas');
+    off.width  = _img.height;   // dimensions swap on a quarter turn
+    off.height = _img.width;
+    const o = off.getContext('2d');
+    o.translate(off.width / 2, off.height / 2);
+    o.rotate(dir * Math.PI / 2);
+    o.drawImage(_img, -_img.width / 2, -_img.height / 2);
+    _img = off;                 // a canvas is a valid drawImage source everywhere _img is used
+    const c = canvas();
+    const maxW = 1400;
+    const scale = _img.width > maxW ? maxW / _img.width : 1;
+    c.width  = Math.round(_img.width  * scale);
+    c.height = Math.round(_img.height * scale);
+    crop = { x: 0, y: 0, w: c.width, h: c.height };
+    draw();
+  }
+
   // ── Export cropped + filtered blob ──────────────────────
   function exportBlob(cb) {
     const src = canvas();
@@ -5129,6 +5255,10 @@ const ImgEditor = (() => {
       document.getElementById('img-contrast-val').textContent = this.value;
       draw();
     };
+
+    // Rotate (90° steps, baked in)
+    document.getElementById('img-rotate-l').onclick = () => rotate(-1);
+    document.getElementById('img-rotate-r').onclick = () => rotate(1);
 
     // Reset
     document.getElementById('img-reset').onclick = () => {

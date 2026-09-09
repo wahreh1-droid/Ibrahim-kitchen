@@ -539,13 +539,18 @@ async function createDay(env, date, body) {
  *     closing = opening + received + sadaqa - consumed
  *
  * which is exactly the remaining_qty formula getDay() returns. Days are chained
- * (each recomputed day becomes the "prev" for the next), and each is cleared of
- * its is_stale flag once fixed. Locked days are skipped and also stop the chain,
- * since a locked closing is authoritative and must not be silently overwritten.
+ * (each recomputed day becomes the "prev" for the next). Locked days are skipped
+ * and also stop the chain, since a locked closing is authoritative and must not
+ * be silently overwritten.
  *
- * Called after any edit to a past day. Cheap for this dataset (one kitchen,
- * chains measured in weeks). value_pkr on opening is intentionally left at 0,
- * matching createDay's existing behaviour.
+ * Only rows whose value actually changes are written, and the walk stops as soon
+ * as a day needs no change (its closing is then unchanged, so all later days are
+ * already correct). This bounds row writes to the days genuinely affected by the
+ * edit — editing the current day writes nothing. (The is_stale flag is not
+ * touched here; nothing consumes it and it is never set to 1.)
+ *
+ * Called after any edit to a past day. value_pkr on opening is intentionally
+ * left at 0, matching createDay's existing behaviour.
  * ------------------------------------------------------------------------- */
 async function propagateOpenings(env, fromDate) {
   // The edited day is the first "previous". It must exist.
@@ -583,22 +588,44 @@ async function propagateOpenings(env, fromDate) {
 
   let prevId = start.id;
   let count  = 0;
+  const EPS  = 1e-9;
 
   for (const day of laterRes.results) {
     if (day.locked) break;  // authoritative closing downstream — do not overwrite
 
+    // Target openings for this day = prior day's per-item closing (+ carried cost).
     const closings = await env.DB.prepare(closingSql).bind(prevId).all();
 
-    const stmts = closings.results.map(row =>
-      env.DB.prepare(
-        `UPDATE opening_balances SET qty = ?1, cost_per_unit = ?2 WHERE header_id = ?3 AND item_id = ?4`
-      ).bind(row.closing_qty ?? 0, row.cost_per_unit ?? 0, day.id, row.item_id)
-    );
-    stmts.push(
-      env.DB.prepare(`UPDATE daily_headers SET is_stale = 0 WHERE id = ?1`).bind(day.id)
-    );
+    // Current openings for this day, to diff against the target. Reads are cheap
+    // and uncapped; the daily limit is on ROW WRITES, which is what we minimise.
+    const curRes = await env.DB.prepare(
+      `SELECT item_id, qty, cost_per_unit FROM opening_balances WHERE header_id = ?1`
+    ).bind(day.id).all();
+    const cur = new Map(curRes.results.map(r => [r.item_id, r]));
 
-    if (stmts.length) await env.DB.batch(stmts);
+    // Emit an UPDATE only for items whose qty or cost actually changed. Rows that
+    // already match hold the correct value, so writing them again is wasted quota.
+    const stmts = [];
+    for (const row of closings.results) {
+      const c = cur.get(row.item_id);
+      if (!c) continue;  // not seeded on this day — propagate never creates rows
+      const tgtQty  = row.closing_qty  ?? 0;
+      const tgtCost = row.cost_per_unit ?? 0;
+      if (Math.abs((c.qty ?? 0) - tgtQty) < EPS &&
+          Math.abs((c.cost_per_unit ?? 0) - tgtCost) < EPS) continue;
+      stmts.push(
+        env.DB.prepare(
+          `UPDATE opening_balances SET qty = ?1, cost_per_unit = ?2 WHERE header_id = ?3 AND item_id = ?4`
+        ).bind(tgtQty, tgtCost, day.id, row.item_id)
+      );
+    }
+
+    // Nothing changed on this day → its closing is unchanged → every later day is
+    // already correct. Stop the walk. (Editing the current day, the common case,
+    // has no later days at all and returns 0 writes.)
+    if (!stmts.length) break;
+
+    await env.DB.batch(stmts);
 
     prevId = day.id;  // chain forward
     count++;
@@ -1081,7 +1108,7 @@ async function deleteItem(env, itemId) {
  * ------------------------------------------------------------------------- */
 async function setItemUnit(env, itemId, body) {
   const { unit } = body;
-  const ALLOWED = ['kg','g','L','pcs','dozen'];
+  const ALLOWED = ['kg','g','L','pcs','dozen','mun'];
   if (!ALLOWED.includes(unit))
     return { error: "bad_request", message: "unit must be one of " + ALLOWED.join(',') };
 
@@ -2342,20 +2369,32 @@ async function authLogin(env, body) {
   if (hash !== user.password_hash) {
     const fc = ((th?.fail_count) || 0) + 1;
     const locked = fc >= THROTTLE_MAX ? now + THROTTLE_LOCK_MS : null;
-    await env.DB.prepare(
-      `INSERT INTO auth_throttle (id, fail_count, locked_until) VALUES (1, ?1, ?2)
-       ON CONFLICT(id) DO UPDATE SET fail_count = ?1, locked_until = ?2`
-    ).bind(fc, locked).run();
+    // Record the failed attempt, but never let a bookkeeping-write failure (e.g.
+    // the D1 daily write cap being reached) turn a wrong PIN into a 500. Access
+    // is still correctly denied; only the attempt counter fails to advance.
+    try {
+      await env.DB.prepare(
+        `INSERT INTO auth_throttle (id, fail_count, locked_until) VALUES (1, ?1, ?2)
+         ON CONFLICT(id) DO UPDATE SET fail_count = ?1, locked_until = ?2`
+      ).bind(fc, locked).run();
+    } catch (e) { /* counter could not persist; still deny access below */ }
     return locked
       ? { error: "locked", message: "Too many attempts", retry_after_ms: THROTTLE_LOCK_MS }
       : { error: "invalid", message: "Invalid PIN", attempts_left: Math.max(0, THROTTLE_MAX - fc) };
   }
 
-  // Success — clear the throttle.
-  await env.DB.prepare(
-    `INSERT INTO auth_throttle (id, fail_count, locked_until) VALUES (1, 0, NULL)
-     ON CONFLICT(id) DO UPDATE SET fail_count = 0, locked_until = NULL`
-  ).run();
+  // Success. Clear the throttle only if there is something to clear — so a normal
+  // login (no prior failures) performs ZERO writes and cannot be blocked by a
+  // write cap. If the clear is needed but the write fails, still return the token:
+  // a correct PIN must log in regardless of throttle bookkeeping.
+  if (th && (((th.fail_count) || 0) > 0 || th.locked_until)) {
+    try {
+      await env.DB.prepare(
+        `INSERT INTO auth_throttle (id, fail_count, locked_until) VALUES (1, 0, NULL)
+         ON CONFLICT(id) DO UPDATE SET fail_count = 0, locked_until = NULL`
+      ).run();
+    } catch (e) { /* could not reset throttle; harmless — valid login proceeds */ }
+  }
   return { ok: true, token: await makeToken(env.SESSION_SECRET) };
 }
 
