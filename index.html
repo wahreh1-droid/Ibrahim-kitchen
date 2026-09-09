@@ -385,19 +385,21 @@ tfoot td{
 .modal{
   background:var(--sur);border-radius:var(--rl);
   width:480px;max-width:calc(100vw - 32px);
+  max-height:calc(100vh - 32px);
+  display:flex;flex-direction:column;
   box-shadow:0 8px 32px rgba(0,0,0,.16);overflow:hidden;
   transform:translateY(14px);transition:transform .2s;direction:rtl;
 }
 .ov.open .modal{transform:translateY(0)}
 .mhdr{
-  background:var(--g700);color:#fff;
+  background:var(--g700);color:#fff;flex-shrink:0;
   padding:16px 20px;display:flex;align-items:center;justify-content:space-between;
 }
 .mtitle-ur{font-family:var(--ur);font-size:1.1rem;font-weight:700}
 .mtitle-en{font-family:var(--en);font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;opacity:.6;margin-top:2px}
 .mclose{color:rgba(255,255,255,.65);font-size:1.4rem;line-height:1;transition:color .15s}
 .mclose:hover{color:#fff}
-.mbody{padding:20px}
+.mbody{padding:20px;overflow-y:auto;flex:1 1 auto;-webkit-overflow-scrolling:touch}
 .fg{margin-bottom:18px}
 .flbl{
   font-family:var(--en);font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;
@@ -441,7 +443,7 @@ select.finp.don-unit-sel{
 .uopt:hover{border-color:var(--g500);color:var(--g700)}
 .uopt.sel{background:var(--g700);border-color:var(--g700);color:#fff}
 .mfoot{
-  padding:16px 20px;border-top:1px solid var(--bdr);
+  padding:16px 20px;border-top:1px solid var(--bdr);flex-shrink:0;
   display:flex;gap:10px;justify-content:flex-start;direction:rtl;
 }
 .btn-cancel{
