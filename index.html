@@ -436,6 +436,25 @@ select.finp.don-unit-sel{
 }
 .unit-sel:focus{outline:none;border-color:var(--g500);box-shadow:0 0 0 3px rgba(58,138,78,.1)}
 .unit-fixed{display:inline-block;font-family:var(--ur);font-size:.82rem;color:var(--ink7);text-align:center;padding:5px 6px}
+/* Category filter chips */
+.cat-filter-bar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:10px 16px;background:var(--sur);border-bottom:1px solid var(--bdr)}
+.cat-chip{font-family:var(--ur);font-size:.82rem;padding:4px 12px;border-radius:999px;cursor:pointer;border:1.5px solid var(--bdr);background:var(--sur);color:var(--ink7);display:flex;align-items:center;gap:6px;transition:all .12s}
+.cat-chip:hover{border-color:var(--g500)}
+.cat-chip.active{background:var(--g700);border-color:var(--g700);color:#fff}
+.cat-chip .cc{font-family:var(--mono);font-size:.7rem;background:var(--ink1);color:var(--ink5);border-radius:999px;padding:0 6px;line-height:1.5}
+.cat-chip.active .cc{background:rgba(255,255,255,.22);color:#fff}
+.cat-chip .dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+/* Category header rows inside the grid */
+tr.cat-row{cursor:pointer;user-select:none}
+tr.cat-row td{background:#d3e9da;border-top:1px solid #b7dcc2;border-bottom:1px solid #b7dcc2;padding:0}
+.cat-inner{display:flex;align-items:center;gap:10px;padding:8px 16px}
+.cat-accent{width:5px;height:20px;border-radius:3px;flex-shrink:0}
+.cat-name{font-family:var(--ur);font-size:1.02rem;font-weight:700;color:var(--g900)}
+.cat-en{font-family:var(--en);font-size:.54rem;letter-spacing:.1em;text-transform:uppercase;color:var(--ink5)}
+.cat-count{font-family:var(--mono);font-size:.72rem;color:var(--g600);background:var(--g100);border-radius:999px;padding:1px 9px}
+.cat-chev{margin-inline-start:auto;color:var(--g600);font-size:.85rem;transition:transform .18s}
+tr.cat-row.collapsed .cat-chev{transform:rotate(-90deg)}
+tbody tr.hidden{display:none}
 .uopt{
   flex:1;padding:8px 6px;border:1.5px solid var(--bdr);border-radius:var(--r);
   font-family:var(--ur);font-size:.85rem;text-align:center;color:var(--ink7);transition:all .15s;
@@ -959,6 +978,8 @@ select.finp.don-unit-sel{
     <button class="add-btn" id="open-add"><span class="plus">+</span> نیا آئٹم</button>
   </div>
 
+  <div class="cat-filter-bar" id="cat-filters"></div>
+
   <div class="tbl-wrap">
     <table>
       <thead>
@@ -1118,6 +1139,10 @@ select.finp.don-unit-sel{
           اکائی صرف ابھی مقرر ہوتی ہے، بعد میں تبدیل نہیں ہو سکتی
         </div>
       </div>
+      <div class="fg">
+        <label class="flbl"><span>Category</span><span class="flbl-ur">قسم</span></label>
+        <select class="finp" id="ni-cat" dir="rtl"></select>
+      </div>
       <!-- عارضی toggle -->
       <div class="fg" style="margin-top:12px">
         <label class="flbl"><span>Item Type</span><span class="flbl-ur">آئٹم کی قسم</span></label>
@@ -1243,6 +1268,10 @@ select.finp.don-unit-sel{
             </div>
           </div>
         </div>
+      </div>
+      <div class="fg">
+        <label class="flbl"><span>Category</span><span class="flbl-ur">قسم</span></label>
+        <select class="finp" id="edit-item-cat" dir="rtl"></select>
       </div>
     </div>
     <div class="mfoot">
@@ -1593,6 +1622,21 @@ function rcptImgUrl(id) {
 }
 
 const UNIT_UR = { kg: 'کلو گرام', g: 'گرام', L: 'لیٹر', pcs: 'عدد', dozen: 'درجن', mun: 'من' };
+
+// Item categories — order here is the on-screen group order. Plain codes, app-
+// validated (no DB CHECK), so adding a category later is a one-line change here.
+const CATEGORIES = [
+  { code:'anaaj',    ur:'اناج',   en:'Grains & pulses', color:'#b45309' },
+  { code:'sabzi',    ur:'سبزی',   en:'Vegetables',      color:'#3a8a4e' },
+  { code:'gosht',    ur:'گوشت',   en:'Meat',            color:'#b91c1c' },
+  { code:'masalah',  ur:'مصالحہ', en:'Spices',          color:'#d97706' },
+  { code:'janwar',   ur:'جانور',  en:'Livestock',       color:'#7c3aed' },
+  { code:'mutafariq',ur:'متفرق',  en:'Miscellaneous',   color:'#6b7280' },
+];
+const CAT_ORDER = CATEGORIES.map(c => c.code);
+const CAT_BY    = Object.fromEntries(CATEGORIES.map(c => [c.code, c]));
+let   catFilter    = 'all';   // active filter chip ('all' or a category code)
+const catCollapsed = {};      // code -> true when collapsed (session-only, resets on reload)
 // Options for the unit picker (code → label). Used by the add-item modal.
 // Unit is chosen once at creation and then locked (no in-grid changing).
 const UNIT_OPTS = [
@@ -2076,6 +2120,12 @@ function wireGlobal() {
     uSel.innerHTML = UNIT_OPTS.filter(([v]) => v)
       .map(([v,l]) => `<option value="${v}"${v==='kg'?' selected':''}>${l}</option>`).join('');
   }
+  // Category picker — placeholder first so a choice is required.
+  const cSel = document.getElementById('ni-cat');
+  if (cSel) {
+    cSel.innerHTML = `<option value="">— قسم منتخب کریں —</option>` +
+      CATEGORIES.map(c => `<option value="${c.code}">${c.ur}</option>`).join('');
+  }
   document.getElementById('ov-add').onclick = e => { if (e.target===e.currentTarget) closeAdd(); };
   document.getElementById('btn-save-item').onclick = saveItem;
   document.getElementById('ni-ur').addEventListener('input', () => {
@@ -2271,8 +2321,45 @@ function renderKitchen(data) {
   document.getElementById('btn-receipt').onclick = openReceiptModal;
 
   renderRows(data, activeBlk);
+  renderCatFilters(data);
   statsUpdate(data);
   renderOccasionBar();
+}
+
+/* Collapse / expand one category (session-only; no re-render, just toggles rows). */
+function toggleCat(code) {
+  catCollapsed[code] = !catCollapsed[code];
+  const tbody = document.getElementById('tbody');
+  if (!tbody) return;
+  const header = tbody.querySelector(`tr.cat-row[data-cat-header="${code}"]`);
+  if (header) header.classList.toggle('collapsed', catCollapsed[code]);
+  tbody.querySelectorAll(`tr[data-cat="${code}"]`).forEach(r => r.classList.toggle('hidden', catCollapsed[code]));
+}
+
+/* Render the category filter chips (سب + one per non-empty category). */
+function renderCatFilters(data) {
+  const bar = document.getElementById('cat-filters');
+  if (!bar) return;
+  const firstBlkId = data.blocks?.[0]?.id;
+  const firstMap   = data.rows_by_block?.[firstBlkId] ?? {};
+  const master     = Array.isArray(firstMap) ? firstMap : Object.values(firstMap);
+  const counts = {}; let total = 0;
+  for (const r of master) { const c = CAT_BY[r.category] ? r.category : 'mutafariq'; counts[c] = (counts[c]||0)+1; total++; }
+
+  let html = `<span class="cat-chip${catFilter==='all'?' active':''}" data-filter="all">سب <span class="cc">${total}</span></span>`;
+  for (const cat of CATEGORIES) {
+    const n = counts[cat.code] || 0;
+    if (!n) continue;
+    html += `<span class="cat-chip${catFilter===cat.code?' active':''}" data-filter="${cat.code}"><span class="dot" style="background:${cat.color}"></span>${cat.ur} <span class="cc">${n}</span></span>`;
+  }
+  bar.innerHTML = html;
+  bar.querySelectorAll('.cat-chip').forEach(chip => {
+    chip.onclick = () => {
+      catFilter = chip.dataset.filter;
+      renderCatFilters(data);
+      renderRows(dayData || data, activeBlk);
+    };
+  });
 }
 
 /* ─── Table rows ─────────────────────────────────────────── */
@@ -2309,7 +2396,33 @@ function renderRows(data, blkId) {
     return (q * c).toFixed(2);
   };
 
+  // Group items by category; render each group under a collapsible header row.
+  const itemsByCat = {};
   for (const row of masterItems) {
+    const cc = CAT_BY[row.category] ? row.category : 'mutafariq';
+    (itemsByCat[cc] = itemsByCat[cc] || []).push(row);
+  }
+  for (const catCode of CAT_ORDER) {
+    if (catFilter !== 'all' && catCode !== catFilter) continue;   // single-select filter
+    const catItems = itemsByCat[catCode] || [];
+    if (!catItems.length) continue;                                // hide empty categories
+    const cat = CAT_BY[catCode];
+    const collapsed = !!catCollapsed[catCode];
+
+    const chtr = document.createElement('tr');
+    chtr.className = 'cat-row' + (collapsed ? ' collapsed' : '');
+    chtr.dataset.catHeader = catCode;
+    chtr.innerHTML = `<td colspan="15"><div class="cat-inner">
+        <span class="cat-accent" style="background:${cat.color}"></span>
+        <span class="cat-name">${cat.ur}</span>
+        <span class="cat-en">${cat.en}</span>
+        <span class="cat-count">${catItems.length}</span>
+        <span class="cat-chev">▾</span>
+      </div></td>`;
+    chtr.onclick = () => toggleCat(catCode);
+    tbody.appendChild(chtr);
+
+    for (const row of catItems) {
     const drk      = dirtyRcv[row.item_id] ?? {};
     const savedRcv = rcvMap[row.item_id]   ?? {};
 
@@ -2334,7 +2447,7 @@ function renderRows(data, blkId) {
         <span class="iur">${row.name_ur}${row.is_temporary ? ' <span style="color:var(--g600);font-weight:700;font-size:.8rem" title="عارضی آئٹم · Temporary">*</span>' : ''}</span>
         ${(row.name_en && row.name_en !== row.name_ur) ? `<span class="ien">${row.name_en}</span>` : ''}
         ${rcptIconHTML(row.item_id)}
-        <button class="item-edit-btn" data-iid="${row.item_id}" data-iur="${row.name_ur.replace(/"/g,'&quot;')}" title="نام درست کریں · Edit name" style="background:none;border:none;cursor:pointer;padding:0 2px;opacity:.45;vertical-align:middle;line-height:1;color:var(--ink5)" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.45'"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11.5 2.5a2.121 2.121 0 0 1 3 3L5 15H1v-4L11.5 2.5z"/></svg></button>
+        <button class="item-edit-btn" data-iid="${row.item_id}" data-iur="${row.name_ur.replace(/"/g,'&quot;')}" data-icat="${row.category||'mutafariq'}" title="نام درست کریں · Edit name" style="background:none;border:none;cursor:pointer;padding:0 2px;opacity:.45;vertical-align:middle;line-height:1;color:var(--ink5)" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.45'"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11.5 2.5a2.121 2.121 0 0 1 3 3L5 15H1v-4L11.5 2.5z"/></svg></button>
         <button class="item-del-btn" data-did="${row.item_id}" data-dur="${row.name_ur.replace(/"/g,'&quot;')}" title="آئٹم حذف کریں · Delete item" style="background:none;border:none;cursor:pointer;padding:0 2px;opacity:.35;vertical-align:middle;line-height:1;color:#c0392b" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.35'"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 4 14 12 14 13 6"/><path d="M2 4h12M6 4V2h4v2"/></svg></button>
       </td>
       <td class="cu">
@@ -2392,7 +2505,10 @@ function renderRows(data, blkId) {
           ${isls?`<span class="ls-badge">کم · LOW</span>`:''}
         </div>
       </td>`;
+    tr.dataset.cat = catCode;
+    if (collapsed) tr.classList.add('hidden');
     tbody.appendChild(tr);
+    }
   }
 
   // Inline receipt icons — VIEW ONLY: tap opens that item's thumbnails popup
@@ -2534,7 +2650,7 @@ function renderRows(data, blkId) {
     const btn = e.target.closest('.item-edit-btn');
     if (!btn) return;
     e.stopPropagation();
-    openEditItem(+btn.dataset.iid, btn.dataset.iur);
+    openEditItem(+btn.dataset.iid, btn.dataset.iur, btn.dataset.icat);
   });
 
   // Delegated click for item delete buttons
@@ -3049,6 +3165,7 @@ function openAdd() {
   document.getElementById('auto-tag').style.display='none';
   document.getElementById('ni-perm').checked = true; // reset to permanent
   document.getElementById('ni-unit').value = 'kg';   // sensible default; user can change
+  document.getElementById('ni-cat').value = '';      // force an explicit category choice
   document.getElementById('ov-add').classList.add('open');
   setTimeout(()=>document.getElementById('ni-ur').focus(),120);
 }
@@ -3115,10 +3232,12 @@ async function addTempItemToToday(itemId) {
 /* ─── Edit item name modal ───────────────────────────────── */
 let editItemId = null;
 
-function openEditItem(itemId, currentNameUr) {
+function openEditItem(itemId, currentNameUr, currentCat) {
   editItemId = itemId;
   const inp = document.getElementById('edit-item-ur');
   inp.value = currentNameUr;
+  const catSel = document.getElementById('edit-item-cat');
+  if (catSel) { const c = CAT_BY[currentCat] ? currentCat : 'mutafariq'; catSel.value = c; catSel.dataset.orig = c; }
   document.getElementById('ov-edit-item').classList.add('open');
   inp.focus({ preventScroll: true });
 }
@@ -3175,6 +3294,24 @@ async function saveEditItem() {
       }
     }
 
+    // Category change (editable after creation, unlike unit)
+    const catSel = document.getElementById('edit-item-cat');
+    const newCat = catSel?.value;
+    if (newCat && newCat !== catSel.dataset.orig) {
+      const cr = await fetch(`${API}/api/items/${editItemId}/category`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ category: newCat, user_id: 'ibrahim' }),
+      });
+      const cd = await cr.json();
+      if (cd.error) throw new Error(cd.message || cd.error);
+      const patchCat = (arr) => (arr||[]).forEach(x => { if (x.item_id === editItemId) x.category = newCat; });
+      patchCat(dayData?.day_totals);
+      for (const bid of Object.keys(dayData?.rows_by_block || {})) {
+        const a = dayData.rows_by_block[bid];
+        if (Array.isArray(a)) patchCat(a);
+      }
+    }
+
     closeEditItem();
     if (dayData?.exists) renderKitchen(dayData);
     setAS('نام درست ہو گیا');
@@ -3192,6 +3329,8 @@ async function saveEditItem() {
   document.getElementById('edit-item-close').onclick  = closeEditItem;
   document.getElementById('edit-item-cancel').onclick = closeEditItem;
   document.getElementById('edit-item-save').onclick   = saveEditItem;
+  const ecSel = document.getElementById('edit-item-cat');
+  if (ecSel) ecSel.innerHTML = CATEGORIES.map(c => `<option value="${c.code}">${c.ur}</option>`).join('');
   document.getElementById('ov-edit-item').onclick = e => {
     if (e.target === e.currentTarget) closeEditItem();
   };
@@ -3233,6 +3372,8 @@ async function saveItem() {
   const en = document.getElementById('ni-en').value.trim()||ur;
   if (!ur) { document.getElementById('ni-ur').focus(); return; }
   const isTemp = document.getElementById('ni-temp').checked ? 1 : 0;
+  const category = document.getElementById('ni-cat').value;
+  if (!category) { toast('قسم منتخب کریں · choose a category', true); document.getElementById('ni-cat').focus(); return; }
   const btn = document.getElementById('btn-save-item');
   btn.disabled=true; btn.textContent='محفوظ ہو رہا ہے…';
   try {
@@ -3241,6 +3382,7 @@ async function saveItem() {
       body: JSON.stringify({
         name_ur:ur, name_en:en, name_roman:en,
         unit: (document.getElementById('ni-unit').value || 'kg'),
+        category,
         user_id:'ibrahim', is_temporary:isTemp,
         current_date: curDate   // needed for temp item ob insertion
       })

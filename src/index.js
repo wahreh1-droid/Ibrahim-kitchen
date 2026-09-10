@@ -97,6 +97,14 @@ export default {
         return json(await setItemUnit(env, +itemUnitMatch[1], body));
       }
 
+      // POST /api/items/:id/category — set an item's (global) category
+      const itemCatMatch = path.match(/^\/api\/items\/(\d+)\/category$/);
+      if (itemCatMatch && request.method === "POST") {
+        const body = await request.json().catch(() => null);
+        if (!body) return json({ error: "bad_request", message: "Missing body" }, 400);
+        return json(await setItemCategory(env, +itemCatMatch[1], body));
+      }
+
       // GET /api/hijri/anchors — list all anchors (ascending by date)
       if (path === "/api/hijri/anchors" && request.method === "GET") {
         return json(await listHijriAnchors(env));
@@ -294,7 +302,7 @@ export default {
  * ------------------------------------------------------------------------- */
 async function getItems(env) {
   const { results } = await env.DB.prepare(
-    `SELECT id, name_ur, name_en, name_roman, unit, sort_order, is_temporary
+    `SELECT id, name_ur, name_en, name_roman, unit, sort_order, is_temporary, category
        FROM items
       WHERE is_active = 1 AND is_temporary = 0
       ORDER BY sort_order, name_ur`
@@ -341,7 +349,7 @@ async function getDay(env, date) {
     // for received figures after migration 002.
     env.DB.prepare(
       `SELECT i.id                                        AS item_id,
-              i.name_ur, i.name_en, i.name_roman, i.unit,
+              i.name_ur, i.name_en, i.name_roman, i.unit, i.category,
               ob.qty                                      AS opening_qty,
               ob.value_pkr                                AS opening_pkr,
               COALESCE(ob.cost_per_unit,      0)          AS cost_per_unit,
@@ -363,7 +371,7 @@ async function getDay(env, date) {
            ON  lr.header_id = ob.header_id
            AND lr.item_id   = ob.item_id
         WHERE ob.header_id = ?1
-        GROUP BY i.id, ob.qty, ob.value_pkr, ob.cost_per_unit, dr.recv_qty, dr.recv_value_pkr, dr.sadaqa_qty
+        GROUP BY i.id, ob.qty, ob.value_pkr, ob.cost_per_unit, dr.recv_qty, dr.recv_value_pkr, dr.sadaqa_qty, i.category
         ORDER BY i.sort_order, i.name_ur`
     ).bind(header.id),
 
@@ -374,7 +382,7 @@ async function getDay(env, date) {
               mb.name_ur                          AS block_name_ur,
               mb.name_en                          AS block_name_en,
               i.id                                AS item_id,
-              i.name_ur, i.name_en, i.unit,
+              i.name_ur, i.name_en, i.unit, i.category,
               i.is_temporary,
               m.meal_type,
               COALESCE(lr.used_qty,       0)      AS used_qty,
@@ -1128,6 +1136,28 @@ async function setItemUnit(env, itemId, body) {
 }
 
 /* ---------------------------------------------------------------------------
+ * POST /api/items/:id/category — set an item's global category.
+ * Body: { category, user_id }. category must be one of the six valid codes.
+ * Unlike unit, category is editable after creation (a miscategorisation is
+ * harmless to fix and does not reinterpret any stored quantities).
+ * ------------------------------------------------------------------------- */
+async function setItemCategory(env, itemId, body) {
+  const { category } = body;
+  const ALLOWED = ['anaaj','sabzi','gosht','masalah','janwar','mutafariq'];
+  if (!ALLOWED.includes(category))
+    return { error: "bad_request", message: "category must be one of " + ALLOWED.join(',') };
+
+  const exists = await env.DB.prepare(`SELECT id FROM items WHERE id = ?1`).bind(itemId).first();
+  if (!exists) return { error: "not_found", message: "Item not found" };
+
+  await env.DB.prepare(
+    `UPDATE items SET category = ?1 WHERE id = ?2`
+  ).bind(category, itemId).run();
+
+  return { ok: true, item_id: itemId, category };
+}
+
+/* ---------------------------------------------------------------------------
  * Hijri anchors
  * GET  /api/hijri/anchors  — list ascending
  * POST /api/hijri/anchors  — { gregorian_date, hijri_day, hijri_month,
@@ -1165,14 +1195,16 @@ async function addHijriAnchor(env, body) {
  * POST /api/items — add a new item and assign it to all blocks
  * ------------------------------------------------------------------------- */
 async function addItem(env, body) {
-  const { name_ur, name_en, name_roman, unit, user_id, is_temporary = 0, current_date } = body;
+  const { name_ur, name_en, name_roman, unit, user_id, is_temporary = 0, current_date, category } = body;
   if (!name_ur) return { error: "bad_request", message: "name_ur is required" };
 
   const isTemp = is_temporary ? 1 : 0;
+  const CATS = ['anaaj','sabzi','gosht','masalah','janwar','mutafariq'];
+  const cat  = CATS.includes(category) ? category : 'mutafariq';
 
   const ins = await env.DB.prepare(
-    `INSERT INTO items (name_ur, name_en, name_roman, unit, is_active, is_temporary, created_by)
-     VALUES (?1, ?2, ?3, ?4, 1, ?5, ?6)
+    `INSERT INTO items (name_ur, name_en, name_roman, unit, category, is_active, is_temporary, created_by)
+     VALUES (?1, ?2, ?3, ?4, ?7, 1, ?5, ?6)
      RETURNING id`
   ).bind(
     name_ur,
@@ -1180,7 +1212,8 @@ async function addItem(env, body) {
     name_roman || name_en || name_ur,
     unit || 'kg',
     isTemp,
-    user_id || 'ibrahim'
+    user_id || 'ibrahim',
+    cat
   ).first();
 
   const itemId = ins.id;
