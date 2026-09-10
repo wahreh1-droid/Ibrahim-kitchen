@@ -435,6 +435,7 @@ async function getDay(env, date) {
         name_ur:      row.name_ur,
         name_en:      row.name_en,
         unit:         row.unit,
+        category:     row.category,
         is_temporary: row.is_temporary,
         breakfast: { used_qty: 0, used_value_pkr: 0 },
         lunch:     { used_qty: 0, used_value_pkr: 0 },

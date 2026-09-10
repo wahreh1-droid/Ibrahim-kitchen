@@ -1128,11 +1128,6 @@ tbody tr.hidden{display:none}
         </div>
       </div>
       <div class="fg">
-        <label class="flbl"><span>English / Roman Urdu <span style="opacity:.5;font-size:.55rem">(اختیاری · Optional)</span></span><span class="flbl-ur">انگریزی نام</span></label>
-        <input class="finp ltr" id="ni-en" type="text" placeholder="Optional — auto-fills via Qwen when built" dir="ltr">
-        <span class="auto-tag" id="auto-tag">AUTO-TRANSLATED VIA QWEN — TAP TO EDIT</span>
-      </div>
-      <div class="fg">
         <label class="flbl"><span>Unit</span><span class="flbl-ur">اکائی</span></label>
         <select class="finp" id="ni-unit" dir="rtl"></select>
         <div style="margin-top:6px;font-size:.72rem;color:var(--ink4);direction:rtl;text-align:right">
@@ -2128,12 +2123,6 @@ function wireGlobal() {
   }
   document.getElementById('ov-add').onclick = e => { if (e.target===e.currentTarget) closeAdd(); };
   document.getElementById('btn-save-item').onclick = saveItem;
-  document.getElementById('ni-ur').addEventListener('input', () => {
-    clearTimeout(window._tt);
-    const v = document.getElementById('ni-ur').value.trim();
-    if (!v) return;
-    window._tt = setTimeout(()=>autoTranslate(v), 800);
-  });
 
   // Temp item picker modal
   document.getElementById('temp-pick-close').onclick  = closeTempPicker;
@@ -3160,9 +3149,6 @@ function setAS(msg) {
 /* ─── Add item modal ─────────────────────────────────────── */
 function openAdd() {
   document.getElementById('ni-ur').value='';
-  document.getElementById('ni-en').value='';
-  document.getElementById('ni-en').placeholder='Auto-translating via Qwen…';
-  document.getElementById('auto-tag').style.display='none';
   document.getElementById('ni-perm').checked = true; // reset to permanent
   document.getElementById('ni-unit').value = 'kg';   // sensible default; user can change
   document.getElementById('ni-cat').value = '';      // force an explicit category choice
@@ -3358,18 +3344,9 @@ async function saveEditItem() {
   });
 })();
 
-async function autoTranslate(urdu) {
-  document.getElementById('ni-en').value='';
-  document.getElementById('ni-en').placeholder='Translating via Qwen…';
-  // Placeholder until POST /api/items with translation is built
-  await new Promise(r=>setTimeout(r,500));
-  document.getElementById('ni-en').placeholder='Translation pending (route not yet built)';
-  document.getElementById('auto-tag').style.display='block';
-}
-
 async function saveItem() {
   const ur = document.getElementById('ni-ur').value.trim();
-  const en = document.getElementById('ni-en').value.trim()||ur;
+  const en = ur;   // English-name field removed; backend stores name_en = name_ur
   if (!ur) { document.getElementById('ni-ur').focus(); return; }
   const isTemp = document.getElementById('ni-temp').checked ? 1 : 0;
   const category = document.getElementById('ni-cat').value;
