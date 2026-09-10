@@ -442,7 +442,7 @@ footer .ur { font-family: var(--ur); color: rgba(255,255,255,.7); font-size: 1.1
   <div class="stat"><div class="stat-n">3</div><div class="stat-l">Meal Blocks</div></div>
   <div class="stat"><div class="stat-n">30+</div><div class="stat-l">API Endpoints</div></div>
   <div class="stat"><div class="stat-n">14</div><div class="stat-l">Database Tables</div></div>
-  <div class="stat"><div class="stat-n">13</div><div class="stat-l">Migrations</div></div>
+  <div class="stat"><div class="stat-n">15</div><div class="stat-l">Migrations</div></div>
   <div class="stat"><div class="stat-n">46</div><div class="stat-l">Urdu Keys</div></div>
 </div>
 
@@ -620,7 +620,7 @@ footer .ur { font-family: var(--ur); color: rgba(255,255,255,.7); font-size: 1.1
           <li>Multi-select item picker — attach one photo to multiple items simultaneously (bulk attach)</li>
           <li>Or manage each item's receipts individually from the "کھولیں" panel</li>
           <li>Every photo passes through a built-in image editor before upload</li>
-          <li>Editor: crop with draggable handles, brightness slider, contrast slider, reset</li>
+          <li>Editor: crop with draggable handles, brightness slider, contrast slider, rotate (90° steps, baked into the image), reset</li>
           <li>Lightbox view — tap any thumbnail to see the full-size photo</li>
           <li>Delete individual photos; storage cleaned up automatically</li>
           <li>No-receipt note: when no photo exists, a reason can be typed (e.g. cash purchase, no receipt available)</li>
@@ -661,6 +661,57 @@ footer .ur { font-family: var(--ur); color: rgba(255,255,255,.7); font-size: 1.1
         </div>
       </div>
     </div>
+  </div>
+</section>
+
+<!-- NEW FEATURES -->
+<section class="section">
+  <div class="container">
+    <div class="sec-label">Item Organisation</div>
+    <h2 class="sec-title">Item Categories <span class="ur">اشیاء کی اقسام</span></h2>
+    <p class="sec-lead">Every item belongs to one of six categories. The daily dashboard groups items under collapsible category headers, and filter chips let you narrow the view to one category instantly.</p>
+    <div class="feat-row">
+      <div>
+        <ul>
+          <li>Six categories: اناج (Grains &amp; pulses), سبزی (Vegetables), گوشت (Meat), مصالحہ (Spices), جانور (Livestock), متفرق (Miscellaneous)</li>
+          <li>Dashboard shows items grouped under darker category-band header rows with a coloured accent, item count, and a collapse chevron</li>
+          <li>Filter chips above the table narrow the view to one category (single-select) or show all</li>
+          <li>Category is chosen when adding a new item — the Save button is blocked until a category is selected</li>
+          <li>Category is editable at any time via the pencil (edit) button — unlike unit, which is locked at creation</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="sec-label" style="margin-top:48px">Item Management</div>
+    <h2 class="sec-title">Unit Lock &amp; Mun Unit <span class="ur">اکائی · من</span></h2>
+    <p class="sec-lead">Item unit is chosen once at creation and then becomes immutable — changing it mid-stream would silently reinterpret all historical quantities. The unit list now includes <strong>Mun (من)</strong> alongside kg, g, L, pcs, and dozen.</p>
+    <div class="feat-row">
+      <div>
+        <ul>
+          <li>Unit picker appears in the Add New Item modal; once saved it shows as a read-only label in the dashboard grid</li>
+          <li>Mun (من) reinstated as a selectable unit — stored in the database as <code>mun</code></li>
+          <li>Category picker also present in the Add New Item modal (mandatory, as above)</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="sec-label" style="margin-top:48px">Price Entry</div>
+    <h2 class="sec-title">Price-Paid → Cost Derivation <span class="ur">قیمت سے لاگت</span></h2>
+    <p class="sec-lead">When receiving an item, entering the total price paid and quantity automatically derives and populates the cost per unit — no manual calculation required.</p>
+    <div class="feat-row">
+      <div>
+        <ul>
+          <li>The received-value cell (Total Price Paid) is now editable</li>
+          <li>Edit total price → cost/unit = price ÷ qty (whole number if it divides evenly, else 2 decimal places)</li>
+          <li>Last-edited-wins: editing cost/unit updates the value; editing the value re-derives cost/unit</li>
+          <li>Applies to any day you actively edit — no retroactive backfill of existing records</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="sec-label" style="margin-top:48px">Branding</div>
+    <h2 class="sec-title">Institution Logo <span class="ur">ادارے کا لوگو</span></h2>
+    <p class="sec-lead">The madrassa logo appears on both the PIN lock screen (centred above the title) and the dashboard masthead (beside the institution name).</p>
   </div>
 </section>
 
@@ -786,7 +837,7 @@ footer .ur { font-family: var(--ur); color: rgba(255,255,255,.7); font-size: 1.1
   <div class="container">
     <div class="sec-label">Database</div>
     <h2 class="sec-title">Database Schema</h2>
-    <p class="sec-lead">Built on Cloudflare D1 (SQLite). 14 tables, 4 views, 13 migrations. Every column designed for the specific needs of a madrassa kitchen ledger.</p>
+    <p class="sec-lead">Built on Cloudflare D1 (SQLite). 14 tables, 4 views, 15 migrations. Every column designed for the specific needs of a madrassa kitchen ledger.</p>
 
     <div class="schema-tabs" id="schema-tabs">
       <button class="stab active" data-t="core">Core Tables</button>
@@ -800,7 +851,7 @@ footer .ur { font-family: var(--ur); color: rgba(255,255,255,.7); font-size: 1.1
         <thead><tr><th>Table</th><th>Purpose</th><th>Key Columns</th></tr></thead>
         <tbody>
           <tr><td>daily_headers</td><td>One row per calendar day — the anchor for all per-day data</td><td>entry_date, hijri_date, students_boys/girls, locked, occasion_title</td></tr>
-          <tr><td>items</td><td>Master item catalogue, global across all days and blocks</td><td>name_ur, unit, is_active, is_temporary, sort_order</td></tr>
+          <tr><td>items</td><td>Master item catalogue, global across all days and blocks</td><td>name_ur, unit, category, is_active, is_temporary, sort_order</td></tr>
           <tr><td>meal_blocks</td><td>The three blocks: بنین (1), بنات (2), خاص مواقع (4)</td><td>name_ur, name_en, sort_order</td></tr>
           <tr><td>block_items</td><td>Many-to-many: which items appear in which blocks</td><td>block_id, item_id, UNIQUE(block_id, item_id)</td></tr>
           <tr><td>opening_balances</td><td>Opening stock + cost per (day, item)</td><td>qty, value_pkr, cost_per_unit, UNIQUE(header_id, item_id)</td></tr>

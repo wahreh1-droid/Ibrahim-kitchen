@@ -377,7 +377,7 @@ footer .title { color: #fff; font-size: 1.3rem; font-weight: 700; display: block
   <div class="stat"><div class="stat-n">3</div><div class="stat-l">کھانے کے دورانیے</div></div>
   <div class="stat"><div class="stat-n">30+</div><div class="stat-l">API راستے</div></div>
   <div class="stat"><div class="stat-n">14</div><div class="stat-l">ڈیٹابیس ٹیبل</div></div>
-  <div class="stat"><div class="stat-n">13</div><div class="stat-l">مائیگریشنز</div></div>
+  <div class="stat"><div class="stat-n">15</div><div class="stat-l">مائیگریشنز</div></div>
   <div class="stat"><div class="stat-n">46</div><div class="stat-l">اردو کی بورڈ کے بٹن</div></div>
 </div>
 
@@ -552,7 +552,7 @@ footer .title { color: #fff; font-size: 1.3rem; font-weight: 700; display: block
           <li>کثیر انتخاب — ایک تصویر بیک وقت کئی اشیاء سے منسلک کریں</li>
           <li>یا "کھولیں" بٹن سے ہر چیز کی رسیدیں الگ سے دیکھیں اور شامل کریں</li>
           <li>ہر تصویر اپلوڈ سے پہلے بلٹ ان تصویر ایڈیٹر سے گزرتی ہے</li>
-          <li>ایڈیٹر: کرپ کریں (چار کونوں سے)، روشنی اور کنٹراسٹ کی سلائیڈر</li>
+          <li>ایڈیٹر: کرپ کریں (چار کونوں سے)، روشنی اور کنٹراسٹ کی سلائیڈر، ۹۰° گھمائیں (بائیں / دائیں، تصویر میں بیک کریں)</li>
           <li>لائٹ باکس — کوئی بھی تھمب نیل ٹچ کر کے پوری تصویر دیکھیں</li>
           <li>انفرادی تصاویر حذف کریں؛ اسٹوریج خودکار صاف ہو جاتی ہے</li>
           <li>اگر رسید نہ ہو تو وجہ لکھیں — نقد خریداری وغیرہ</li>
@@ -593,6 +593,56 @@ footer .title { color: #fff; font-size: 1.3rem; font-weight: 700; display: block
         </div>
       </div>
     </div>
+  </div>
+</section>
+
+<!-- NEW FEATURES -->
+<section class="section">
+  <div class="container">
+    <div class="sec-label">اشیاء کی ترتیب</div>
+    <h2 class="sec-title">اشیاء کی اقسام</h2>
+    <p class="sec-lead">ہر چیز چھ اقسام میں سے کسی ایک میں شامل ہوتی ہے۔ روزانہ ڈیش بورڈ پر اشیاء اپنی قسم کے تہت گروپ ہوتی ہیں اور فلٹر بٹن سے ایک قسم الگ سے دیکھی جا سکتی ہے۔</p>
+    <div class="feat-row">
+      <div>
+        <ul>
+          <li>چھ اقسام: اناج، سبزی، گوشت، مصالحہ، جانور، متفرق</li>
+          <li>ڈیش بورڈ پر ہر قسم کے نام کی گہری پٹی ہوتی ہے — کلک کر کے سکیڑیں یا پھیلائیں</li>
+          <li>اوپر فلٹر بٹن — ایک قسم منتخب کریں یا سب دیکھیں</li>
+          <li>نیا آئٹم شامل کرتے وقت قسم منتخب کرنا ضروری ہے</li>
+          <li>قسم بعد میں بھی تبدیل کی جا سکتی ہے (قلم بٹن سے) — اکائی کے برخلاف جو ہمیشہ کے لیے مقرر ہوتی ہے</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="sec-label" style="margin-top:48px">آئٹم کا اندراج</div>
+    <h2 class="sec-title">اکائی مقفل اور من کی اکائی</h2>
+    <p class="sec-lead">آئٹم کی اکائی صرف اندراج کے وقت مقرر ہوتی ہے اور بعد میں تبدیل نہیں ہو سکتی۔ اب اکائی کی فہرست میں <strong>من</strong> بھی شامل ہے۔</p>
+    <div class="feat-row">
+      <div>
+        <ul>
+          <li>نئے آئٹم کی ونڈو میں اکائی منتخب کریں — ڈیش بورڈ پر صرف پڑھنے کے لیے نظر آتی ہے</li>
+          <li>اکائیاں: کلو گرام، گرام، لیٹر، عدد، درجن، <strong>من</strong></li>
+          <li>قسم کا بٹن بھی اسی ونڈو میں ہے (ضروری)</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="sec-label" style="margin-top:48px">قیمت کا حساب</div>
+    <h2 class="sec-title">کل قیمت سے لاگت فی اکائی</h2>
+    <p class="sec-lead">وصول کرتے وقت کل قیمت ادا شدہ درج کریں — لاگت فی اکائی خودکار حساب ہو کر بھر جاتی ہے۔</p>
+    <div class="feat-row">
+      <div>
+        <ul>
+          <li>مالیت کا خانہ اب قابلِ ترمیم ہے</li>
+          <li>کل قیمت درج کریں ← قیمت ÷ مقدار = لاگت فی اکائی (پوری عدد یا ۲ اعشاریہ)</li>
+          <li>جو آخری تبدیل کیا وہ اصل ماخذ بنتا ہے — لاگت یا مالیت دونوں سے حساب ہوتا ہے</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="sec-label" style="margin-top:48px">برانڈنگ</div>
+    <h2 class="sec-title">ادارے کا لوگو</h2>
+    <p class="sec-lead">جامعہ کا لوگو پن لاک اسکرین (عنوان کے اوپر) اور ڈیش بورڈ کے ہیڈر (نام کے ساتھ) دونوں پر نظر آتا ہے۔</p>
   </div>
 </section>
 
@@ -717,7 +767,7 @@ footer .title { color: #fff; font-size: 1.3rem; font-weight: 700; display: block
   <div class="container">
     <div class="sec-label">ڈیٹابیس</div>
     <h2 class="sec-title">ڈیٹابیس کا خاکہ</h2>
-    <p class="sec-lead">Cloudflare D1 (SQLite) پر بنایا گیا — ۱۴ ٹیبل، ۴ ویوز، ۱۳ مائیگریشنز۔ ہر کالم جامعہ کے باورچی خانے کی مخصوص ضروریات کے مطابق ڈیزائن کیا گیا۔</p>
+    <p class="sec-lead">Cloudflare D1 (SQLite) پر بنایا گیا — ۱۴ ٹیبل، ۴ ویوز، ۱۵ مائیگریشنز۔ ہر کالم جامعہ کے باورچی خانے کی مخصوص ضروریات کے مطابق ڈیزائن کیا گیا۔</p>
 
     <div class="schema-tabs" id="schema-tabs">
       <button class="stab active" data-t="core">بنیادی ٹیبل</button>
