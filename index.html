@@ -86,8 +86,14 @@ a{text-decoration:none}
 .hijri-reminder{
   font-family:var(--ur);font-size:.72rem;color:#fde68a;margin-top:3px;
   background:rgba(180,83,9,.35);border:1px solid rgba(253,230,138,.4);
-  border-radius:6px;padding:2px 10px;text-align:center;
+  border-radius:6px;padding:2px 6px 2px 10px;text-align:center;
+  display:flex;align-items:center;justify-content:center;gap:6px;
 }
+.hijri-reminder-x{
+  font-family:var(--en);font-size:.8rem;line-height:1;color:#fde68a;opacity:.75;
+  cursor:pointer;padding:1px 4px;border-radius:4px;
+}
+.hijri-reminder-x:hover{opacity:1;background:rgba(0,0,0,.15)}
 .h-pick{display:flex;gap:8px;margin:4px 0 2px}
 .h-pick select{flex:1;text-align:center}
 #date-picker{position:absolute;opacity:0;width:0;height:0;top:0;left:50%}
@@ -883,7 +889,10 @@ tbody tr.hidden{display:none}
         <span class="hijri-val" id="hijri-disp" title="تبدیل کریں">—</span>
         <span class="hijri-suffix">ھ</span>
       </div>
-      <div class="hijri-reminder" id="hijri-reminder" style="display:none">ہجری تاریخ ایڈجسٹ کریں</div>
+      <div class="hijri-reminder" id="hijri-reminder" style="display:none">
+        <span>ہجری تاریخ ایڈجسٹ کریں</span>
+        <span class="hijri-reminder-x" id="hijri-reminder-x" title="بند کریں">&#10005;</span>
+      </div>
       <input type="date" id="date-picker">
     </div>
     <button class="nav-btn" id="btn-next">&#8250;</button>
@@ -2067,6 +2076,8 @@ async function saveHijriAnchor(iso, day, month, year) {
 }
 
 
+let hijriReminderDismissed = null; // ISO date the reminder was manually closed for
+
 function renderDate() {
   const [y,m,d] = curDate.split('-');
   document.getElementById('dd').textContent = d;
@@ -2079,10 +2090,11 @@ function renderDate() {
   const disp = document.getElementById('hijri-disp');
   disp.textContent = hijriDisplay(curDate);
   // Reminder when the displayed Hijri day reaches 29 (moon sighting likely) —
-  // clears once a new anchor is set for this/later day.
+  // clears once a new anchor is set for this/later day, or the user dismisses it.
   const r = resolveHijri(curDate);
   const rem = document.getElementById('hijri-reminder');
-  if (rem) rem.style.display = (r.day >= 29) ? '' : 'none';
+  const dueForReminder = r.day >= 29 && hijriReminderDismissed !== curDate;
+  if (rem) rem.style.display = dueForReminder ? '' : 'none';
 }
 
 /* ─── Global wire ────────────────────────────────────────── */
@@ -2094,6 +2106,15 @@ function wireGlobal() {
   document.getElementById('date-picker').onchange = e => {
     if (!e.target.value) return;
     curDate = e.target.value; reset(); renderDate(); loadDay(curDate);
+  };
+
+  // Reminder banner: clicking its body does nothing (must not open the
+  // Gregorian picker via date-block's bubbling handler); only the X dismisses it.
+  document.getElementById('hijri-reminder').onclick = e => e.stopPropagation();
+  document.getElementById('hijri-reminder-x').onclick = e => {
+    e.stopPropagation();
+    hijriReminderDismissed = curDate;
+    document.getElementById('hijri-reminder').style.display = 'none';
   };
 
   // Hijri modal — day+month+year picker that sets an anchor
