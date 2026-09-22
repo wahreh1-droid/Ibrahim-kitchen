@@ -1828,6 +1828,31 @@ async function reportYearly(env, year) {
 }
 
 
+/* Donation helpers — optional phone, optional meat weight (kg | mun, stored as entered). */
+function cleanPhone(p) {
+  const s = String(p ?? "").trim();
+  return s ? s.slice(0, 30) : null;
+}
+function donationItemStmt(env, donationId, item) {
+  const w = parseFloat(item.meat_weight);
+  const hasW = Number.isFinite(w) && w > 0 && !item.cash_amount;
+  return env.DB.prepare(
+    `INSERT INTO donation_items
+       (donation_id, item_name, quantity, unit, cash_amount, estimated_value,
+        meat_weight, meat_weight_unit)
+     VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)`
+  ).bind(
+    donationId,
+    item.item_name       ?? null,
+    item.quantity        ?? null,
+    item.unit            ?? null,
+    item.cash_amount     ?? null,
+    item.estimated_value ?? null,
+    hasW ? w : null,
+    hasW ? (item.meat_weight_unit === "mun" ? "mun" : "kg") : null,
+  );
+}
+
 /* ---------------------------------------------------------------------------
  * GET /api/donations — donations with their items array.
  * Optional `date` (YYYY-MM-DD) restricts to a single day; without it, returns all.
@@ -1835,11 +1860,13 @@ async function reportYearly(env, year) {
 async function getDonations(env, date = null) {
   const { results: donations } = await env.DB.prepare(
     date
-      ? `SELECT id, donor_name, donation_date, notes, created_at
+      ? `SELECT id, donor_name, donation_date, notes, created_at,
+                donor_phone, receipt_year, receipt_seq
            FROM donations
           WHERE donation_date = ?1
           ORDER BY id DESC`
-      : `SELECT id, donor_name, donation_date, notes, created_at
+      : `SELECT id, donor_name, donation_date, notes, created_at,
+                donor_phone, receipt_year, receipt_seq
            FROM donations
           ORDER BY donation_date DESC, id DESC`
   ).bind(...(date ? [date] : [])).all();
@@ -1851,7 +1878,7 @@ async function getDonations(env, date = null) {
 
   const { results: items } = await env.DB.prepare(
     `SELECT id, donation_id, item_name, quantity, unit,
-            cash_amount, estimated_value, created_at
+            cash_amount, estimated_value, meat_weight, meat_weight_unit, created_at
        FROM donation_items
       WHERE donation_id IN (${ph})
       ORDER BY id`
@@ -1882,32 +1909,34 @@ async function addDonation(env, body) {
   if (!Array.isArray(items) || !items.length)
     return { error: "bad_request", message: "items must be a non-empty array" };
 
-  const ins = await env.DB.prepare(
-    `INSERT INTO donations (donor_name, donation_date, notes)
-     VALUES (?1, ?2, ?3)
-     RETURNING id`
-  ).bind(donor_name.trim(), donation_date, notes ?? null).first();
+  // Receipt number = next in the donation date's year (2026-0001, 2026-0002 …),
+  // assigned in the same INSERT. The unique index on (receipt_year, receipt_seq)
+  // rejects a simultaneous duplicate; retry picks the next free number.
+  let ins = null;
+  for (let attempt = 0; attempt < 3 && !ins; attempt++) {
+    try {
+      ins = await env.DB.prepare(
+        `INSERT INTO donations
+           (donor_name, donation_date, notes, donor_phone, receipt_year, receipt_seq)
+         SELECT ?1, ?2, ?3, ?4, CAST(substr(?2,1,4) AS INTEGER),
+                COALESCE(MAX(receipt_seq), 0) + 1
+           FROM donations
+          WHERE receipt_year = CAST(substr(?2,1,4) AS INTEGER)
+         RETURNING id, receipt_year, receipt_seq`
+      ).bind(donor_name.trim(), donation_date, notes ?? null, cleanPhone(body.donor_phone)).first();
+    } catch (e) {
+      if (!/UNIQUE/i.test(String(e?.message)) || attempt === 2) throw e;
+    }
+  }
 
   const donationId = ins.id;
 
-  const itemStmts = items.map(item =>
-    env.DB.prepare(
-      `INSERT INTO donation_items
-         (donation_id, item_name, quantity, unit, cash_amount, estimated_value)
-       VALUES (?1, ?2, ?3, ?4, ?5, ?6)`
-    ).bind(
-      donationId,
-      item.item_name       ?? null,
-      item.quantity        ?? null,
-      item.unit            ?? null,
-      item.cash_amount     ?? null,
-      item.estimated_value ?? null,
-    )
-  );
+  const itemStmts = items.map(item => donationItemStmt(env, donationId, item));
 
   await env.DB.batch(itemStmts);
 
-  return { ok: true, donation_id: donationId };
+  return { ok: true, donation_id: donationId,
+           receipt_year: ins.receipt_year, receipt_seq: ins.receipt_seq };
 }
 
 
@@ -1949,29 +1978,18 @@ async function updateDonation(env, id, body) {
   // Update the parent row
   await env.DB.prepare(
     `UPDATE donations
-        SET donor_name = ?2, donation_date = ?3, notes = ?4
+        SET donor_name = ?2, donation_date = ?3, notes = ?4, donor_phone = ?5
       WHERE id = ?1`
-  ).bind(id, donor_name.trim(), donation_date, notes ?? null).run();
+  ).bind(id, donor_name.trim(), donation_date, notes ?? null, cleanPhone(body.donor_phone)).run();
+  // receipt_year / receipt_seq are deliberately left alone: once issued, a
+  // receipt keeps its number even if the donation is edited.
 
   // Replace items: delete existing, insert new set
   const stmts = [
     env.DB.prepare(`DELETE FROM donation_items WHERE donation_id = ?1`).bind(id),
   ];
   for (const item of items) {
-    stmts.push(
-      env.DB.prepare(
-        `INSERT INTO donation_items
-           (donation_id, item_name, quantity, unit, cash_amount, estimated_value)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6)`
-      ).bind(
-        id,
-        item.item_name       ?? null,
-        item.quantity        ?? null,
-        item.unit            ?? null,
-        item.cash_amount     ?? null,
-        item.estimated_value ?? null,
-      )
-    );
+    stmts.push(donationItemStmt(env, id, item));
   }
   await env.DB.batch(stmts);
 
@@ -1990,7 +2008,9 @@ async function reportDonations(env, from, to) {
 
   const { results: rows } = await env.DB.prepare(
     `SELECT d.id, d.donor_name, d.donation_date, d.notes,
-            di.item_name, di.quantity, di.unit, di.cash_amount, di.estimated_value
+            d.donor_phone, d.receipt_year, d.receipt_seq,
+            di.item_name, di.quantity, di.unit, di.cash_amount, di.estimated_value,
+            di.meat_weight, di.meat_weight_unit
        FROM donations d
        LEFT JOIN donation_items di ON di.donation_id = d.id
        ${dateFilter}
@@ -2007,6 +2027,9 @@ async function reportDonations(env, from, to) {
         donor_name:    row.donor_name,
         donation_date: row.donation_date,
         notes:         row.notes,
+        donor_phone:   row.donor_phone,
+        receipt_year:  row.receipt_year,
+        receipt_seq:   row.receipt_seq,
         items:         [],
       });
     }
@@ -2017,6 +2040,8 @@ async function reportDonations(env, from, to) {
         unit:            row.unit,
         cash_amount:     row.cash_amount,
         estimated_value: row.estimated_value,
+        meat_weight:      row.meat_weight,
+        meat_weight_unit: row.meat_weight_unit,
       });
     }
   }

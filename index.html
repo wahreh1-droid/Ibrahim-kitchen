@@ -718,6 +718,27 @@ tbody tr.hidden{display:none}
 .don-item-fields{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .don-item-fields .fg{margin-bottom:0}
 .don-item-fields .fg.full{grid-column:1/-1}
+/* Meat weight unit toggle (kg | mun) — own class so the item/cash type toggle ignores it */
+.wu-tog{display:flex;gap:6px;direction:rtl;flex-shrink:0}
+.wu-btn{font-family:var(--ur);font-size:.85rem;padding:5px 14px;border-radius:20px;
+  border:1.5px solid var(--bdr);background:var(--sur);color:var(--ink7);cursor:pointer;transition:all .15s}
+.wu-btn.active{background:var(--g700);border-color:var(--g700);color:#fff}
+/* Donor receipt */
+.btn-don-rcpt{display:inline-flex;align-items:center;gap:4px;font-family:var(--ur);font-size:.85rem;
+  padding:3px 10px;border-radius:var(--r);border:1.5px solid var(--bdr);background:var(--sur);
+  color:var(--g700);cursor:pointer}
+.btn-don-rcpt:hover{border-color:var(--g500);background:var(--g50)}
+.don-rno{font-family:var(--mono);font-size:.7rem;color:var(--ink5);direction:ltr}
+.rcpt-ov{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:210;display:flex;
+  align-items:center;justify-content:center;opacity:0;pointer-events:none;visibility:hidden;transition:opacity .2s}
+.rcpt-ov.open{opacity:1;pointer-events:all;visibility:visible}
+.rcpt-box{background:var(--sur);border-radius:var(--rl);width:460px;max-width:calc(100vw - 24px);
+  max-height:92vh;overflow-y:auto;padding:14px;box-shadow:0 8px 32px rgba(0,0,0,.16);direction:rtl}
+.rcpt-box-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.rcpt-box-hdr .t{font-family:var(--ur);font-size:1.05rem;color:var(--ink9)}
+#rcpt-img{display:block;width:100%;height:auto;border:1px solid var(--bdr);border-radius:6px;background:#fff;min-height:120px}
+.rcpt-acts{display:flex;gap:8px;margin-top:12px}
+.rcpt-acts button{flex:1;justify-content:center}
 .btn-rm-item{
   position:absolute;top:8px;left:8px;
   color:var(--ink5);font-size:1rem;padding:2px 6px;border-radius:4px;
@@ -1553,6 +1574,10 @@ tbody tr.hidden{display:none}
         <div class="ur-kb-wrap" id="don-kb-don-donor"></div>
       </div>
       <div class="fg">
+        <label class="flbl"><span>Phone (optional)</span><span class="flbl-ur">فون نمبر (اختیاری)</span></label>
+        <input class="finp ltr" id="don-phone" type="tel" inputmode="tel" dir="ltr" placeholder="03001234567">
+      </div>
+      <div class="fg">
         <label class="flbl"><span>Donation Date</span><span class="flbl-ur">تاریخ</span></label>
         <input class="finp ltr" id="don-date" type="date" dir="ltr">
       </div>
@@ -1584,6 +1609,20 @@ tbody tr.hidden{display:none}
 </div>
 
 <!-- DONATION REPORT MODAL -->
+<div class="rcpt-ov" id="rcpt-ov">
+  <div class="rcpt-box">
+    <div class="rcpt-box-hdr">
+      <div class="t">رسید عطیہ</div>
+      <button class="mclose" id="rcpt-close" style="color:var(--ink7)">×</button>
+    </div>
+    <img id="rcpt-img" alt="رسید">
+    <div class="rcpt-acts">
+      <button class="btn-pri" id="rcpt-print">🖨 پرنٹ · Print</button>
+      <button class="btn-pri" id="rcpt-wa" style="background:#128c4a;border-color:#128c4a">واٹس ایپ · WhatsApp</button>
+    </div>
+  </div>
+</div>
+
 <div class="pdf-ov" id="don-rpt-ov">
   <div class="pdf-box" style="width:380px">
     <div class="pdf-hdr">
@@ -4049,9 +4088,10 @@ function renderDonations(data) {
         <div class="don-card-hdr">
           <div>
             <div class="don-donor">${esc(d.donor_name)}</div>
-            <div class="don-date">${dateStr}</div>
+            <div class="don-date">${dateStr}${d.receipt_seq ? ` · <span class="don-rno">رسید ${receiptNo(d)}</span>` : ''}</div>
           </div>
-          <div style="display:flex;gap:4px;margin-right:auto">
+          <div style="display:flex;gap:4px;margin-right:auto;align-items:center">
+            <button class="btn-don-rcpt" data-did="${d.id}" title="رسید · Receipt">🧾 رسید</button>
             <button class="btn-don-edit" data-did="${d.id}" title="ترمیم کریں"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z"></path></svg></button>
             <button class="btn-don-del" data-did="${d.id}" title="حذف کریں"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block"><path d="M3 6h18"></path><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path><path d="M10 11v6"></path><path d="M14 11v6"></path></svg></button>
           </div>
@@ -4066,10 +4106,12 @@ function renderDonations(data) {
           </div>`;
         } else {
           const qty = item.quantity ? `${fmt(item.quantity)} ${item.unit ?? ''}` : '';
+          const mw  = item.meat_weight ? `گوشت ${fmt(item.meat_weight)} ${MEAT_UNIT_UR[item.meat_weight_unit] || 'کلو'}` : '';
           html += `<div class="don-item">
             <div class="don-item-name">${esc(item.item_name ?? '')}</div>
             <div style="display:flex;gap:12px;align-items:center">
               ${qty ? `<div class="don-item-meta">${qty}</div>` : ''}
+              ${mw ? `<div class="don-item-meta" style="font-family:var(--ur)">${mw}</div>` : ''}
               ${item.estimated_value ? `<div class="don-item-meta">₨${fmtP(item.estimated_value)}</div>` : ''}
             </div>
           </div>`;
@@ -4100,6 +4142,14 @@ function renderDonations(data) {
       } catch(e) {
         toast('خرابی: ' + e.message, true);
       }
+    };
+  });
+
+  // Wire receipt buttons
+  document.querySelectorAll('.btn-don-rcpt').forEach(btn => {
+    btn.onclick = () => {
+      const donation = (data.donations ?? []).find(d => d.id === +btn.dataset.did);
+      if (donation) openReceipt(donation);
     };
   });
 
@@ -4134,6 +4184,7 @@ function openDonModal(donation = null) {
   if (titleEn) titleEn.textContent = donation ? 'Edit Donation' : 'Add New Donation';
 
   document.getElementById('don-donor').value = donation ? donation.donor_name : '';
+  document.getElementById('don-phone').value = donation ? (donation.donor_phone ?? '') : '';
   document.getElementById('don-date').value  = donation ? donation.donation_date : curDate;
   document.getElementById('don-notes').value = donation ? (donation.notes ?? '') : '';
   document.getElementById('don-items-list').innerHTML = '';
@@ -4446,6 +4497,9 @@ function addDonItemRow(prefill = null) {
       if (qtyEl && prefill.quantity != null) qtyEl.value = prefill.quantity;
       if (unitEl && prefill.unit != null) unitEl.value = prefill.unit;
       if (valEl && prefill.estimated_value != null) valEl.value = prefill.estimated_value;
+      const mwEl = document.getElementById(`don-mw-${idx}`);
+      if (mwEl && prefill.meat_weight != null) mwEl.value = prefill.meat_weight;
+      setMeatUnit(idx, prefill.meat_weight_unit || 'kg');
     }
   }
 
@@ -4500,8 +4554,33 @@ function itemFields(idx) {
     <div class="fg full">
       <label class="flbl"><span>Est. Value PKR (optional)</span><span class="flbl-ur">تخمینی مالیت</span></label>
       <input class="finp ltr" id="don-val-${idx}" type="number" min="0" placeholder="0" dir="ltr">
+    </div>
+    <div class="fg full">
+      <label class="flbl"><span>Meat Weight (optional)</span><span class="flbl-ur">گوشت کا وزن (اختیاری)</span></label>
+      <div style="display:flex;gap:8px;align-items:center">
+        <input class="finp ltr" id="don-mw-${idx}" type="number" min="0" step="0.01" placeholder="0" dir="ltr" style="flex:1">
+        <div class="wu-tog" id="don-mwu-${idx}" data-unit="kg">
+          <button type="button" class="wu-btn active" data-wu="kg">کلو</button>
+          <button type="button" class="wu-btn" data-wu="mun">مَن</button>
+        </div>
+      </div>
     </div>`;
 }
+
+/* kg | mun toggle for meat weight — delegated, since item fields re-render
+   whenever a row switches between item and cash. */
+function setMeatUnit(idx, unit) {
+  const tog = document.getElementById(`don-mwu-${idx}`);
+  if (!tog) return;
+  tog.dataset.unit = unit === 'mun' ? 'mun' : 'kg';
+  tog.querySelectorAll('.wu-btn').forEach(b => b.classList.toggle('active', b.dataset.wu === tog.dataset.unit));
+}
+document.getElementById('don-items-list').addEventListener('click', e => {
+  const b = e.target.closest('.wu-btn');
+  if (!b) return;
+  e.preventDefault();
+  setMeatUnit(b.closest('.wu-tog').id.replace('don-mwu-', ''), b.dataset.wu);
+});
 
 function cashFields(idx) {
   return `
@@ -4519,6 +4598,7 @@ async function saveDonation() {
   const donor_name    = document.getElementById('don-donor').value.trim();
   const donation_date = document.getElementById('don-date').value;
   const notes         = document.getElementById('don-notes').value.trim();
+  const donor_phone   = document.getElementById('don-phone').value.trim();
 
   if (!donor_name)    { toast('عطیہ دہندہ کا نام درج کریں', true); return; }
   if (!donation_date) { toast('تاریخ درج کریں', true); return; }
@@ -4536,7 +4616,10 @@ async function saveDonation() {
         const qty  = parseFloat(document.getElementById(`don-qty-${idx}`)?.value)  || null;
         const unit = document.getElementById(`don-unit-${idx}`)?.value.trim()      || null;
         const val  = parseFloat(document.getElementById(`don-val-${idx}`)?.value)  || null;
-        return { item_name: name || null, quantity: qty, unit, estimated_value: val };
+        const mw   = parseFloat(document.getElementById(`don-mw-${idx}`)?.value)   || null;
+        const mwu  = document.getElementById(`don-mwu-${idx}`)?.dataset.unit      || 'kg';
+        return { item_name: name || null, quantity: qty, unit, estimated_value: val,
+                 meat_weight: mw, meat_weight_unit: mw ? mwu : null };
       }
     })
     .filter(Boolean);
@@ -4554,7 +4637,8 @@ async function saveDonation() {
     const r = await fetch(urlPath, {
       method: httpMethod,
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ donor_name, donation_date, notes: notes || null, items }),
+      body: JSON.stringify({ donor_name, donation_date, notes: notes || null,
+                             donor_phone: donor_phone || null, items }),
     });
     const data = await r.json();
     if (data.error) throw new Error(data.message || data.error);
@@ -4566,6 +4650,226 @@ async function saveDonation() {
     btn.disabled = false; btn.textContent = 'محفوظ کریں · SAVE';
   }
 }
+
+/* ══════════════════════════════════════════════════════════
+ * DONOR RECEIPT — drawn once on a canvas; the same image is previewed,
+ * printed, and shared to WhatsApp, so all three always match.
+ * ══════════════════════════════════════════════════════════ */
+const RCPT_INST = 'جامعہ دارالعلوم کبیروالا';
+const RCPT_THANKS = 'جزاک اللہ خیراً — آپ کے عطیہ کا شکریہ';
+const MEAT_UNIT_UR = { kg: 'کلو', mun: 'مَن' };
+let rcptCanvas = null, rcptDonation = null;
+
+function receiptNo(d) {
+  return d.receipt_seq ? `${d.receipt_year}-${String(d.receipt_seq).padStart(4, '0')}` : '—';
+}
+
+function loadImg(src) {
+  return new Promise(res => {
+    const im = new Image();
+    im.onload = () => res(im);
+    im.onerror = () => res(null);
+    im.src = src;
+  });
+}
+
+async function drawReceipt(d, withLogo = true) {
+  const UR = "'Noto Nastaliq Urdu', 'IBM Plex Mono', serif";
+  const MONO = "'IBM Plex Mono', monospace";
+  try {
+    await Promise.race([
+      Promise.all([
+        document.fonts.load(`700 40px 'Noto Nastaliq Urdu'`, 'جامعہ'),
+        document.fonts.load(`400 26px 'Noto Nastaliq Urdu'`, 'رسید'),
+        document.fonts.load(`500 26px 'IBM Plex Mono'`, '0123'),
+      ]),
+      new Promise(r => setTimeout(r, 4000)),
+    ]);
+  } catch (e) {}
+  const logo = withLogo ? await loadImg('logo-256.png?v=1') : null;
+
+  const items = d.items ?? [];
+  const W = 800, PAD = 44, ROW = 66, S = 2;
+  // Draw on a tall canvas, then crop to the content height at the end.
+  const H = 1000 + items.length * ROW;
+  const c = document.createElement('canvas');
+  c.width = W * S; c.height = H * S;
+  const g = c.getContext('2d');
+  g.scale(S, S);
+  g.fillStyle = '#fff'; g.fillRect(0, 0, W, H);
+  g.textBaseline = 'middle';
+
+  // Mono (number) strings are drawn LTR so digit groups keep their order.
+  const txt = (s, x, y, font, align = 'right', color = '#111827') => {
+    g.font = font; g.fillStyle = color; g.textAlign = align;
+    g.direction = font.includes(MONO) && !font.includes(UR) ? 'ltr' : 'rtl';
+    g.fillText(String(s), x, y);
+  };
+  const fit = (s, font, max) => {
+    g.font = font; s = String(s ?? '');
+    if (g.measureText(s).width <= max) return s;
+    while (s.length > 1 && g.measureText(s + '…').width > max) s = s.slice(0, -1);
+    return s + '…';
+  };
+  const hr = (y, color = '#d1d5db') => {
+    g.strokeStyle = color; g.lineWidth = 1.5;
+    g.beginPath(); g.moveTo(PAD, y); g.lineTo(W - PAD, y); g.stroke();
+  };
+
+  let y = 34;
+  if (logo) { g.drawImage(logo, W / 2 - 55, y, 110, 110); y += 140; } else { y += 30; }
+  txt(RCPT_INST, W / 2, y + 26, `700 38px ${UR}`, 'center', '#1f5132');
+  y += 88;
+  txt('رسید عطیہ', W / 2, y, `400 26px ${UR}`, 'center', '#4b5563');
+  y += 42; hr(y, '#1f5132');
+
+  // Receipt no (right) · date (left)
+  const [yy, mm, dd] = (d.donation_date || '').split('-');
+  y += 44;
+  txt('رسید نمبر:', W - PAD, y, `400 24px ${UR}`, 'right', '#4b5563');
+  g.font = `400 24px ${UR}`; const lw = g.measureText('رسید نمبر:').width;
+  txt(receiptNo(d), W - PAD - lw - 12, y, `600 24px ${MONO}`, 'right');
+  txt(`${dd}/${mm}/${yy}`, PAD, y, `500 24px ${MONO}`, 'left');
+  g.font = `500 24px ${MONO}`; const dw = g.measureText(`${dd}/${mm}/${yy}`).width;
+  txt('تاریخ:', PAD + dw + 12, y, `400 24px ${UR}`, 'left', '#4b5563');
+
+  // Donor + phone
+  y += 68;
+  txt('عطیہ دہندہ:', W - PAD, y, `400 24px ${UR}`, 'right', '#4b5563');
+  g.font = `400 24px ${UR}`; const nlw = g.measureText('عطیہ دہندہ:').width;
+  txt(fit(d.donor_name, `700 26px ${UR}`, W - 2 * PAD - nlw - 20), W - PAD - nlw - 14, y, `700 26px ${UR}`);
+  if (d.donor_phone) {
+    y += 58;
+    txt('فون:', W - PAD, y, `400 24px ${UR}`, 'right', '#4b5563');
+    g.font = `400 24px ${UR}`; const plw = g.measureText('فون:').width;
+    txt(d.donor_phone, W - PAD - plw - 14, y, `500 24px ${MONO}`, 'right');
+  }
+
+  // Table — columns (RTL): description | qty | meat weight | value
+  const cDesc = W - PAD - 8, cQty = 430, cWt = 280, cVal = PAD + 8;
+  y += 44; hr(y);
+  y += 36;
+  const hf = `400 22px ${UR}`, hc = '#4b5563';
+  txt('تفصیل', cDesc, y, hf, 'right', hc);
+  txt('مقدار', cQty, y, hf, 'center', hc);
+  txt('وزن گوشت', cWt, y, hf, 'center', hc);
+  txt('مالیت (روپے)', cVal, y, hf, 'left', hc);
+  y += 30; hr(y);
+
+  let total = 0;
+  const num = n => (+n).toLocaleString('en-PK', { maximumFractionDigits: 2 });
+  for (const it of items) {
+    y += ROW / 2 + 4;
+    const isCash = it.cash_amount != null && it.cash_amount !== '';
+    const val = isCash ? +it.cash_amount : (it.estimated_value != null ? +it.estimated_value : null);
+    if (val) total += val;
+    const desc = isCash ? 'نقد رقم' : (it.item_name || '—');
+    txt(fit(desc, `400 26px ${UR}`, cDesc - cQty - 70), cDesc, y, `400 26px ${UR}`);
+    txt(isCash || !it.quantity ? '—' : `${num(it.quantity)}\u00A0 ${it.unit ?? ''}`.trim(), cQty, y, `400 24px ${UR}`, 'center');
+    txt(!isCash && it.meat_weight ? `${num(it.meat_weight)}\u00A0 ${MEAT_UNIT_UR[it.meat_weight_unit] || 'کلو'}` : '—',
+        cWt, y, `400 24px ${UR}`, 'center');
+    txt(val ? `₨ ${num(val)}` : '—', cVal, y, `500 24px ${MONO}`, 'left');
+    y += ROW / 2 - 4;
+  }
+  hr(y, '#1f5132');
+  y += 40;
+  txt('کل', cDesc, y, `700 28px ${UR}`);
+  txt(total ? `₨ ${num(total)}` : '—', cVal, y, `600 26px ${MONO}`, 'left');
+
+  if (d.notes) {
+    y += 60;
+    txt(fit(d.notes, `400 22px ${UR}`, W - 2 * PAD), W - PAD, y, `400 22px ${UR}`, 'right', '#4b5563');
+  }
+  y += 72;
+  txt(RCPT_THANKS, W / 2, y, `400 24px ${UR}`, 'center', '#1f5132');
+
+  // Crop to content and add the frame.
+  const HF = Math.ceil(y + 56);
+  const out = document.createElement('canvas');
+  out.width = W * S; out.height = HF * S;
+  const o = out.getContext('2d');
+  o.drawImage(c, 0, 0, W * S, HF * S, 0, 0, W * S, HF * S);
+  o.scale(S, S);
+  o.strokeStyle = '#1f5132'; o.lineWidth = 3; o.strokeRect(12, 12, W - 24, HF - 24);
+  return out;
+}
+
+async function openReceipt(d) {
+  rcptDonation = d;
+  const ov = document.getElementById('rcpt-ov');
+  const img = document.getElementById('rcpt-img');
+  img.removeAttribute('src');
+  ov.classList.add('open');
+  try {
+    rcptCanvas = await drawReceipt(d);
+    try {
+      img.src = rcptCanvas.toDataURL('image/png');
+    } catch (e) {
+      // Logo blocked from export (e.g. served from another origin) — redraw without it.
+      rcptCanvas = await drawReceipt(d, false);
+      img.src = rcptCanvas.toDataURL('image/png');
+    }
+  } catch (e) {
+    toast('رسید نہیں بنی: ' + e.message, true);
+  }
+}
+
+function closeReceipt() {
+  document.getElementById('rcpt-ov').classList.remove('open');
+}
+
+function printReceipt() {
+  if (!rcptCanvas) return;
+  const src = rcptCanvas.toDataURL('image/png');
+  printHtml(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Receipt ${receiptNo(rcptDonation)}</title>
+    <style>@page{size:A5;margin:8mm}html,body{margin:0}body{text-align:center}
+    img{width:100%;max-width:125mm;height:auto}</style></head>
+    <body><img src="${src}"></body></html>`, `receipt-${receiptNo(rcptDonation)}`);
+}
+
+/* Pakistani numbers → WhatsApp international form: 0300… → 92300… */
+function waPhone(p) {
+  let n = String(p || '').replace(/\D/g, '');
+  if (n.startsWith('00')) n = n.slice(2);
+  if (n.startsWith('0')) n = '92' + n.slice(1);
+  else if (n.length === 10 && n.startsWith('3')) n = '92' + n;
+  return n;
+}
+
+async function shareReceiptWA() {
+  if (!rcptCanvas || !rcptDonation) return;
+  const d = rcptDonation, no = receiptNo(d);
+  const text = `السلام علیکم ${d.donor_name}،\n${RCPT_INST} کی جانب سے آپ کے عطیہ کی رسید (نمبر ${no})۔\n${RCPT_THANKS}`;
+  const blob = await new Promise(r => rcptCanvas.toBlob(r, 'image/png'));
+  const file = new File([blob], `receipt-${no}.png`, { type: 'image/png' });
+
+  // Phones/tablets: native share sheet sends the image straight into WhatsApp.
+  const touch = window.matchMedia && matchMedia('(pointer:coarse)').matches;
+  if (touch && navigator.canShare && navigator.canShare({ files: [file] })) {
+    try { await navigator.share({ files: [file], text }); } catch (e) {
+      if (e.name !== 'AbortError') toast('شیئر نہیں ہو سکا: ' + e.message, true);
+    }
+    return;
+  }
+  // Computer: download the image, then open WhatsApp with the message ready.
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = file.name;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+  const ph = waPhone(d.donor_phone);
+  window.open(`https://wa.me/${ph}?text=${encodeURIComponent(text)}`, '_blank');
+  toast('رسید ڈاؤن لوڈ ہو گئی — واٹس ایپ میں تصویر منسلک کریں');
+}
+
+(function wireReceipt() {
+  const ov = document.getElementById('rcpt-ov');
+  if (!ov) return;
+  document.getElementById('rcpt-close').onclick = closeReceipt;
+  document.getElementById('rcpt-print').onclick = printReceipt;
+  document.getElementById('rcpt-wa').onclick = shareReceiptWA;
+  ov.onclick = e => { if (e.target === ov) closeReceipt(); };
+})();
 
 function esc(str) {
   return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
