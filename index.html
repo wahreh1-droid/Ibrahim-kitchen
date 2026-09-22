@@ -224,12 +224,13 @@ thead th .ur-hdr{
 }
 th.gh{text-align:center;border-bottom:1px solid;padding-bottom:3px;font-family:var(--ur)}
 tr.sh th{padding-top:3px;border-bottom:2px solid}
-th.ci{min-width:140px}
-th.cu{text-align:center;width:90px}
-th.cn{text-align:center;width:104px}
-th.col-recv,th.col-sadq,th.col-cons{width:74px}
-th.col-recv2,th.col-cons2{width:116px}
-th.cr{min-width:150px}
+/* Column sizing (Option B): numeric columns are sized by the widest number
+   they must hold (fixed ch widths on the inputs below) and can never be
+   squeezed; the Item column takes what is left and its name wraps. */
+th.ci{width:150px;min-width:130px}
+th.cu{text-align:center;width:64px}
+th.cn{text-align:center;padding-left:4px;padding-right:4px}
+th.cr{min-width:130px}
 th.sep-l{border-left:1px solid rgba(0,0,0,.08)}
 th.sep-r{border-right:1px solid rgba(0,0,0,.08)}
 /* Column group header colors */
@@ -275,8 +276,11 @@ tbody tr.ls:hover{background:#fef3c7}
 
 td{padding:9px 13px;vertical-align:middle}
 td.ci{text-align:right;position:relative}
-td.cu{text-align:center}
-td.cn{text-align:center}
+/* Cap the item name's natural width so auto table layout stops handing the
+   Item column the lion's share of the row; long names wrap instead. */
+td.ci .iur,td.ci .ien{max-width:170px;white-space:normal;overflow-wrap:anywhere}
+td.cu{text-align:center;padding-left:4px;padding-right:4px}
+td.cn{text-align:center;padding-left:4px;padding-right:4px;white-space:nowrap}
 
 .iur{font-family:var(--ur);font-size:1rem;color:var(--ink9);display:block;line-height:1.4}
 .ien{font-family:var(--en);font-size:.68rem;color:var(--ink5);display:block}
@@ -290,14 +294,26 @@ td.cn{text-align:center}
 
 .qi{
   font-family:var(--mono);font-size:.9rem;color:var(--ink9);
-  width:100%;min-width:60px;max-width:100px;box-sizing:border-box;text-align:center;
+  /* Width = digits it must show (--qch, in monospace ch) + padding/border.
+     Fixed, not %, so the table can never squeeze digits out of view. */
+  --qch:7;
+  width:calc(var(--qch) * 1ch + 14px);min-width:calc(var(--qch) * 1ch + 14px);
+  box-sizing:border-box;text-align:center;
+  font-variant-numeric:tabular-nums;
   border:1.5px solid var(--bdr);border-radius:var(--r);
   padding:5px 4px;background:var(--sur);
   transition:border-color .15s,box-shadow .15s;
   display:block;margin:0 auto;
+  -moz-appearance:textfield;appearance:textfield;
 }
-td.col-recv .qi,td.col-sadq .qi,td.col-cons .qi{max-width:64px;min-width:50px}
-td.col-recv2 .qi,td.col-cons2 .qi{max-width:108px;min-width:90px}
+/* Spinner arrows ate ~15px of every box — hide them. */
+.qi::-webkit-outer-spin-button,.qi::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+/* Capacity per column: qty 9999.99 (7) · cost/opening 99999.99 (8) ·
+   value 9999999.99 (10) */
+td.col-recv .qi,td.col-sadq .qi,td.col-cons .qi{--qch:7}
+td.col-cost .qi,td.col-open .qi{--qch:8}
+td.col-recv2 .qi{--qch:10}
+td.col-cons2 .vcomp{min-width:calc(10ch + 12px);white-space:nowrap;font-variant-numeric:tabular-nums}
 .qi:focus{outline:none;border-color:var(--g500);box-shadow:0 0 0 3px rgba(58,138,78,.1)}
 .qi.chg{border-color:var(--g500);background:var(--g50)}
 .vi{
