@@ -1613,7 +1613,7 @@ tbody tr.hidden{display:none}
   <div class="rcpt-box">
     <div class="rcpt-box-hdr">
       <div class="t">رسید عطیہ</div>
-      <button class="mclose" id="rcpt-close" style="color:var(--ink7)">×</button>
+      <button class="mclose" id="don-rcpt-close" style="color:var(--ink7)">×</button>
     </div>
     <img id="rcpt-img" alt="رسید">
     <div class="rcpt-acts">
@@ -4865,7 +4865,7 @@ async function shareReceiptWA() {
 (function wireReceipt() {
   const ov = document.getElementById('rcpt-ov');
   if (!ov) return;
-  document.getElementById('rcpt-close').onclick = closeReceipt;
+  document.getElementById('don-rcpt-close').onclick = closeReceipt;
   document.getElementById('rcpt-print').onclick = printReceipt;
   document.getElementById('rcpt-wa').onclick = shareReceiptWA;
   ov.onclick = e => { if (e.target === ov) closeReceipt(); };
