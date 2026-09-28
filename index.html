@@ -1724,6 +1724,12 @@ let dirtyCost = {};      // key: itemId → new cost_per_unit (day-wide, per-day
 let dirtyRcv  = {};      // key: itemId → {recv_qty, recv_value_pkr, sadaqa_qty} (day-wide received)
 let stuDirty  = false;   // boys/girls headcount edited but not yet saved
 let asTimer   = null;
+// True while saveBlock() is flushing+saving all dirty fields (opening/received/
+// cost/consumed). Per-field blur handlers below check this and skip their own
+// individual save when it's set, so clicking Save while a cell still has focus
+// doesn't fire two concurrent POSTs (one from blur, one from the batch) for the
+// same item — that race is what was wiping just-typed received values on save.
+let blockSaveInFlight = false;
 let itemOrder = null;    // last-known global item order (array of item_ids) — survives saves
 
 /* ─── Boot ───────────────────────────────────────────────── */
@@ -2387,6 +2393,19 @@ function renderKitchen(data) {
   const addD = document.getElementById('tb-open-add');
   if (addD) addD.onclick = openAdd;
   document.getElementById('btn-save').onclick  = saveBlock;
+  // Set the in-flight guard on mousedown, not just inside saveBlock() itself.
+  // Clicking Save while a received/cost/opening cell still has focus fires the
+  // browser's blur on that cell BEFORE the click (and saveBlock) ever runs —
+  // mousedown is the only point early enough to flag "a save is starting" so
+  // that blur's own individual save backs off. Safety net: if the click never
+  // follows (pointer dragged off the button before release), the button never
+  // gets disabled, so clear the flag shortly after rather than leave it stuck.
+  document.getElementById('btn-save').onmousedown = () => {
+    blockSaveInFlight = true;
+    setTimeout(() => {
+      if (!document.getElementById('btn-save')?.disabled) blockSaveInFlight = false;
+    }, 300);
+  };
   document.getElementById('btn-pdf').onclick   = openPdfDialog;
   document.getElementById('btn-receipt').onclick = openReceiptModal;
 
@@ -2643,6 +2662,9 @@ function renderRows(data, blkId) {
     });
     inp.addEventListener('blur', async () => {
       const itemId = +inp.dataset.rid;
+      // saveBlock() is about to (or already did) flush this same field itself —
+      // let it own the save so this blur doesn't fire a second, racing POST.
+      if (blockSaveInFlight) return;
       if (!dirtyRcv[itemId] || !dayData?.exists) return;
       await saveReceived(itemId);
     });
@@ -2670,6 +2692,7 @@ function renderRows(data, blkId) {
     });
     inp.addEventListener('blur', async () => {
       const itemId = +inp.dataset.vid;
+      if (blockSaveInFlight) return;
       if (dirtyCost[itemId] === undefined || !dayData?.exists) return;
       await saveCost(itemId);  // persists derived cost + rewrites dependent values
     });
@@ -2686,6 +2709,7 @@ function renderRows(data, blkId) {
     });
     inp.addEventListener('blur', async () => {
       const itemId = +inp.dataset.cid;
+      if (blockSaveInFlight) return;
       if (dirtyCost[itemId] === undefined || !dayData?.exists) return;
       await saveCost(itemId);
     });
@@ -2703,6 +2727,7 @@ function renderRows(data, blkId) {
     });
     inp.addEventListener('blur', async () => {
       const itemId = +inp.dataset.oid;
+      if (blockSaveInFlight) return;
       if (dirtyOp[itemId] === undefined) return;
       await saveOpening(itemId, dirtyOp[itemId]);
     });
@@ -3121,6 +3146,9 @@ async function saveBlock() {
 
   const btn = document.getElementById('btn-save');
   btn.disabled=true; btn.textContent='محفوظ ہو رہا ہے…';
+  // Block the per-field blur handlers below from firing their own save while
+  // this flush-and-save is in progress — see the flag's declaration for why.
+  blockSaveInFlight = true;
 
   try {
     // 1. Collect any in-flight received/sadaqa values directly from DOM (blur may not have fired)
@@ -3183,6 +3211,7 @@ async function saveBlock() {
   } catch(e) {
     toast('خرابی: '+e.message, true);
   } finally {
+    blockSaveInFlight = false;
     btn.disabled=false; btn.textContent='محفوظ کریں · SAVE';
   }
 }
