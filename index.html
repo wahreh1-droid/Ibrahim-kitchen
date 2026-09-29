@@ -1072,6 +1072,9 @@ tbody tr.hidden{display:none}
       <button class="btn-ghost" id="btn-pdf">
         PDF ریپورٹ
       </button>
+      <button class="btn-ghost" id="btn-item-rpt">
+        آئٹم رپورٹ
+      </button>
       <button class="btn-ghost" id="btn-receipt">
         رسید کی تصویر
       </button>
@@ -1647,6 +1650,46 @@ tbody tr.hidden{display:none}
     <div class="pdf-foot">
       <button class="btn-pdf-cancel" id="don-rpt-cancel-btn">Cancel</button>
       <button class="btn-pdf-gen" id="don-rpt-gen-btn">⬇ Generate Report · رپورٹ بنائیں</button>
+    </div>
+  </div>
+</div>
+
+<!-- ITEM REPORT MODAL — purchased vs. consumed totals for one or more
+     specific items over a date range (Ibrahim's request, 28 Sep). -->
+<div class="pdf-ov" id="item-rpt-ov">
+  <div class="pdf-box" style="width:420px">
+    <div class="pdf-hdr">
+      <div>
+        <div class="pdf-title">Item Report <span class="ur-part">· آئٹم رپورٹ</span></div>
+        <div class="pdf-sub">Pick one or more items and a date range</div>
+      </div>
+      <button class="pdf-close" id="item-rpt-close">✕</button>
+    </div>
+    <div class="pdf-body">
+      <div class="date-lbl" style="margin-bottom:6px">آئٹم منتخب کریں · Select items</div>
+      <div id="item-rpt-chips" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px"></div>
+      <div style="position:relative;margin-bottom:14px">
+        <input class="date-inp" type="text" id="item-rpt-search" dir="rtl"
+               placeholder="آئٹم کا نام لکھیں…" autocomplete="off" style="width:100%">
+        <div id="item-rpt-drop" class="hidden"
+             style="position:absolute;top:calc(100% + 4px);right:0;left:0;z-index:20;
+                    background:var(--surface-2,#fff);border:1px solid #d1d5db;border-radius:8px;
+                    max-height:180px;overflow-y:auto;box-shadow:0 4px 12px rgba(0,0,0,.08)"></div>
+      </div>
+      <div class="date-row" style="display:grid">
+        <div>
+          <div class="date-lbl">From · سے</div>
+          <input class="date-inp" type="date" id="item-rpt-from">
+        </div>
+        <div>
+          <div class="date-lbl">To · تک</div>
+          <input class="date-inp" type="date" id="item-rpt-to">
+        </div>
+      </div>
+    </div>
+    <div class="pdf-foot">
+      <button class="btn-pdf-cancel" id="item-rpt-cancel-btn">Cancel</button>
+      <button class="btn-pdf-gen" id="item-rpt-gen-btn">⬇ Generate Report · رپورٹ بنائیں</button>
     </div>
   </div>
 </div>
@@ -2407,6 +2450,7 @@ function renderKitchen(data) {
     }, 300);
   };
   document.getElementById('btn-pdf').onclick   = openPdfDialog;
+  document.getElementById('btn-item-rpt').onclick = openItemReportDialog;
   document.getElementById('btn-receipt').onclick = openReceiptModal;
 
   renderRows(data, activeBlk);
@@ -5082,6 +5126,197 @@ function srt(col){
     dateLabel,
     statsBar + tableHtml,
     'عطیات رپورٹ — مطبخ جامعہ دارالعلوم کبیروالا'
+  );
+}
+
+/* ══════════════════════════════════════════════════════════
+ * ITEM REPORT — purchased vs. consumed totals for one or more
+ * specific items over a date range (Ibrahim's request, 28 Sep).
+ * ══════════════════════════════════════════════════════════ */
+
+let itemRptSelected = [];   // [{item_id, name_ur, name_en, unit}, ...] — up to 5
+
+document.addEventListener('DOMContentLoaded', () => {
+  const ov = document.getElementById('item-rpt-ov');
+  document.getElementById('item-rpt-close').onclick      = closeItemReportDialog;
+  document.getElementById('item-rpt-cancel-btn').onclick = closeItemReportDialog;
+  ov.onclick = e => { if (e.target === ov) closeItemReportDialog(); };
+  document.getElementById('item-rpt-gen-btn').onclick = generateItemReport;
+
+  const search = document.getElementById('item-rpt-search');
+  const drop   = document.getElementById('item-rpt-drop');
+  search.addEventListener('input', () => renderItemRptDrop(search.value));
+  search.addEventListener('focus', () => renderItemRptDrop(search.value));
+  document.addEventListener('click', e => {
+    if (!drop.contains(e.target) && e.target !== search) drop.classList.add('hidden');
+  });
+});
+
+function openItemReportDialog() {
+  itemRptSelected = [];
+  renderItemRptChips();
+  document.getElementById('item-rpt-search').value = '';
+  document.getElementById('item-rpt-drop').classList.add('hidden');
+  const [y, m] = curDate.split('-');
+  document.getElementById('item-rpt-from').value = `${y}-${m}-01`;
+  document.getElementById('item-rpt-to').value   = curDate;
+  document.getElementById('item-rpt-ov').classList.add('open');
+}
+
+function closeItemReportDialog() {
+  document.getElementById('item-rpt-ov').classList.remove('open');
+}
+
+// Source list is the currently-loaded day's item catalog (day_totals carries
+// every active item regardless of block) — no separate /api/items round trip
+// needed since a day is always loaded before this dialog can be opened.
+function itemRptCatalog() {
+  return (dayData?.day_totals ?? []).map(t => ({
+    item_id: t.item_id, name_ur: t.name_ur, name_en: t.name_en, unit: t.unit,
+  }));
+}
+
+function renderItemRptDrop(query) {
+  const drop = document.getElementById('item-rpt-drop');
+  const q = (query || '').trim();
+  const chosenIds = new Set(itemRptSelected.map(x => x.item_id));
+  const pool = itemRptCatalog().filter(it => !chosenIds.has(it.item_id));
+  const matches = (q
+    ? pool.filter(it => (it.name_ur || '').includes(q) || (it.name_en || '').toLowerCase().includes(q.toLowerCase()))
+    : pool
+  ).slice(0, 30);
+
+  if (itemRptSelected.length >= 5) {
+    drop.innerHTML = `<div style="padding:10px;font-size:13px;color:var(--ink5,#888)">زیادہ سے زیادہ 5 آئٹم · Up to 5 items</div>`;
+    drop.classList.remove('hidden');
+    return;
+  }
+  if (!matches.length) {
+    drop.innerHTML = `<div style="padding:10px;font-size:13px;color:var(--ink5,#888)">کوئی آئٹم نہیں ملا</div>`;
+    drop.classList.remove('hidden');
+    return;
+  }
+  drop.innerHTML = matches.map(it => `
+    <div class="item-rpt-opt" data-iid="${it.item_id}"
+         style="padding:8px 10px;cursor:pointer;font-size:14px;display:flex;justify-content:space-between;gap:8px">
+      <span>${esc(it.name_ur)}</span>
+      <span style="color:var(--ink5,#888);font-size:12px">${esc(it.name_en || '')}</span>
+    </div>`).join('');
+  drop.querySelectorAll('.item-rpt-opt').forEach(el => {
+    el.onmouseover = () => el.style.background = '#f1f5f9';
+    el.onmouseout  = () => el.style.background = '';
+    el.onclick = () => {
+      const iid = +el.dataset.iid;
+      const item = pool.find(x => x.item_id === iid);
+      if (item) {
+        itemRptSelected.push(item);
+        renderItemRptChips();
+      }
+      document.getElementById('item-rpt-search').value = '';
+      renderItemRptDrop('');
+    };
+  });
+  drop.classList.remove('hidden');
+}
+
+function renderItemRptChips() {
+  const wrap = document.getElementById('item-rpt-chips');
+  wrap.innerHTML = itemRptSelected.map(it => `
+    <span data-iid="${it.item_id}" style="background:#eff6ff;color:#1d4ed8;font-size:13px;
+      padding:5px 8px;border-radius:6px;display:inline-flex;align-items:center;gap:6px">
+      ${esc(it.name_ur)}
+      <span data-rm="${it.item_id}" style="cursor:pointer;font-weight:700">×</span>
+    </span>`).join('');
+  wrap.querySelectorAll('[data-rm]').forEach(el => {
+    el.onclick = () => {
+      const iid = +el.dataset.rm;
+      itemRptSelected = itemRptSelected.filter(x => x.item_id !== iid);
+      renderItemRptChips();
+    };
+  });
+}
+
+async function generateItemReport() {
+  if (!itemRptSelected.length) { toast('کم از کم ایک آئٹم منتخب کریں', true); return; }
+  const from = document.getElementById('item-rpt-from').value;
+  const to   = document.getElementById('item-rpt-to').value;
+  if (!from || !to) { toast('تاریخیں منتخب کریں', true); return; }
+  if (from > to)    { toast('شروع کی تاریخ آخری تاریخ سے پہلے ہونی چاہیے', true); return; }
+
+  const btn = document.getElementById('item-rpt-gen-btn');
+  btn.disabled = true; btn.textContent = 'Loading…';
+
+  try {
+    const ids = itemRptSelected.map(x => x.item_id).join(',');
+    const data = await fetchReport(`${API}/api/report/items?item_ids=${ids}&from=${from}&to=${to}`);
+    closeItemReportDialog();
+    printHtml(buildItemsReportHtml(data));
+  } catch(e) {
+    toast('رپورٹ خرابی: ' + e.message, true);
+  } finally {
+    btn.disabled = false; btn.innerHTML = '⬇ Generate Report · رپورٹ بنائیں';
+  }
+}
+
+function buildItemsReportHtml(data) {
+  const items = data.items ?? [];
+  const from  = data.period?.from ?? '';
+  const to    = data.period?.to   ?? '';
+  const fmtDate = iso => { const [y,m,d] = iso.split('-'); return `${d}/${m}/${y}`; };
+  const dateLabel = from && to ? `${fmtDate(from)} — ${fmtDate(to)}` : '';
+
+  const totalRecvPkr = items.reduce((s,i) => s + (i.recv_pkr_total ?? 0), 0);
+  const totalUsedPkr = items.reduce((s,i) => s + (i.used_pkr_total ?? 0), 0);
+
+  const statsBar = `
+<div class="stats-bar" style="grid-template-columns:repeat(2,1fr)">
+  <div class="stat-card stat-grn">
+    <div class="stat-lbl">TOTAL PURCHASED · <span class="ur">کل خریداری</span></div>
+    <div class="stat-val">₨${fmtP(totalRecvPkr)}</div>
+  </div>
+  <div class="stat-card" style="background:#eff6ff;border:1px solid #bfdbfe">
+    <div class="stat-lbl" style="color:#1e40af">TOTAL CONSUMED · <span class="ur">کل خرچ</span></div>
+    <div class="stat-val" style="color:#1e40af">₨${fmtP(totalUsedPkr)}</div>
+  </div>
+</div>`;
+
+  const rows = items.map(it => `
+    <tr>
+      <td class="ur-cell" style="text-align:right">${esc(it.name_ur)}${it.name_en ? `<br><span style="font-size:.75rem;color:#888">${esc(it.name_en)}</span>` : ''}</td>
+      <td class="num">${it.unit || '—'}</td>
+      <td class="num c-recv">${fmtN(it.recv_qty_total)}</td>
+      <td class="num c-recv2">${it.recv_pkr_total ? '₨' + fmtP(it.recv_pkr_total) : '—'}</td>
+      <td class="num c-recv">${fmtN(it.used_qty_total)}</td>
+      <td class="num c-recv2">${it.used_pkr_total ? '₨' + fmtP(it.used_pkr_total) : '—'}</td>
+    </tr>`).join('');
+
+  const tableHtml = `
+<div class="sec-hdr">Item Totals · آئٹم کے کل اعداد</div>
+<table class="tbl" style="direction:rtl">
+  <thead>
+    <tr>
+      <th class="ur-cell" style="text-align:right">آئٹم · Item</th>
+      <th style="text-align:center">اکائی · Unit</th>
+      <th colspan="2" style="text-align:center">خریداری · Purchased</th>
+      <th colspan="2" style="text-align:center">خرچ · Consumed</th>
+    </tr>
+  </thead>
+  <tbody>${rows}</tbody>
+  <tfoot>
+    <tr class="tot-row">
+      <td colspan="3" class="ur" style="text-align:right">کل — Total</td>
+      <td class="num c-recv2">₨${fmtP(totalRecvPkr)}</td>
+      <td></td>
+      <td class="num c-recv2">₨${fmtP(totalUsedPkr)}</td>
+    </tr>
+  </tfoot>
+</table>`;
+
+  return rptShell(
+    'Item Report · آئٹم رپورٹ',
+    dateLabel,
+    statsBar + tableHtml,
+    'آئٹم رپورٹ — مطبخ جامعہ دارالعلوم کبیروالا'
   );
 }
 
