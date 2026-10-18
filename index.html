@@ -715,6 +715,7 @@ tbody tr.hidden{display:none}
   transition:all .15s;
 }
 .type-btn.active{background:var(--g700);border-color:var(--g700);color:#fff}
+.don-kind-tog{display:flex;gap:6px;direction:rtl}
 .don-item-fields{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .don-item-fields .fg{margin-bottom:0}
 .don-item-fields .fg.full{grid-column:1/-1}
@@ -1594,6 +1595,13 @@ tbody tr.hidden{display:none}
         </label>
         <input class="finp" id="don-notes" type="text" placeholder="اضافی معلومات" dir="rtl">
         <div class="ur-kb-wrap" id="don-kb-don-notes"></div>
+      </div>
+      <div class="fg">
+        <label class="flbl"><span>Sadaqa / Attiya</span><span class="flbl-ur">نوعیت</span></label>
+        <div class="don-kind-tog" id="don-kind">
+          <button type="button" class="type-btn" data-kind="sadaqa">صدقہ / Sadaqa</button>
+          <button type="button" class="type-btn active" data-kind="attiya">عطیہ / Attiya</button>
+        </div>
       </div>
       <div style="margin-bottom:10px">
         <div class="flbl" style="margin-bottom:4px"><span>Donated Items / Cash</span><span class="flbl-ur">عطیات</span></div>
@@ -4246,6 +4254,17 @@ function renderDonations(data) {
 let donItemRows = [];
 let editingDonationId = null;
 
+/* Sadaqa / Attiya — one per donation; sets the receipt title + thank-you line */
+function setDonKind(kind) {
+  const tog = document.getElementById('don-kind');
+  tog.dataset.kind = kind === 'sadaqa' ? 'sadaqa' : 'attiya';
+  tog.querySelectorAll('.type-btn').forEach(b => b.classList.toggle('active', b.dataset.kind === tog.dataset.kind));
+}
+document.getElementById('don-kind').addEventListener('click', e => {
+  const b = e.target.closest('.type-btn');
+  if (b) { e.preventDefault(); setDonKind(b.dataset.kind); }
+});
+
 function openDonModal(donation = null) {
   donItemRows = [];
   editingDonationId = donation ? donation.id : null;
@@ -4260,6 +4279,7 @@ function openDonModal(donation = null) {
   document.getElementById('don-phone').value = donation ? (donation.donor_phone ?? '') : '';
   document.getElementById('don-date').value  = donation ? donation.donation_date : curDate;
   document.getElementById('don-notes').value = donation ? (donation.notes ?? '') : '';
+  setDonKind(donation ? donation.donation_type : 'attiya');
   document.getElementById('don-items-list').innerHTML = '';
 
   if (donation && donation.items && donation.items.length) {
@@ -4711,7 +4731,9 @@ async function saveDonation() {
       method: httpMethod,
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ donor_name, donation_date, notes: notes || null,
-                             donor_phone: donor_phone || null, items }),
+                             donor_phone: donor_phone || null,
+                             donation_type: document.getElementById('don-kind').dataset.kind || 'attiya',
+                             items }),
     });
     const data = await r.json();
     if (data.error) throw new Error(data.message || data.error);
@@ -4729,7 +4751,9 @@ async function saveDonation() {
  * printed, and shared to WhatsApp, so all three always match.
  * ══════════════════════════════════════════════════════════ */
 const RCPT_INST = 'جامعہ دارالعلوم کبیروالا';
-const RCPT_THANKS = 'جزاک اللہ خیراً — آپ کے عطیہ کا شکریہ';
+const rcptKind   = d => d.donation_type === 'sadaqa' ? 'صدقہ' : 'عطیہ';
+const rcptTitle  = d => `رسید ${rcptKind(d)}`;
+const rcptThanks = d => `جزاک اللہ خیراً — آپ کے ${rcptKind(d)} کا شکریہ`;
 const MEAT_UNIT_UR = { kg: 'کلو', mun: 'مَن' };
 let rcptCanvas = null, rcptDonation = null;
 
@@ -4793,7 +4817,7 @@ async function drawReceipt(d, withLogo = true) {
   if (logo) { g.drawImage(logo, W / 2 - 55, y, 110, 110); y += 140; } else { y += 30; }
   txt(RCPT_INST, W / 2, y + 26, `700 38px ${UR}`, 'center', '#1f5132');
   y += 88;
-  txt('رسید عطیہ', W / 2, y, `400 26px ${UR}`, 'center', '#4b5563');
+  txt(rcptTitle(d), W / 2, y, `400 26px ${UR}`, 'center', '#4b5563');
   y += 42; hr(y, '#1f5132');
 
   // Receipt no (right) · date (left)
@@ -4854,7 +4878,7 @@ async function drawReceipt(d, withLogo = true) {
     txt(fit(d.notes, `400 22px ${UR}`, W - 2 * PAD), W - PAD, y, `400 22px ${UR}`, 'right', '#4b5563');
   }
   y += 72;
-  txt(RCPT_THANKS, W / 2, y, `400 24px ${UR}`, 'center', '#1f5132');
+  txt(rcptThanks(d), W / 2, y, `400 24px ${UR}`, 'center', '#1f5132');
 
   // Crop to content and add the frame.
   const HF = Math.ceil(y + 56);
@@ -4869,6 +4893,7 @@ async function drawReceipt(d, withLogo = true) {
 
 async function openReceipt(d) {
   rcptDonation = d;
+  document.querySelector('#rcpt-ov .rcpt-box-hdr .t').textContent = rcptTitle(d);
   const ov = document.getElementById('rcpt-ov');
   const img = document.getElementById('rcpt-img');
   img.removeAttribute('src');
@@ -4912,7 +4937,7 @@ function waPhone(p) {
 async function shareReceiptWA() {
   if (!rcptCanvas || !rcptDonation) return;
   const d = rcptDonation, no = receiptNo(d);
-  const text = `السلام علیکم ${d.donor_name}،\n${RCPT_INST} کی جانب سے آپ کے عطیہ کی رسید (نمبر ${no})۔\n${RCPT_THANKS}`;
+  const text = `السلام علیکم ${d.donor_name}،\n${RCPT_INST} کی جانب سے آپ کے ${rcptKind(d)} کی رسید (نمبر ${no})۔\n${rcptThanks(d)}`;
   const blob = await new Promise(r => rcptCanvas.toBlob(r, 'image/png'));
   const file = new File([blob], `receipt-${no}.png`, { type: 'image/png' });
 
