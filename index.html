@@ -4753,7 +4753,10 @@ async function saveDonation() {
 const RCPT_INST = 'جامعہ دارالعلوم کبیروالا';
 const rcptKind   = d => d.donation_type === 'sadaqa' ? 'صدقہ' : 'عطیہ';
 const rcptTitle  = d => `رسید ${rcptKind(d)}`;
-const rcptThanks = d => `جزاک اللہ خیراً — آپ کے ${rcptKind(d)} کا شکریہ`;
+// Closing lines — Sadaqa gets a dua on its own line; Attiya keeps the thank-you.
+const rcptThanks = d => d.donation_type === 'sadaqa'
+  ? ['جزاک اللہ خیراً', 'اللہ تعالیٰ آپ کا صدقہ قبول فرمائیں۔ آمین']
+  : ['جزاک اللہ خیراً — آپ کے عطیہ کا شکریہ'];
 const MEAT_UNIT_UR = { kg: 'کلو', mun: 'مَن' };
 let rcptCanvas = null, rcptDonation = null;
 
@@ -4878,7 +4881,10 @@ async function drawReceipt(d, withLogo = true) {
     txt(fit(d.notes, `400 22px ${UR}`, W - 2 * PAD), W - PAD, y, `400 22px ${UR}`, 'right', '#4b5563');
   }
   y += 72;
-  txt(rcptThanks(d), W / 2, y, `400 24px ${UR}`, 'center', '#1f5132');
+  rcptThanks(d).forEach((line, i) => {
+    if (i) y += 52;
+    txt(line, W / 2, y, `400 24px ${UR}`, 'center', '#1f5132');
+  });
 
   // Crop to content and add the frame.
   const HF = Math.ceil(y + 56);
@@ -4937,7 +4943,7 @@ function waPhone(p) {
 async function shareReceiptWA() {
   if (!rcptCanvas || !rcptDonation) return;
   const d = rcptDonation, no = receiptNo(d);
-  const text = `السلام علیکم ${d.donor_name}،\n${RCPT_INST} کی جانب سے آپ کے ${rcptKind(d)} کی رسید (نمبر ${no})۔\n${rcptThanks(d)}`;
+  const text = `السلام علیکم ${d.donor_name}،\n${RCPT_INST} کی جانب سے آپ کے ${rcptKind(d)} کی رسید (نمبر ${no})۔\n${rcptThanks(d).join('\n')}`;
   const blob = await new Promise(r => rcptCanvas.toBlob(r, 'image/png'));
   const file = new File([blob], `receipt-${no}.png`, { type: 'image/png' });
 
